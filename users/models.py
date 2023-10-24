@@ -1,59 +1,59 @@
-from django.db import models
+from collections.abc import Iterable
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 from django.db.models.query import QuerySet
 
-# Create your models here.
-class CustomUsers(AbstractUser):
+class Users(AbstractUser):
     
     class Types(models.TextChoices):
         SERVICE_PROVIDER = ("SERVICE_PROVIDER", "Service_Provider")
+        SUPER_ADMIN = ("SUPER_ADMIN", "Super_Admin")
         ADMIN = ("ADMIN", "Admin")
         USER = ("USER", "User")
     
-    base_type = Types.USER
+    email = models.EmailField(max_length=128, unique=True, null=False)
+    image = models.ImageField(upload_to="profile_images/", default="defaults/default_profile.jpg")
     
-    type = models.CharField("Type", max_length=50, choices=Types.choices, default=Types.USER)
+    base_type = Types.USER
+    user_type = models.CharField(max_length=32, choices=Types.choices, default=base_type)
+    
+    REQUIRED_FIELDS = []
+    
+    USERNAME_FIELD = "email"
+    EMAIL_FIELD = "email"
+    
+    class Meta:
+        verbose_name = "Users"
     
     def __str__(self) -> str:
         return self.username
 
 
-class ServiceProvider(CustomUsers):
+class SuperAdminsManager(models.Manager):
+    def get_queryset(self) -> QuerySet:
+        result = super().get_queryset()
+        return result.filter(user_type=Users.Types.SUPER_ADMIN)
+
+class SuperAdmins(Users):
+    base_type = Users.Types.SUPER_ADMIN
     
-    isbn = models.IntegerField()
+    admins = SuperAdminsManager()
+    
+    class Meta:
+        proxy = True
+        verbose_name = "SuperAdmins"
 
 
 class AdminsManager(models.Manager):
     def get_queryset(self) -> QuerySet:
         result = super().get_queryset()
-        return result.filter(type=CustomUsers.Types.ADMIN)
+        return result.filter(user_type=Users.Types.ADMIN)
 
-
-class Admins(CustomUsers):
+class Admins(Users):
+    base_type = Users.Types.SUPER_ADMIN
     
-    base_type = CustomUsers.Types.ADMIN
-    
-    objects = AdminsManager()
+    admins = AdminsManager()
     
     class Meta:
         proxy = True
-
-
-# class ProvidersManager(models.Manager):
-#     def get_queryset(self) -> QuerySet:
-#         result = super().get_queryset()
-#         return result.filter(type=CustomUsers.Types.SERVICE_PROVIDER)
-
-
-# class ServiceProviderProxy(CustomUsers):
-    
-#     base_type = CustomUsers.Types.SERVICE_PROVIDER
-    
-#     objects = ProvidersManager()
-    
-#     class Meta:
-#         proxy = True
-
-
-# class ServiceProvider(ServiceProviderProxy):
-#     isbn_number = models.IntegerField()
+        verbose_name = "Admins"
