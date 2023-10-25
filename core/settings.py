@@ -43,7 +43,15 @@ INSTALLED_APPS = [
     "corsheaders",
     
     # local apps
-    "users",
+    "service_providers.apps.ServiceProvidersConfig",
+    "appointments.apps.AppointmentsConfig",
+    "deliveries.apps.DeliveriesConfig",
+    "bookings.apps.BookingsConfig",
+    "category.apps.CategoryConfig",
+    "services.apps.ServicesConfig",
+    "products.apps.ProductsConfig",
+    "orders.apps.OrdersConfig",
+    "users.apps.UsersConfig",
 ]
 
 MIDDLEWARE = [
