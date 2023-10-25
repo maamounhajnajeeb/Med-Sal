@@ -33,7 +33,15 @@ INSTALLED_APPS = [
     "corsheaders",
     
     # local apps
-    "users",
+    "service_providers.apps.ServiceProvidersConfig",
+    "appointments.apps.AppointmentsConfig",
+    "deliveries.apps.DeliveriesConfig",
+    "bookings.apps.BookingsConfig",
+    "category.apps.CategoryConfig",
+    "services.apps.ServicesConfig",
+    "products.apps.ProductsConfig",
+    "orders.apps.OrdersConfig",
+    "users.apps.UsersConfig",
 ]
 
 MIDDLEWARE = [
@@ -78,33 +86,33 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-import os
-from environs import Env
-
-def get_env_details():
-    env = Env()
-    env.read_env()
-    
-    return os.getenv("PASSWORD")
-
-
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "rest_project", # any name
-        "USER": "postgres", # your chosen or default database system name
-        "PASSWORD": get_env_details(), #
-        "HOST": "localhost", # localhost
-        "PORT": "5432", # 5432
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# import os
+# from environs import Env
+
+# def get_env_details():
+#     env = Env()
+#     env.read_env()
+    
+#     return os.getenv("PASSWORD")
+
+
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": "med-sal", # any name
+#         "USER": "postgres", # your chosen or default database system name
+#         "PASSWORD": get_env_details(), #
+#         "HOST": "", # localhost
+#         "PORT": "", # 5432
+#     }
+# }
 
 
 # Password validation
@@ -153,6 +161,5 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-AUTH_USER_MODEL = "users.CustomUsers" #
+AUTH_USER_MODEL = "users.Users" #
