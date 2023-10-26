@@ -12,7 +12,7 @@ class Users(AbstractUser):
         ADMIN = ("ADMIN", "Admin")
         USER = ("USER", "User")
     
-    username = models.CharField(max_length=128, unique=False)
+    username = models.CharField(max_length=128, unique=False, null=True, blank=True)
     email = models.EmailField(max_length=128, unique=True, null=False)
     image = models.ImageField(
         upload_to=utils.unique_image_name, default="defaults/default_profile.jpg")
