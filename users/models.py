@@ -1,16 +1,6 @@
-from django.contrib.auth.models import AbstractUser, UserManager
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.query import QuerySet
-
-class CusotmManager(UserManager):
-    def create_user(self, username: str, email: str | None = ..., password: str | None = ..., **extra_fields):
-        is_staff, is_superuser = extra_fields.get("is_staff"), extra_fields.get("is_superuser")
-        print(is_superuser)
-        if not is_staff:
-            extra_fields.setdefault("is_staff", False)
-        if not is_superuser:
-            extra_fields.setdefault("is_superuser", False)
-        return self._create_user(username, email, password, **extra_fields)
 
 class Users(AbstractUser):
     
@@ -26,8 +16,6 @@ class Users(AbstractUser):
     
     base_type = Types.USER
     user_type = models.CharField(max_length=32, choices=Types.choices, default=base_type)
-    
-    objects = CusotmManager()
     
     REQUIRED_FIELDS = []
     
@@ -49,13 +37,7 @@ class SuperAdminsManager(models.Manager):
 class SuperAdmins(Users):
     base_type = Users.Types.SUPER_ADMIN
     
-    AbstractUser.is_superuser = True
-    AbstractUser.is_staff = True
-    
-    admins = SuperAdminsManager()
-    
-    is_staff = True
-    is_superuser = True
+    super_admins = SuperAdminsManager()
 
     class Meta:
         proxy = True
@@ -69,8 +51,6 @@ class AdminsManager(models.Manager):
 
 class Admins(Users):
     base_type = Users.Types.SUPER_ADMIN
-    
-    AbstractUser.is_staff = True
     
     admins = AdminsManager()
     
