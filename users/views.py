@@ -7,6 +7,7 @@ from django.http import HttpRequest
 from . import models, serializers
 
 
+<<<<<<< HEAD
 class SignUp(generics.CreateAPIView):
     
     permission_classes = ()
@@ -40,3 +41,9 @@ class SignUp(generics.CreateAPIView):
         
         return hash_map[user_type]
     
+=======
+@decorators.api_view(["GET"])
+def hello(request):
+    print("Hi")
+    return response.Response({"message": "hello"})
+>>>>>>> 07472eb439a9f1fe55e376c5c7c3c086a8cf6426
