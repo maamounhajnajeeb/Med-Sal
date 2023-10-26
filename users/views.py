@@ -7,4 +7,5 @@ from django.shortcuts import render
 
 @decorators.api_view(["GET"])
 def hello(request):
+    print("Hi")
     return response.Response({"message": "hello"})
