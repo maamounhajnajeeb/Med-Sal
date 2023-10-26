@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from django.contrib.auth.hashers import make_password
+
 from . import models
 
 class UsersSerializer(serializers.ModelSerializer):
@@ -11,14 +13,16 @@ class UsersSerializer(serializers.ModelSerializer):
     
     def validate(self, attrs):
         password = attrs.get("password")
-        if not password:
-            raise serializers.ValidationError(
-                "password field is required")
-        
         confirm_password = self.initial_data.get("confirm_password")
+        if not (password or confirm_password):
+            raise serializers.ValidationError(
+                "password fields are required")
+        
         if password != confirm_password:
             raise serializers.ValidationError(
                 "passwords are not the same")
+        
+        attrs["password"] = self.encrypt_password(password)
         
         email = attrs.get("email")
         if not email:
@@ -35,9 +39,6 @@ class UsersSerializer(serializers.ModelSerializer):
         
         return attrs
     
-    def create(self, validated_data):
-        instance = self.Meta.model(**validated_data)
-        instance.set_password(instance.password)
-        instance.save()
-        
-        return instance
+    def encrypt_password(self, password):
+        return make_password(password=password)
+    

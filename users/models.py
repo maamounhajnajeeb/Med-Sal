@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.query import QuerySet
 
+from . import utils
+
 class Users(AbstractUser):
     
     class Types(models.TextChoices):
@@ -12,7 +14,8 @@ class Users(AbstractUser):
     
     username = models.CharField(max_length=128, unique=False)
     email = models.EmailField(max_length=128, unique=True, null=False)
-    image = models.ImageField(upload_to="profile_images/", default="defaults/default_profile.jpg")
+    image = models.ImageField(
+        upload_to=utils.unique_image_name, default="defaults/default_profile.jpg")
     
     base_type = Types.USER
     user_type = models.CharField(max_length=32, choices=Types.choices, default=base_type)
