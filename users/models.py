@@ -70,12 +70,8 @@ class AdminsManager(models.Manager):
 class Admins(Users):
     base_type = Users.Types.SUPER_ADMIN
     
-<<<<<<< HEAD
     AbstractUser.is_staff = True
     
-=======
-    is_staff = True
->>>>>>> 07472eb439a9f1fe55e376c5c7c3c086a8cf6426
     admins = AdminsManager()
     
     class Meta:
