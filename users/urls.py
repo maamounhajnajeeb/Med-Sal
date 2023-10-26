@@ -9,4 +9,5 @@ app_name = "users"
 urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path("sign_up/", views.SignUp.as_view(), name="sign_up"),
 ]
