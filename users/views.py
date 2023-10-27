@@ -12,7 +12,7 @@ class SignUp(generics.CreateAPIView):
     permission_classes = ()
     serializer_class = serializers.UsersSerializer
     
-    def create(self, request, *args, **kwargs):
+    def create(self, request: HttpRequest, *args, **kwargs):
         resp = super().create(request, *args, **kwargs)
         return Response({
             "created": "Done"
