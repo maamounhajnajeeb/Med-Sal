@@ -15,6 +15,7 @@ class Command(BaseCommand):
         super_user = SuperAdmins.objects.create(
             email=options.get("email")
             , password=make_password(options.get("password"))
-            , is_superuser=True, is_staff=True)
+            , is_superuser=True, is_staff=True
+            , user_type=SuperAdmins.Types.SUPER_ADMIN)
         
-        self.stdout.write(f"{super_user} account created with email {options.get('email')}")
+        self.stdout.write(f"{super_user} created")

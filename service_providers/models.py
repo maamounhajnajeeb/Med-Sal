@@ -34,7 +34,7 @@ class ServiceProvider(Users):
     updated_at = models.DateTimeField(auto_now = True)
     
     base_type = Users.Types.SERVICE_PROVIDER
-  
+    
     def __str__(self):
         return self.business_name
     

@@ -12,6 +12,16 @@ class SignUp(generics.CreateAPIView):
     permission_classes = ()
     serializer_class = serializers.UsersSerializer
     
+    def create(self, request, *args, **kwargs):
+        resp = super().create(request, *args, **kwargs)
+        return Response({
+            "created": "Done"
+            , "user_email": resp.data["email"]
+            , "user_type": resp.data["user_type"]
+            , "token": "the token"
+        }, status=resp.status_code
+        , headers=self.get_success_headers(resp.data))
+    
     def get_serializer_class(self):
         assert self.serializer_class is not None, (
             f"'{self.__class__.__name__}' should either include a `serializer_class` attribute, "

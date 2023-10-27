@@ -30,15 +30,25 @@ class UsersSerializer(serializers.ModelSerializer):
                 "email is field required")
         
         user_type = attrs.get("user_type")
-        if user_type != "USER":
-            attrs.setdefault("is_staff", True)
-            attrs.setdefault("user_type", models.Users.Types.ADMIN)
-            if user_type == "SUPER_ADMIN":
-                attrs.setdefault("is_superuser", True)
-                attrs.setdefault("user_type", models.Users.Types.SUPER_ADMIN)
+        added_attrs = self.user_attrs_mapping(user_type)
+        attrs = self.assign_attrs(attrs, added_attrs)
         
         return attrs
     
     def encrypt_password(self, password):
         return make_password(password=password)
     
+    def user_attrs_mapping(self, user_type):
+        hash_map = {
+            "USER": [("is_active", False)]
+            , "SERVICE_PROVIDER": [("is_active", False)]
+            , "ADMIN": [("is_active", True), ("is_staff", True)]
+            , "SUPER_ADMIN" : [("is_active", True), ("is_superuser", True), ("is_staff", True)]
+        }
+        return hash_map[user_type]
+    
+    def assign_attrs(self, original_attrs, added_attrs):
+        if added_attrs:
+            for attr in added_attrs:
+                original_attrs[attr[0]] = attr[1]
+        return original_attrs
