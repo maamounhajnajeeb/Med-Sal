@@ -3,6 +3,8 @@ from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
 
 from . import models
+from service_providers.models import ServiceProvider
+from category.models import Category
 
 class UsersSerializer(serializers.ModelSerializer):
     
@@ -12,6 +14,7 @@ class UsersSerializer(serializers.ModelSerializer):
             )
     
     def validate(self, attrs):
+        
         password = attrs.get("password")
         confirm_password = self.initial_data.get("confirm_password")
         if not (password or confirm_password):
@@ -52,3 +55,21 @@ class UsersSerializer(serializers.ModelSerializer):
             for attr in added_attrs:
                 original_attrs[attr[0]] = attr[1]
         return original_attrs
+    
+    def save(self, **kwargs):
+        user_instance = super().save(**kwargs)
+        if self.initial_data.get("category"):
+            self.create_service_provider(user_instance)
+        return user_instance
+    
+    
+    def create_service_provider(self, user_instance):
+        data = self.initial_data
+        category_instance = Category.objects.get(id=data["category"])
+        
+        ServiceProvider.objects.create(
+            category=category_instance, business_name=data["bussiness_name"]
+            , contact_number=data["contact_number"], bank_name=data["bank_name"]
+            , iban=data["iban"], swift_code=data["swift_code"]
+            , provider_file=data["provider_file"], user=user_instance
+        )
