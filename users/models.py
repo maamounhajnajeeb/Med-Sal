@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.query import QuerySet
 
+from . import utils
+
 class Users(AbstractUser):
     
     class Types(models.TextChoices):
@@ -10,9 +12,10 @@ class Users(AbstractUser):
         ADMIN = ("ADMIN", "Admin")
         USER = ("USER", "User")
     
-    username = models.CharField(max_length=128, unique=False)
+    username = models.CharField(max_length=128, unique=False, null=True, blank=True)
     email = models.EmailField(max_length=128, unique=True, null=False)
-    image = models.ImageField(upload_to="profile_images/", default="defaults/default_profile.jpg")
+    image = models.ImageField(
+        upload_to=utils.unique_image_name, default="defaults/default_profile.jpg")
     
     base_type = Types.USER
     user_type = models.CharField(max_length=32, choices=Types.choices, default=base_type)
@@ -23,7 +26,8 @@ class Users(AbstractUser):
     EMAIL_FIELD = "email"
     
     class Meta:
-        verbose_name = "Users"
+        verbose_name = "User"
+        verbose_name_plural = "User"
     
     def __str__(self) -> str:
         return self.email
@@ -36,12 +40,14 @@ class SuperAdminsManager(models.Manager):
 
 class SuperAdmins(Users):
     base_type = Users.Types.SUPER_ADMIN
+    Users.user_type = models.CharField(max_length=32, choices=Users.Types.choices, default=base_type)
     
     super_admins = SuperAdminsManager()
-
+    
     class Meta:
         proxy = True
-        verbose_name = "SuperAdmins"
+        verbose_name = "SuperAdmin"
+        verbose_name_plural = "SuperAdmin"
 
 
 class AdminsManager(models.Manager):
@@ -50,11 +56,12 @@ class AdminsManager(models.Manager):
         return result.filter(user_type=Users.Types.ADMIN)
 
 class Admins(Users):
-    base_type = Users.Types.SUPER_ADMIN
+    base_type = Users.Types.ADMIN
+    Users.user_type = models.CharField(max_length=32, choices=Users.Types.choices, default=base_type)
     
     admins = AdminsManager()
     
     class Meta:
         proxy = True
-        verbose_name = "Admins"
-    
+        verbose_name = "Admin"
+        verbose_name_plural = "Admin"

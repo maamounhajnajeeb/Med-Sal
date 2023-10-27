@@ -9,7 +9,7 @@ from marshmallow import ValidationError
 class Category(models.Model):
     
     class Names(models.TextChoices):
-
+        
         DOCTOR = ("DOCTOR","Doctor")
         DENTAL = ("DENTAL", "Dental") 
         OPTICS = ("OPTICS", "Optics") 
@@ -22,16 +22,12 @@ class Category(models.Model):
         HOSPITAL = ("HOSPITAL", "Hospital")
         LAB = ("LAB", "Lab")
         CLINIC = ("CLINIC", "Clinic")
-
-    name = models.CharField(max_length = 20, choices = Names.choices)
-
-    class Meta:
         
+    name = models.CharField(max_length=20, choices=Names.choices, unique=True)
+    
+    class Meta:
         verbose_name = "Category"
         verbose_name_plural = "Category" 
 
     def __str__(self):
         return self.name
-    
-    
-    
