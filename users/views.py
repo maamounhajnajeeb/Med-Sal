@@ -18,7 +18,7 @@ class SignUp(generics.CreateAPIView):
             "created": "Done"
             , "user_email": resp.data["email"]
             , "user_type": resp.data["user_type"]
-            , "token": "the token"
+            , "tokens": "refresh and access tokens"
         }, status=resp.status_code
         , headers=self.get_success_headers(resp.data))
     
