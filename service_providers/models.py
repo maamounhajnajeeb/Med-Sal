@@ -30,7 +30,7 @@ class ServiceProvider(Users):
     class Meta:
         ordering = ['date_joined']
         verbose_name = "ServiceProvider"
-        verbose_name_plural = "ServiceProvider"
+        verbose_name_plural = "ServiceProviders"
 
 
 class ServiceProviderLocations(models.Model):

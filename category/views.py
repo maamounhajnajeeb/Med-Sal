@@ -1,10 +1,11 @@
 
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from category.serializers import CategorySerializer
 from category.models import Category
+
 
 class CategoryGet(APIView):
     serializer_class = CategorySerializer
@@ -20,7 +21,6 @@ class CategoryGet(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status = status.HTTP_201_CREATED)
-   
         else:
             return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
    
