@@ -1,11 +1,5 @@
 from django.db import models
 
-# Create your models here.
-from django.db import models
-from marshmallow import ValidationError
-
-# Create your models here.
-
 class Category(models.Model):
     
     class Names(models.TextChoices):
@@ -22,12 +16,13 @@ class Category(models.Model):
         HOSPITAL = ("HOSPITAL", "Hospital")
         LAB = ("LAB", "Lab")
         CLINIC = ("CLINIC", "Clinic")
+
+    name = models.CharField(max_length = 20, choices = Names.choices)
+    parent = models.ForeignKey("self", on_delete = models.CASCADE, null = True, blank = True)
         
-    name = models.CharField(max_length=20, choices=Names.choices, unique=True)
-    
     class Meta:
         verbose_name = "Category"
-        verbose_name_plural = "Category" 
+        verbose_name_plural = "Categorys" 
 
     def __str__(self):
         return self.name
