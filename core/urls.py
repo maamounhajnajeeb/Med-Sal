@@ -20,8 +20,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    
     path('admin/', admin.site.urls),
     path('api/v1/users/', include("users.urls", namespace="users")),
+
+    # Category Testing 
+    path('category/', include("category.urls", namespace="category")),
 ]
 
 if settings.DEBUG:
