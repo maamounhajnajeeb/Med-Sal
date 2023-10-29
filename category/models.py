@@ -1,11 +1,5 @@
 from django.db import models
 
-# Create your models here.
-from django.db import models
-from marshmallow import ValidationError
-
-# Create your models here.
-
 class Category(models.Model):
     
     class Names(models.TextChoices):
@@ -29,6 +23,6 @@ class Category(models.Model):
     class Meta:
         verbose_name = "Category"
         verbose_name_plural = "Category" 
-    
+
     def __str__(self):
         return self.name

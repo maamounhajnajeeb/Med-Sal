@@ -1,16 +1,14 @@
 from rest_framework import routers
 
-from django.urls import path
-
 from . import views
 
 app_name = "category"
 
 router = routers.SimpleRouter()
-router.register("", views.CRUDCategory, basename="all_categories")
+router.register("", views.CRUDCategory, basename="category-functionality")
 
-urlpatterns = [
-    # path("all_categories/", views.CRUDCategory.as_view(), name="all_categories"),
+url_patterns = [
+    
 ]
 
-urlpatterns += router.urls
+url_patterns += router.urls

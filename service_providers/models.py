@@ -30,5 +30,26 @@ class ServiceProvider(Users):
     class Meta:
         ordering = ['date_joined']
         verbose_name = "ServiceProvider"
-        verbose_name_plural = "ServiceProvider"
+        verbose_name_plural = "ServiceProviders"
 
+
+class ServiceProviderLocations(models.Model):
+    
+    service_provider_id = models.ForeignKey(ServiceProvider, on_delete = models.CASCADE, null = True)
+
+    location = models.CharField(max_length=20, blank=False)
+
+    opening = models.TimeField(blank=False)
+    
+    closing = models.TimeField(blank=False)
+
+    crew = models.CharField(max_length = 32, blank=False)
+
+    created_at = models.DateTimeField(auto_now_add = True, null = False)
+
+    def __str__(self):
+        return self.service_provider_id.business_name
+    
+    class Meta:
+        verbose_name = "ServiceProviderLocations"
+        verbose_name_plural = "ServiceProviderLocations"
