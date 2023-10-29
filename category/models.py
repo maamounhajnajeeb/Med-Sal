@@ -24,10 +24,11 @@ class Category(models.Model):
         CLINIC = ("CLINIC", "Clinic")
         
     name = models.CharField(max_length=20, choices=Names.choices, unique=True)
+    parent = models.ForeignKey("category.Category", on_delete=models.CASCADE, null=True)
     
     class Meta:
         verbose_name = "Category"
         verbose_name_plural = "Category" 
-
+    
     def __str__(self):
         return self.name
