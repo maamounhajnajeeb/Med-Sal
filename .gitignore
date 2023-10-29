@@ -61,3 +61,6 @@ problem.py
 
 # languages
 /locale
+
+# db
+db.slqite3
