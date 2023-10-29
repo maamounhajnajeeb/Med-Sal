@@ -14,4 +14,7 @@ class CRUDCategory(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     queryset = Category.objects
     # permission_classes = () # after adding model permission
-    
+
+
+class SerachCategory(generics.ListAPIView):
+    pass
