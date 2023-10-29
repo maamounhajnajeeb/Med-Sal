@@ -1,11 +1,14 @@
-from django.urls import path
+from rest_framework import routers
 
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-
-from category.views import CategoryGet
+from . import views
 
 app_name = "category"
 
-urlpatterns = [
-    path('testing_category/', CategoryGet.as_view())
+router = routers.SimpleRouter()
+router.register("", views.CRUDCategory, basename="category-functionality")
+
+url_patterns = [
+    
 ]
+
+url_patterns += router.urls

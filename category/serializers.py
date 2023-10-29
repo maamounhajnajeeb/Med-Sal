@@ -1,10 +1,9 @@
 from rest_framework import serializers
-from category.models import *
 
+from .models import Category
 
 class CategorySerializer(serializers.ModelSerializer):
-    parent = serializers.StringRelatedField()
     
     class Meta:
         model = Category
-        fields = ["id", "name", "parent"]
+        fields = "__all__"

@@ -23,9 +23,13 @@ urlpatterns = [
     
     path('admin/', admin.site.urls),
     path('api/v1/users/', include("users.urls", namespace="users")),
+<<<<<<< HEAD
+    path('api/v1/category/', include("category.urls", namespace="category")),
+=======
 
     # Category Testing 
     path('category/', include("category.urls", namespace="category")),
+>>>>>>> 834755d8eae53caaa166d40e2d2aca0755d4f066
 ]
 
 if settings.DEBUG:

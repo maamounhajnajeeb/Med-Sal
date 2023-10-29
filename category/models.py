@@ -16,13 +16,13 @@ class Category(models.Model):
         HOSPITAL = ("HOSPITAL", "Hospital")
         LAB = ("LAB", "Lab")
         CLINIC = ("CLINIC", "Clinic")
-
-    name = models.CharField(max_length = 20, choices = Names.choices)
-    parent = models.ForeignKey("self", on_delete = models.CASCADE, null = True, blank = True)
         
+    name = models.CharField(max_length=20, choices=Names.choices, unique=True)
+    parent = models.ForeignKey("category.Category", on_delete=models.CASCADE, null=True)
+    
     class Meta:
         verbose_name = "Category"
-        verbose_name_plural = "Categorys" 
+        verbose_name_plural = "Category" 
 
     def __str__(self):
         return self.name
