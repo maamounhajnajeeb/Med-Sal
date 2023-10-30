@@ -2,6 +2,9 @@ asgiref==3.7.2
 attrs==23.1.0
 Django==4.2.6
 django-cors-headers==4.3.0
+django-modeltranslation==0.18.11
+django-parler==2.3
+django-parler-rest==2.2
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.3.0
 environs==9.5.0
@@ -17,5 +20,6 @@ pytz==2023.3.post1
 referencing==0.30.2
 rpds-py==0.10.6
 sqlparse==0.4.4
+typing_extensions==4.8.0
 tzdata==2023.3
 uritemplate==4.1.1

@@ -1,18 +1,31 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, decorators
 from rest_framework import status, filters
 from rest_framework.response import Response
 
 from django.utils.translation import gettext as _
 from django.utils.translation import activate, get_language
 from django.shortcuts import render
+from django.http import HttpRequest
+from django.views.i18n import set_language
 
-from .models import Category
+from .models import Category, MyCategory
 from .permissions import IsAdmin
-from .serializers import CategorySerializer
+from .serializers import CategorySerializer, MyCategorySerializer
 
 
-def home(request):
+def home(request: HttpRequest):
+    print(request.user.language_preference)
     return render(request, "home.html", {})
+
+
+@decorators.api_view(["PATCH"])
+def change_lang(request):
+    if request.data.get("language_code"):
+        # language_code = request.data.get("language_code")
+        set_language(request)
+        return Response({
+            "result": "changed successfully"
+        }, status=status.HTTP_200_OK)
 
 
 class CRUDCategory(viewsets.ModelViewSet):
@@ -72,3 +85,9 @@ class CRUDCategory(viewsets.ModelViewSet):
             child_instance = Category.objects.select_related("parent").get(id=self.kwargs["pk"])
             self.assign_parent(parent_parameter, child_instance)
         return super().update(request, *args, **kwargs)
+
+
+class MyCategoryView(viewsets.ModelViewSet):
+    permission_classes = ()
+    queryset = MyCategory.objects
+    serializer_class = MyCategorySerializer

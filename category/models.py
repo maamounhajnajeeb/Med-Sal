@@ -1,4 +1,7 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
+
+from parler.models import TranslatableModel, TranslatedFields
 
 class Category(models.Model):
     
@@ -25,4 +28,15 @@ class Category(models.Model):
         verbose_name_plural = "Category" 
 
     def __str__(self):
+        return self.name
+
+
+class MyCategory(TranslatableModel):
+    name = models.CharField(max_length=20, unique=True)
+    
+    translations = TranslatedFields(
+        ar_name = models.CharField(_("Name"), max_length=200)
+    )
+
+    def __unicode__(self):
         return self.name

@@ -178,13 +178,28 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "users.Users" #
 
-# LANGUAGE_CODE = "ar" # default language
+LANGUAGE_CODE = "ar" # default language
 
 USE_I18N = True
+
+PARLER_DEFAULT_LANGUAGE_CODE = 'en'
+
+PARLER_LANGUAGES = {
+    None: (
+        {'code': 'ar'}
+        , {'code': 'en'}
+        , {'code': 'fr'}
+    ),
+    'default': {
+        'fallbacks': ['ar'],
+        'hide_untranslated': False,
+    }
+}
 
 LANGUAGES = (
     ("ar", _("Arabic"))
     , ('en', _("English"))
+    , ('fr', _("French"))
 )
 
 LOCALE_PATHS = (
