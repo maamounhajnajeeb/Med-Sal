@@ -25,6 +25,8 @@ urlpatterns = [
     path('api/v1/users/', include("users.urls", namespace="users")),
     path('api/v1/category/', include("category.urls", namespace="category")),
 
+    # languages url
+    path("18in/", include("django.conf.urls.i18n")),
 ]
 
 if settings.DEBUG:

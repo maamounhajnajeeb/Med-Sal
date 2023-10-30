@@ -4,10 +4,15 @@ from rest_framework.response import Response
 
 from django.utils.translation import gettext as _
 from django.utils.translation import activate, get_language
+from django.shortcuts import render
 
 from .models import Category
 from .permissions import IsAdmin
 from .serializers import CategorySerializer
+
+
+def home(request):
+    return render(request, "home.html", {})
 
 
 class CRUDCategory(viewsets.ModelViewSet):

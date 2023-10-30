@@ -29,9 +29,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # third party packages
-    "rest_framework",
     'rest_framework_simplejwt',
+    "rest_framework",
     "corsheaders",
+    "parler_rest",
+    "parler",
     
     # local apps
     "service_providers.apps.ServiceProvidersConfig",
@@ -178,11 +180,13 @@ AUTH_USER_MODEL = "users.Users" #
 
 # LANGUAGE_CODE = "ar" # default language
 
-# LANGUAGES = (
-#     ("ar", _("Arabic"))
-#     , ('en', _("English"))
-#     )
+USE_I18N = True
 
-# LOCALE_PATHS = (
-#     BASE_DIR / "locale",
-# )
+LANGUAGES = (
+    ("ar", _("Arabic"))
+    , ('en', _("English"))
+)
+
+LOCALE_PATHS = (
+    BASE_DIR / "locale",
+)
