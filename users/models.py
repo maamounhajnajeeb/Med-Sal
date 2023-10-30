@@ -3,9 +3,6 @@ from django.db import models
 from django.utils import timezone
 from django.db.models.query import QuerySet
 
-<<<<<<< HEAD
-from . import utils
-=======
 from django.contrib.auth.models import (
     BaseUserManager,
 )
@@ -35,7 +32,6 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(email, password, **extra_fields)
 
->>>>>>> 2fdb9f7c5f6430580c04aef87337da0a97069d11
 
 class Users(AbstractUser):
     class Types(models.TextChoices):
@@ -43,14 +39,6 @@ class Users(AbstractUser):
         SUPER_ADMIN = ("SUPER_ADMIN", "Super_Admin")
         ADMIN = ("ADMIN", "Admin")
         USER = ("USER", "User")
-<<<<<<< HEAD
-    
-    username = models.CharField(max_length=128, unique=False, null=True, blank=True)
-    email = models.EmailField(max_length=128, unique=True, null=False)
-    image = models.ImageField(
-        upload_to=utils.unique_image_name, default="defaults/default_profile.jpg")
-    
-=======
 
     username = None
     email = models.EmailField(max_length=128, unique=True, null=False)
@@ -58,7 +46,6 @@ class Users(AbstractUser):
         upload_to="profile_images/", default="defaults/default_profile.jpg"
     )
 
->>>>>>> 2fdb9f7c5f6430580c04aef87337da0a97069d11
     base_type = Types.USER
     user_type = models.CharField(
         max_length=32, choices=Types.choices, default=base_type
@@ -78,14 +65,8 @@ class Users(AbstractUser):
     objects = CustomUserManager()
 
     class Meta:
-<<<<<<< HEAD
-        verbose_name = "User"
-        verbose_name_plural = "User"
-    
-=======
         verbose_name = "Users"
 
->>>>>>> 2fdb9f7c5f6430580c04aef87337da0a97069d11
     def __str__(self) -> str:
         return str(self.email)
 
@@ -139,12 +120,6 @@ class SuperAdminsManager(models.Manager):
 
 class SuperAdmins(Users):
     base_type = Users.Types.SUPER_ADMIN
-<<<<<<< HEAD
-    Users.user_type = models.CharField(max_length=32, choices=Users.Types.choices, default=base_type)
-    
-=======
-
->>>>>>> 2fdb9f7c5f6430580c04aef87337da0a97069d11
     super_admins = SuperAdminsManager()
     
     class Meta:
@@ -160,22 +135,10 @@ class AdminsManager(models.Manager):
 
 
 class Admins(Users):
-<<<<<<< HEAD
-    base_type = Users.Types.ADMIN
-    Users.user_type = models.CharField(max_length=32, choices=Users.Types.choices, default=base_type)
-    
-=======
     base_type = Users.Types.SUPER_ADMIN
 
->>>>>>> 2fdb9f7c5f6430580c04aef87337da0a97069d11
     admins = AdminsManager()
 
     class Meta:
         proxy = True
-<<<<<<< HEAD
-        verbose_name = "Admin"
-        verbose_name_plural = "Admin"
-        
-=======
         verbose_name = "Admins"
->>>>>>> 2fdb9f7c5f6430580c04aef87337da0a97069d11

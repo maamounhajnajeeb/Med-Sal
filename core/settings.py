@@ -29,7 +29,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     # third party packages
-    "rest_framework",
     "djoser",
     'rest_framework_simplejwt',
     "rest_framework",
