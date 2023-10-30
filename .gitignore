@@ -50,6 +50,8 @@ Thumbs.db
 
 # virtualenv
 /.venv
+venv/
+
 
 # gitignore
 .gitignore

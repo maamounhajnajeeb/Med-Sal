@@ -1,43 +1,65 @@
+from djoser.serializers import UserCreateSerializer
 from rest_framework import serializers
+from .models import Users
+from service_providers.models import ServiceProvider
 
-from . import models
 
-class UsersSerializer(serializers.ModelSerializer):
-    
+class ResetPasswordSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+
+
+class ServiceProviderSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = (
-            "email", "password", "image", "user_type",
-            )
-    
-    def validate(self, attrs):
-        password = attrs.get("password")
-        if not password:
-            raise serializers.ValidationError(
-                "password field is required")
-        
-        confirm_password = self.initial_data.get("confirm_password")
-        if password != confirm_password:
-            raise serializers.ValidationError(
-                "passwords are not the same")
-        
-        email = attrs.get("email")
-        if not email:
-            raise serializers.ValidationError(
-                "email is field required")
-        
-        user_type = attrs.get("user_type")
-        if user_type != "USER":
-            attrs.setdefault("is_staff", True)
-            attrs.setdefault("user_type", models.Users.Types.ADMIN)
-            if user_type == "SUPER_ADMIN":
-                attrs.setdefault("is_superuser", True)
-                attrs.setdefault("user_type", models.Users.Types.SUPER_ADMIN)
-        
-        return attrs
-    
-    def create(self, validated_data):
-        instance = self.Meta.model(**validated_data)
-        instance.set_password(instance.password)
-        instance.save()
-        
-        return instance
+        model = ServiceProvider
+        fields = ("business_name", "contact_number")
+
+
+class UserRegistrationSerializer(UserCreateSerializer):
+    class Meta(UserCreateSerializer.Meta):
+        model = Users
+        fields = UserCreateSerializer.Meta.fields
+
+
+"""
+{
+    "user_type": "SERVICE_PROVIDER",
+    "email": "provider@example.com",
+    "password": "your_password",
+    "re_password": "your_password",
+    "business_name": "Your Business Name",
+    "contact_number": "123-456-7890",
+    "bank_name": "Your Bank Name",
+    "category": "DOCTOR",
+    "iban": "Your IBAN",
+    "swift_code": "Your Swift Code"
+}   
+
+
+"""
+
+
+"""
+
+{
+  "user_type": "USER",
+  "email": "user@example.com",
+  "password": "your_password",
+  "re_password": "your_password"
+}
+
+
+"""
+
+
+"""
+{"code": "344639"}
+"""
+
+
+"""
+
+{"email": "admin@admin.com"}
+
+
+"""
