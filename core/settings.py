@@ -64,7 +64,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5), # default
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60), # default
 }
 
 CORS_ALLOWED_ORIGINS = (

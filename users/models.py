@@ -65,3 +65,4 @@ class Admins(Users):
         proxy = True
         verbose_name = "Admin"
         verbose_name_plural = "Admin"
+        
