@@ -21,23 +21,23 @@ class CustomUserViewSet(UserViewSet):
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
     http_method_names = ["get", "post", "patch", "put", "delete"]
-
+    
     def create(self, request):
         user_data = request.data
         user_type = user_data.get("user_type")
-
+        
         if user_type == Users.Types.SERVICE_PROVIDER:
             response = super().create(request)
-
+            
             # Check if the user was created successfully
             if response.status_code == status.HTTP_201_CREATED:
                 super_user = response.data
                 super_user_id = super_user["id"]
-
+                
                 # Fetch the Category instance based on the user_data value
                 category_value = user_data.get("category")
                 category_instance = get_object_or_404(Category, name=category_value)
-
+                
                 ServiceProvider.objects.create(
                     user_id=super_user_id,
                     business_name=user_data.get("business_name"),
@@ -47,11 +47,11 @@ class CustomUserViewSet(UserViewSet):
                     iban=user_data.get("iban"),
                     swift_code=user_data.get("swift_code"),
                 )
-
+                
                 return Response(super_user, status=status.HTTP_201_CREATED)
             else:
                 return response
-
+        
         try:
             response = super().create(request)
             if (
@@ -156,8 +156,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-
+        
         if response.status_code == status.HTTP_200_OK:
             response.data["message"] = "Token refreshed successfully"
-
+        
         return response

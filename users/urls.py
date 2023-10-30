@@ -17,7 +17,7 @@ app_name = "users"
 urlpatterns = [
     
     # list users
-    path("users/", CustomUserViewSet.as_view({"get": "list"}), name="list-users"),
+    path("all/", CustomUserViewSet.as_view({"get": "list"}), name="list-users"),
     
     # register users and service provider
     path("register/", CustomUserViewSet.as_view({"post": "create", "get": "list"}), name="user-registration"),
@@ -35,8 +35,8 @@ urlpatterns = [
     path("activate-2fa/", Activate2FAView.as_view(), name="activate-2fa"),
 ]
     
-    # avtivate user on  (api/users/activation/)
-    # resend activation email  (api/users/resend_activation/)
-    # update user information and delete   (api/users/me/)
-    # set password   (api/users/set_password/)
-    # CHANGE password  (api/users/reset_password/)  and then confirm (api/users/reset_password_confirm/)
+    # avtivate user on  (api/v1/users/activation/)
+    # resend activation email  (api/v1/users/resend_activation/)
+    # update user information and delete (api/v1/users/me/)
+    # set password   (api/v1/users/set_password/)
+    # CHANGE password  (api/v1/users/reset_password/)  and then confirm (api/users/reset_password_confirm/)
