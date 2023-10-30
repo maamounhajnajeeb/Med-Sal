@@ -1,14 +1,25 @@
+from djoser.serializers import UserCreateSerializer
 from rest_framework import serializers
+from .models import Users
+from service_providers.models import ServiceProvider
 
+<<<<<<< HEAD
 from django.contrib.auth.hashers import make_password
 
 from . import models
 from service_providers.models import ServiceProvider
 from category.models import Category
+=======
+>>>>>>> 2fdb9f7c5f6430580c04aef87337da0a97069d11
 
-class UsersSerializer(serializers.ModelSerializer):
-    
+class ResetPasswordSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+
+
+class ServiceProviderSerializer(serializers.ModelSerializer):
     class Meta:
+<<<<<<< HEAD
         fields = (
             "email", "password", "image", "user_type",
             )
@@ -73,3 +84,57 @@ class UsersSerializer(serializers.ModelSerializer):
             , iban=data["iban"], swift_code=data["swift_code"]
             , provider_file=data["provider_file"], user=user_instance
         )
+=======
+        model = ServiceProvider
+        fields = ("business_name", "contact_number")
+
+
+class UserRegistrationSerializer(UserCreateSerializer):
+    class Meta(UserCreateSerializer.Meta):
+        model = Users
+        fields = UserCreateSerializer.Meta.fields
+
+
+"""
+{
+    "user_type": "SERVICE_PROVIDER",
+    "email": "provider@example.com",
+    "password": "your_password",
+    "re_password": "your_password",
+    "business_name": "Your Business Name",
+    "contact_number": "123-456-7890",
+    "bank_name": "Your Bank Name",
+    "category": "DOCTOR",
+    "iban": "Your IBAN",
+    "swift_code": "Your Swift Code"
+}   
+
+
+"""
+
+
+"""
+
+{
+  "user_type": "USER",
+  "email": "user@example.com",
+  "password": "your_password",
+  "re_password": "your_password"
+}
+
+
+"""
+
+
+"""
+{"code": "344639"}
+"""
+
+
+"""
+
+{"email": "admin@admin.com"}
+
+
+"""
+>>>>>>> 2fdb9f7c5f6430580c04aef87337da0a97069d11
