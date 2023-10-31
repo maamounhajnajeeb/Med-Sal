@@ -50,6 +50,8 @@ Thumbs.db
 
 # virtualenv
 /.venv
+venv/
+
 
 # gitignore
 .gitignore
@@ -64,3 +66,5 @@ problem.py
 
 # db
 db.slqite3
+
+requirements_copy.txt
