@@ -8,7 +8,7 @@ from service_providers.models import ServiceProvider
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from category.models import Category
+from category.models import MyCategory
 
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -36,7 +36,7 @@ class CustomUserViewSet(UserViewSet):
                 
                 # Fetch the Category instance based on the user_data value
                 category_value = user_data.get("category")
-                category_instance = get_object_or_404(Category, name=category_value)
+                category_instance = get_object_or_404(MyCategory, name=category_value)
                 
                 ServiceProvider.objects.create(
                     user_id=super_user_id,

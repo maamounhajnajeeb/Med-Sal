@@ -1,6 +1,6 @@
 from django.db import models
 
-from category.models import Category
+from category.models import MyCategory
 from users.models import Users, Admins
 
 
@@ -13,7 +13,7 @@ class ServiceProvider(models.Model):
     
     user = models.OneToOneField(Users, on_delete = models.CASCADE, related_name='service_provider')
     approved_by = models.ForeignKey(Admins, on_delete = models.SET_NULL, null=True,related_name='accepted_services')
-    category = models.ForeignKey(Category, on_delete = models.CASCADE)
+    category = models.ForeignKey(MyCategory, on_delete = models.CASCADE)
     business_name = models.CharField(max_length=128, null=False, unique=True) 
     contact_number = models.CharField(max_length=16, null=False, unique=True)
     bank_name = models.CharField(max_length=128, null=False)

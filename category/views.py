@@ -8,9 +8,9 @@ from django.shortcuts import render
 from django.http import HttpRequest
 from django.views.i18n import set_language
 
-from .models import Category, MyCategory
+from .models import MyCategory
 from .permissions import IsAdmin
-from .serializers import CategorySerializer, MyCategorySerializer
+from .serializers import CategorySerializer
 
 
 def home(request: HttpRequest):
@@ -45,7 +45,7 @@ class CRUDCategory(viewsets.ModelViewSet):
     
     """
     serializer_class = CategorySerializer
-    queryset = Category.objects
+    queryset = MyCategory.objects
     permission_classes = (IsAdmin, )
     filter_backends = [filters.SearchFilter]
     search_fields = ["name", ]
@@ -56,9 +56,9 @@ class CRUDCategory(viewsets.ModelViewSet):
     def get_parent(self, parent_parameter):
         try:
             parent_parameter = int(parent_parameter)
-            parent_instance = Category.objects.get(id=parent_parameter)
+            parent_instance = MyCategory.objects.get(id=parent_parameter)
         except:
-            parent_instance = Category.objects.get(name=parent_parameter)
+            parent_instance = MyCategory.objects.get(name=parent_parameter)
         return parent_instance
     
     def assign_parent(self, parent_parameter, child_instance):
@@ -82,12 +82,6 @@ class CRUDCategory(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         if request.data.get("parent"):
             parent_parameter = request.data["parent"]
-            child_instance = Category.objects.select_related("parent").get(id=self.kwargs["pk"])
+            child_instance = MyCategory.objects.select_related("parent").get(id=self.kwargs["pk"])
             self.assign_parent(parent_parameter, child_instance)
         return super().update(request, *args, **kwargs)
-
-
-class MyCategoryView(viewsets.ModelViewSet):
-    permission_classes = ()
-    queryset = MyCategory.objects
-    serializer_class = MyCategorySerializer
