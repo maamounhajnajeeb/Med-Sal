@@ -20,14 +20,20 @@ from rest_framework_simplejwt.tokens import RefreshToken
 class CustomUserViewSet(UserViewSet):
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
+    # permission_classes = ( )
     http_method_names = ["get", "post", "patch", "put", "delete"]
     
     def create(self, request):
         user_data = request.data
         user_type = user_data.get("user_type")
         
+        # response = super().create(request)
+        
         if user_type == Users.Types.SERVICE_PROVIDER:
             response = super().create(request)
+            
+            # if response.status_code != status.HTTP_201_CREATED:
+            #     return response
             
             # Check if the user was created successfully
             if response.status_code == status.HTTP_201_CREATED:
@@ -137,18 +143,17 @@ class Activate2FAView(APIView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-
+        
         if response.status_code == status.HTTP_200_OK:
             # If the login was successful, customize the response
             user = Users.objects.get(email=request.data["email"])
             user_type = user.user_type
             refresh = RefreshToken.for_user(user)
-
+            
             response.data["message"] = "Login successful"
             response.data["user_type"] = str(user_type)
-            response.data["refresh"] = str(refresh)
-            response.data["access"] = str(refresh.access_token)
-
+            response.data["tokens"] = {"access": str(refresh), "refresh": str(refresh.access_token)}
+            
         return response
 
 
