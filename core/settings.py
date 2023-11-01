@@ -145,9 +145,6 @@ DATABASES = {
     }
 }
 
-# import os
-# from environs import Env
-
 def get_env_details():
     env = Env()
     env.read_env()
