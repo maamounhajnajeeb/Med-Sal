@@ -8,7 +8,6 @@ cryptography==41.0.5
 defusedxml==0.8.0rc2
 Django==4.2.6
 django-cors-headers==4.3.0
-django-hvad==1.8.0
 django-modeltranslation==0.18.11
 django-parler==2.3
 django-parler-rest==2.2
@@ -52,4 +51,3 @@ tzdata==2023.3
 tzlocal==5.2
 uritemplate==4.1.1
 urllib3==2.0.7
-# GDAL @ file:///C:/Users/HP/pipwin/GDAL-3.4.3-cp39-cp39-win_amd64.whl#sha256=d4f3650d26884da20bde7f33a542b02bfae7ccc017d44a9e6cf5600b84304878
