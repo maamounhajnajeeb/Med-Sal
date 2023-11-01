@@ -6,6 +6,7 @@ from .models import Category
 from .permissions import IsAdmin
 from .serializers import CategorySerializer
 
+
 class CRUDCategory(viewsets.ModelViewSet):
     """
     path : "api/v1/category/"
@@ -29,17 +30,25 @@ class CRUDCategory(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ["name", ]
     
-    def get_serializer(self, *args, **kwargs):
-        """
-        oridnary get_serializer except we add reqiest language_code to the serializer class
-        """
-        serializer_class = self.get_serializer_class()
-        kwargs.setdefault('context', self.get_serializer_context())
-        # if self.request.method in ["POST", "PATCH", "PUT"]:
-        #     return serializer_class(*args, **kwargs)
-        return serializer_class(*args, lang=self.request.LANGUAGE_CODE, **kwargs)
-        
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = self.change_serializer_data(serializer.data)
+        return Response(data)
     
+    def change_serializer_data(self, data):
+        data["name"] = data["name"]["langs"][self.request.LANGUAGE_CODE]
+        return data
+    
+    def list(self, request, *args, **kwargs):
+        resp = super().list(request, *args, **kwargs)
+        for counter in range(len(resp.data)):
+            obj = resp.data[counter]
+            resp.data[counter] = self.change_serializer_data(obj)
+        
+        return Response(
+            resp.data, status=resp.status_code
+            , headers=self.get_success_headers(resp.data))
     
     def perform_create(self, serializer):
         """
@@ -48,11 +57,8 @@ class CRUDCategory(viewsets.ModelViewSet):
         return serializer.save()
     
     def get_parent(self, parent_parameter):
-        try:
-            parent_parameter = int(parent_parameter)
-            parent_instance = Category.objects.get(id=parent_parameter)
-        except:
-            parent_instance = Category.objects.get(name=parent_parameter)
+        parent_parameter = int(parent_parameter)
+        parent_instance = Category.objects.get(id=parent_parameter)
         return parent_instance
     
     def assign_parent(self, parent_parameter, child_instance):
@@ -76,6 +82,6 @@ class CRUDCategory(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         if request.data.get("parent"):
             parent_parameter = request.data["parent"]
-            child_instance = Category.objects.select_related("parent").get(id=self.kwargs["pk"])
+            child_instance = Category.objects.select_related("parent").get(id=int(self.kwargs["pk"]))
             self.assign_parent(parent_parameter, child_instance)
         return super().update(request, *args, **kwargs)
