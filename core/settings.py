@@ -33,8 +33,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     "rest_framework",
     "corsheaders",
-    "parler_rest",
-    "parler",
     
     # local apps
     "service_providers.apps.ServiceProvidersConfig",
@@ -63,8 +61,8 @@ MIDDLEWARE = [
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
-    ],
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+    ]
+    , 'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
@@ -181,15 +179,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
-USE_I18N = True
-
 USE_TZ = True
 
 
@@ -207,27 +196,18 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "users.Users" #
 
-LANGUAGE_CODE = "ar" # default language
+
+# Internationalization
+# https://docs.djangoproject.com/en/4.2/topics/i18n/
+
+TIME_ZONE = 'UTC'
+
+LANGUAGE_CODE = "en" # default language
 
 USE_I18N = True
-
-PARLER_DEFAULT_LANGUAGE_CODE = 'en'
-
-PARLER_LANGUAGES = {
-    None: (
-        {'code': 'ar'}
-        , {'code': 'en'}
-        , {'code': 'fr'}
-    ),
-    'default': {
-        'fallbacks': ['ar'],
-        'hide_untranslated': False,
-    }
-}
 
 LANGUAGES = (
     ("ar", _("Arabic"))
