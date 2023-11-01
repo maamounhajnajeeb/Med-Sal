@@ -14,6 +14,9 @@ urlpatterns = [
     
     # for languages
     path('i18n/', include('django.conf.urls.i18n')),
+
+    path('service_providers/', include("service_providers.urls", namespace="service_prov")),
+
 ]
 
 if settings.DEBUG:
