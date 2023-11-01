@@ -2,6 +2,9 @@ from pathlib import Path
 from datetime import timedelta
 from django.utils.translation import gettext_lazy as _
 
+import os
+from environs import Env
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -145,23 +148,23 @@ DATABASES = {
 # import os
 # from environs import Env
 
-# def get_env_details():
-#     env = Env()
-#     env.read_env()
+def get_env_details():
+    env = Env()
+    env.read_env()
     
-#     return os.getenv("PASSWORD")
+    return os.getenv("PASSWORD")
 
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": "med-sal", # any name
-#         "USER": "postgres", # your chosen or default database system name
-#         "PASSWORD": get_env_details(), #
-#         "HOST": "", # localhost
-#         "PORT": "", # 5432
-#     }
-# }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "Med-SAL_Project", # DB Name
+        "USER": "postgres", # your chosen or default database system name
+        "PASSWORD": get_env_details(), #
+        "HOST": "", # localhost
+        "PORT": "", # 5432
+    }
+}
 
 
 # Password validation
