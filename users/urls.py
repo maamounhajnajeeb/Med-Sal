@@ -1,8 +1,5 @@
 from django.urls import path, include
 
-# from .views import CustomTokenCreateView
-
-# from djoser.views import UserCreateView
 from .views import (
     CustomUserViewSet,
     CustomTokenObtainPairView,
@@ -11,28 +8,30 @@ from .views import (
     CustomTokenRefreshView,
 )
 
+from rest_framework_simplejwt.views import TokenObtainSlidingView
 
 app_name = "users"
 
 urlpatterns = [
     
     # list users
-    path("all/", CustomUserViewSet.as_view({"get": "list"}), name="list-users"),
+    path("users/all/", CustomUserViewSet.as_view({"get": "list"}), name="list-users"),
     
     # register users and service provider
-    path("register/", CustomUserViewSet.as_view({"post": "create", "get": "list"}), name="user-registration"),
+    path("users/register/", CustomUserViewSet.as_view({"post": "create", "get": "list"}), name="user-registration"),
     
     # login
-    path("login/", CustomTokenObtainPairView.as_view(), name="jwt-create"),
-    path("refresh/", CustomTokenRefreshView.as_view(), name="jwt-refresh"),
+    path('users/token/', TokenObtainSlidingView.as_view(), name='token_obtain'),
+    path("users/login/", CustomTokenObtainPairView.as_view(), name="jwt-create"),
+    path("users/refresh/", CustomTokenRefreshView.as_view(), name="jwt-refresh"),
     path("", include("djoser.urls")),
     path("", include("djoser.urls.jwt")),
     
     # resend code
-    path("resend-activation/", ResendActivationCodeView.as_view(), name="resend-activation"),
+    path("users/resend-activation/", ResendActivationCodeView.as_view(), name="resend-activation"),
     
     # 2FA
-    path("activate-2fa/", Activate2FAView.as_view(), name="activate-2fa"),
+    path("users/activate-2fa/", Activate2FAView.as_view(), name="activate-2fa"),
 ]
     
     # avtivate user on  (api/v1/users/activation/)

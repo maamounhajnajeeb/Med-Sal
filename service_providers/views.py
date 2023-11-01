@@ -19,31 +19,31 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
     serializer_class = ServiceProviderRegistrationSerializer
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     search_fields = ["first_name", ]
-
+    
     def creat(self, request):
         serializer = ServiceProviderRegistrationSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
         serializer.save()
         return Response(serializer.data)
-
+    
     
     def retrieve(self, request, pk = None):
         service_provider = ServiceProvider.objects.get(pk = pk)
         serializer = ServiceProviderRegistrationSerializer(service_provider)
         return Response(serializer.data)
     
-
+    
     def get_service_providers(self, request):
         json_data = ServiceProvider.objects.all()
         serializer = ServiceProviderRegistrationSerializer(json_data, many = True)
         return Response(serializer.data)
     
-
+    
     def destroy(self, request, pk=None):
         service_provider = ServiceProvider.objects.get(pk = pk)
         service_provider.delete()
         return Response({"message": "Service provider deleted successfully."})
-   
+    
     
     @action(methods=['POST'], detail=True, )#permission_classes=[AdminPermission])
     def approve(self, request, pk=None):
