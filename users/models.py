@@ -1,11 +1,7 @@
-from django.contrib.auth.models import AbstractUser
-from django.db import models
-from django.utils import timezone
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db.models.query import QuerySet
-
-from django.contrib.auth.models import (
-    BaseUserManager,
-)
+from django.utils import timezone
+from django.db import models
 
 
 class CustomUserManager(BaseUserManager):
