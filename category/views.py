@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, decorators
 from rest_framework import status, filters
 from rest_framework.response import Response
 
@@ -85,3 +85,12 @@ class CRUDCategory(viewsets.ModelViewSet):
             child_instance = Category.objects.select_related("parent").get(id=int(self.kwargs["pk"]))
             self.assign_parent(parent_parameter, child_instance)
         return super().update(request, *args, **kwargs)
+
+
+@decorators.api_view(["GET", ])
+def parent_sub_category(request, pk):
+    queryset = Category.objects.filter(parent=pk)
+    serialized_data = CategorySerializer(queryset, many=True)
+    return Response(
+        serialized_data.data
+        , status=status.HTTP_200_OK)

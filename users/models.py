@@ -17,29 +17,30 @@ class CustomUserManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
-
+    
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_active", True)
         extra_fields.setdefault("is_superuser", True)
-
+        
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser must have is_staff=True.")
         if extra_fields.get("is_superuser") is not True:
             raise ValueError("Superuser must have is_superuser=True.")
         if extra_fields.get("is_active") is not True:
             raise ValueError("Superuser must have is_active=True.")
-
+        
         return self.create_user(email, password, **extra_fields)
 
 
 class Users(AbstractUser):
+    
     class Types(models.TextChoices):
         SERVICE_PROVIDER = ("SERVICE_PROVIDER", "Service_Provider")
         SUPER_ADMIN = ("SUPER_ADMIN", "Super_Admin")
         ADMIN = ("ADMIN", "Admin")
         USER = ("USER", "User")
-
+        
     username = None
     email = models.EmailField(max_length=128, unique=True, null=False)
     image = models.ImageField(
@@ -49,7 +50,7 @@ class Users(AbstractUser):
     user_type = models.CharField(
         max_length=32, choices=Types.choices, default=base_type
     )
-    email_confirmed = models.BooleanField(default=False)
+    email_confirmed = models.BooleanField(default=False) # going to is_accept
     # 2FA
     two_factor_enabled = models.BooleanField(default=False)
     verification_code = models.CharField(max_length=6, blank=True, null=True)
@@ -57,22 +58,21 @@ class Users(AbstractUser):
     is_verification_email_sent = models.BooleanField(default=False)
 
     REQUIRED_FIELDS = ["user_type"]
-
+    
     USERNAME_FIELD = "email"
-    # EMAIL_FIELD = "email"
-
+    
     objects = CustomUserManager()
-
+    
     class Meta:
         verbose_name = "Users"
-
+        
     def __str__(self) -> str:
         return str(self.email)
-
+    
     def generate_verification_code(self):
         import random
         import string
-
+        
         code = "".join(random.choice(string.digits) for _ in range(6))
         self.verification_code = code
         self.verification_code_generated_at = timezone.now()
@@ -94,17 +94,17 @@ class Users(AbstractUser):
             self.is_verification_email_sent = True
             return True
         return False
-
+    
     def clear_verification_code(self):
         self.verification_code = None
         self.verification_code_generated_at = None
         self.save()
-
+        
     def enable_2fa(self):
         self.two_factor_enabled = True
         self.clear_verification_code()
         self.save()
-
+        
     def disable_2fa(self):
         self.two_factor_enabled = False
         self.clear_verification_code()
