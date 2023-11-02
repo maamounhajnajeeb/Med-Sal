@@ -43,9 +43,8 @@ class Users(AbstractUser):
     username = None
     email = models.EmailField(max_length=128, unique=True, null=False)
     image = models.ImageField(
-        upload_to="profile_images/", default="defaults/default_profile.jpg"
-    )
-
+        upload_to="profile_images/", default="defaults/default_profile.jpg")
+    
     base_type = Types.USER
     user_type = models.CharField(
         max_length=32, choices=Types.choices, default=base_type

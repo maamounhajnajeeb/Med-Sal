@@ -13,7 +13,17 @@ urlpatterns = [
     # users app
     path('api/v1/', include("users.urls", namespace="users")),
     
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    # rest framework default [login, logout]
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework_auth')),
+    
+    # delivery app
+    path("api/v1/delivery/", include("deliveries.urls", namespace="delivery")),
+    
+    # products app
+    path("api/v1/products/", include("products.urls", namespace="products")),
+    
+    # orders app
+    path("api/v1/orders/", include("orders.urls", namespace="orders")),
     
     # service_providers app
     path('service_providers/', include("service_providers.urls", namespace="service_prov")),

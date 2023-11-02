@@ -1,33 +1,41 @@
-from djoser.views import UserViewSet
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 
-from .serializers import UserRegistrationSerializer
-from .models import Users
-from service_providers.models import ServiceProvider
 from rest_framework import status
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from category.models import Category
 
+from djoser.views import UserViewSet
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
+from .models import Users
+# from django.contrib.auth import get_user_model
+# User = get_user_model()
+from category.models import Category
+from .serializers import UserRegistrationSerializer
+from service_providers.models import ServiceProvider
 
 
 # users : create ......
 class CustomUserViewSet(UserViewSet):
     serializer_class = UserRegistrationSerializer
-    permission_classes = [AllowAny]
+    permission_classes = (AllowAny, )
+    # permission_classes = ( )
     http_method_names = ["get", "post", "patch", "put", "delete"]
     
     def create(self, request):
         user_data = request.data
         user_type = user_data.get("user_type")
         
+        # response = super().create(request)
+        
         if user_type == Users.Types.SERVICE_PROVIDER:
             response = super().create(request)
+            
+            # if response.status_code != status.HTTP_201_CREATED:
+            #     return response
             
             # Check if the user was created successfully
             if response.status_code == status.HTTP_201_CREATED:
@@ -47,7 +55,7 @@ class CustomUserViewSet(UserViewSet):
                     iban=user_data.get("iban"),
                     swift_code=user_data.get("swift_code"),
                 )
-                
+                # where's category
                 return Response(super_user, status=status.HTTP_201_CREATED)
             else:
                 return response
@@ -137,18 +145,17 @@ class Activate2FAView(APIView):
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
-
+        
         if response.status_code == status.HTTP_200_OK:
             # If the login was successful, customize the response
             user = Users.objects.get(email=request.data["email"])
             user_type = user.user_type
             refresh = RefreshToken.for_user(user)
-
+            
             response.data["message"] = "Login successful"
             response.data["user_type"] = str(user_type)
-            response.data["refresh"] = str(refresh)
-            response.data["access"] = str(refresh.access_token)
-
+            # response.data["tokens"] = {"access": str(refresh), "refresh": str(refresh.access_token)}
+            
         return response
 
 

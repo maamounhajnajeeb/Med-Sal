@@ -10,6 +10,7 @@ class ServiceProvider(Users):
         REJECTED = ('rejected', 'Rejected')
         PENDING = ('pending', 'Pending')
         ACCEPTED = ('accepted', 'Accepted')
+    
     user = models.OneToOneField(Users, on_delete = models.CASCADE, related_name='service_provider')
     approved_by = models.ForeignKey(Admins, on_delete = models.SET_NULL, null=True,related_name='accepted_services')
     category = models.ForeignKey(Category, on_delete = models.CASCADE)
