@@ -33,7 +33,8 @@ class UserRegistrationSerializer(UserCreateSerializer):
     "category": "DOCTOR",
     "iban": "Your IBAN",
     "swift_code": "Your Swift Code"
-}   
+    "provider_file": "service provider documents"
+}
 
 
 """
