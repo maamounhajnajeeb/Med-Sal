@@ -1,5 +1,5 @@
 from django.db import models
-from category.models import MyCategory
+from category.models import Category
 from users.models import Users, Admins
 
 from django.contrib.gis.db import models
@@ -11,9 +11,10 @@ class ServiceProvider(Users):
         REJECTED = ('rejected', 'Rejected')
         PENDING = ('pending', 'Pending')
         ACCEPTED = ('accepted', 'Accepted')
+    
     user = models.OneToOneField(Users, on_delete = models.CASCADE, related_name='service_provider')
     approved_by = models.ForeignKey(Admins, on_delete = models.SET_NULL, null=True,related_name='accepted_services')
-    category = models.ForeignKey(MyCategory, on_delete = models.CASCADE, blank=True, null=True)
+    category = models.ForeignKey(Category, on_delete = models.CASCADE)
     business_name = models.CharField(max_length=128, null=False, unique=True) 
     contact_number = models.CharField(max_length=16, null=False, unique=True)
     bank_name = models.CharField(max_length=128, null=False)
@@ -34,7 +35,7 @@ class ServiceProvider(Users):
 
 
 class ServiceProviderLocations(models.Model):
-    
+
     service_provider_id = models.ForeignKey(ServiceProvider, on_delete = models.CASCADE, null = True)
     location = models.PointField(srid = 4326, null = True, blank = True)
     opening = models.TimeField(blank = False)

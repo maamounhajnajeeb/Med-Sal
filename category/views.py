@@ -1,31 +1,10 @@
-from rest_framework import viewsets, decorators
+from rest_framework import viewsets
 from rest_framework import status, filters
 from rest_framework.response import Response
 
-from django.utils.translation import gettext as _
-from django.utils.translation import activate, get_language
-from django.shortcuts import render
-from django.http import HttpRequest
-from django.views.i18n import set_language
-
-from .models import MyCategory
+from .models import Category
 from .permissions import IsAdmin
 from .serializers import CategorySerializer
-
-
-def home(request: HttpRequest):
-    print(request.user.language_preference)
-    return render(request, "home.html", {})
-
-
-@decorators.api_view(["PATCH"])
-def change_lang(request):
-    if request.data.get("language_code"):
-        # language_code = request.data.get("language_code")
-        set_language(request)
-        return Response({
-            "result": "changed successfully"
-        }, status=status.HTTP_200_OK)
 
 
 class CRUDCategory(viewsets.ModelViewSet):
@@ -44,21 +23,42 @@ class CRUDCategory(viewsets.ModelViewSet):
     create and update methods accept parent as [integer id, string name]
     
     """
+    
     serializer_class = CategorySerializer
-    queryset = MyCategory.objects
+    queryset = Category.objects
     permission_classes = (IsAdmin, )
     filter_backends = [filters.SearchFilter]
     search_fields = ["name", ]
     
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = self.change_serializer_data(serializer.data)
+        return Response(data)
+    
+    def change_serializer_data(self, data):
+        data["name"] = data["name"]["langs"][self.request.LANGUAGE_CODE]
+        return data
+    
+    def list(self, request, *args, **kwargs):
+        resp = super().list(request, *args, **kwargs)
+        for counter in range(len(resp.data)):
+            obj = resp.data[counter]
+            resp.data[counter] = self.change_serializer_data(obj)
+        
+        return Response(
+            resp.data, status=resp.status_code
+            , headers=self.get_success_headers(resp.data))
+    
     def perform_create(self, serializer):
+        """
+        edit the pre-built function just to return the model instance after saving
+        """
         return serializer.save()
     
     def get_parent(self, parent_parameter):
-        try:
-            parent_parameter = int(parent_parameter)
-            parent_instance = MyCategory.objects.get(id=parent_parameter)
-        except:
-            parent_instance = MyCategory.objects.get(name=parent_parameter)
+        parent_parameter = int(parent_parameter)
+        parent_instance = Category.objects.get(id=parent_parameter)
         return parent_instance
     
     def assign_parent(self, parent_parameter, child_instance):
@@ -82,6 +82,6 @@ class CRUDCategory(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         if request.data.get("parent"):
             parent_parameter = request.data["parent"]
-            child_instance = MyCategory.objects.select_related("parent").get(id=self.kwargs["pk"])
+            child_instance = Category.objects.select_related("parent").get(id=int(self.kwargs["pk"]))
             self.assign_parent(parent_parameter, child_instance)
         return super().update(request, *args, **kwargs)
