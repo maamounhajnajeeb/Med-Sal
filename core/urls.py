@@ -1,14 +1,18 @@
-from django.contrib import admin
-from django.urls import path, include
-from django.conf import settings
 from django.conf.urls.static import static
-from django.conf.urls.i18n import i18n_patterns
+from django.urls import path, include
+from django.contrib import admin
+from django.conf import settings
+
+from . import views
 
 
 urlpatterns = [
     
     # admin app
     path('admin/', admin.site.urls),
+    
+    # change language api
+    path("api/v1/change_lang/", views.change_language, name="change_lang"),
     
     # users app
     path('api/v1/', include("users.urls", namespace="users")),
@@ -27,14 +31,10 @@ urlpatterns = [
     
     # service_providers app
     path('service_providers/', include("service_providers.urls", namespace="service_prov")),
-
-    # for languages
-    path('i18n/', include('django.conf.urls.i18n')),
+    
+    # category app
+    path("api/v1/category/", include("category.urls", namespace="category")),
 ]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-# category app [including language]
-urlpatterns += i18n_patterns(
-        path("api/v1/", include("category.urls", namespace="category")) )

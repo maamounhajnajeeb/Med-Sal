@@ -1,6 +1,9 @@
-from rest_framework import viewsets, decorators
 from rest_framework import status, filters
 from rest_framework.response import Response
+from rest_framework import viewsets, decorators
+
+from django.http import HttpRequest
+from django.utils.translation import gettext as _
 
 from .models import Category
 from .permissions import IsAdmin
@@ -93,4 +96,20 @@ def parent_sub_category(request, pk):
     serialized_data = CategorySerializer(queryset, many=True)
     return Response(
         serialized_data.data
+        , status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+def translate(request, pk):
+    queryset = Category.objects.get(id=pk)
+    
+    def wrapper(queryset):
+        if request.LANGUAGE_CODE == "ar":
+            return _(queryset.name)
+        return queryset.name
+    
+    text = wrapper(queryset)
+    
+    return Response(
+        text
         , status=status.HTTP_200_OK)

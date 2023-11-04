@@ -208,16 +208,15 @@ AUTH_USER_MODEL = "users.Users" #
 
 TIME_ZONE = 'UTC'
 
-LANGUAGE_CODE = "en" # default language
+LANGUAGE_CODE = "en-us" # default language
 
 USE_I18N = True
+USE_L10N = True
 
 LANGUAGES = (
     ("ar", _("Arabic"))
     , ('en', _("English"))
-    , ('fr', _("French"))
 )
 
 LOCALE_PATHS = (
-    BASE_DIR / "locale",
-)
+    BASE_DIR / "locale",)
