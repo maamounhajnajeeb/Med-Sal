@@ -137,3 +137,12 @@ class Admins(Users):
     class Meta:
         proxy = True
         verbose_name = "Admins"
+
+
+
+class UserIP(models.Model):
+    ip_address = models.CharField(max_length=32, primary_key=True, null=False)
+    language_code = models.CharField(max_length=8, null=False)
+    
+    def __str__(self) -> str:
+        return f"{self.ip_address} => {self.language_code}"
