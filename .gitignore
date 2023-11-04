@@ -62,7 +62,7 @@ venv/
 problem.py
 
 # languages
-/locale
+# /locale
 
 # db
 db.slqite3
