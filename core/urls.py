@@ -26,7 +26,7 @@ urlpatterns = [
     path("api/v1/orders/", include("orders.urls", namespace="orders")),
     
     # service_providers app
-    path('service_providers/', include("service_providers.urls", namespace="service_prov")),
+    path('api/v1/service_providers/', include("service_providers.urls", namespace="service_prov")),
 
     # for languages
     path('i18n/', include('django.conf.urls.i18n')),
