@@ -1,9 +1,9 @@
 from django.db import models
-
 from category.models import MyCategory
-from core import settings
 from users.models import Users, Admins
-# from django.contrib.gis.db import models
+
+from django.contrib.gis.db import models
+
 
 class ServiceProvider(Users):
     
@@ -24,28 +24,27 @@ class ServiceProvider(Users):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-    def __str__(self):
-        return self.business_name
-    
     class Meta:
         ordering = ['date_joined']
         verbose_name = "ServiceProvider"
         verbose_name_plural = "ServiceProviders"
 
+    def __str__(self):
+        return self.business_name
+
+
 class ServiceProviderLocations(models.Model):
     
     service_provider_id = models.ForeignKey(ServiceProvider, on_delete = models.CASCADE, null = True)
-    location = models.CharField(max_length = 32, null = True, blank = True)
-    # rlocation = PointField(srid=4326, null=True)
-
+    location = models.PointField(srid = 4326, null = True, blank = True)
     opening = models.TimeField(blank = False)
     closing = models.TimeField(blank = False)
     crew = models.CharField(max_length = 32, blank = False)
     created_at = models.DateTimeField(auto_now_add = True, null = False)
-
-    def __str__(self):
-        return self.service_provider_id.business_name
     
     class Meta:
         verbose_name = "ServiceProviderLocations"
         verbose_name_plural = "ServiceProviderLocations"
+
+    def __str__(self):
+        return self.service_provider_id.business_name

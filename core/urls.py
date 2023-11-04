@@ -12,7 +12,7 @@ urlpatterns = [
 
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
-    path('service_providers/', include("service_providers.urls", namespace="service_prov")),
+    path('api/v1/service_providers/', include("service_providers.urls", namespace="service_prov")),
 
 ]
 
