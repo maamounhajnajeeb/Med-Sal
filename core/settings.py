@@ -30,15 +30,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # "django.contrib.gis", # To deal with locations
-
+    "django.contrib.gis", # To deal with gis database
 
     # third party packages
     "djoser",
     'rest_framework_simplejwt',
     "rest_framework",
     "corsheaders",
-    
+    "rest_framework_gis",
+        
     # local apps
     "service_providers.apps.ServiceProvidersConfig",
     "appointments.apps.AppointmentsConfig",
@@ -139,10 +139,15 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # DATABASES = {
 #     'default': {        
 #         # 'ENGINE': 'django.contrib.gis.db.backends.spatialite', 
+#     'default': {
+        
 #         'ENGINE': 'django.db.backends.sqlite3',
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+
+import os
+from environs import Env
 
 def get_env_details():
     env = Env()
@@ -153,8 +158,8 @@ def get_env_details():
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "Med-SAL_Project", # DB Name
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": "medsal_geo", # any name
         "USER": "postgres", # your chosen or default database system name
         "PASSWORD": get_env_details(), #
         "HOST": "", # localhost

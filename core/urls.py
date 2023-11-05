@@ -30,7 +30,7 @@ urlpatterns = [
     path("api/v1/orders/", include("orders.urls", namespace="orders")),
     
     # service_providers app
-    path('service_providers/', include("service_providers.urls", namespace="service_prov")),
+    path('api/v1/service_providers/', include("service_providers.urls", namespace="serivce_providers")),
     
     # category app
     path("api/v1/category/", include("category.urls", namespace="category")),

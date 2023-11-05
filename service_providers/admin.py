@@ -7,5 +7,5 @@ from .models import *
 #     list_filter = ('category','business_name', 'account_status')
 
 
-# admin.site.register(ServiceProvider,ServiceProviderAdmin)
+admin.site.register(ServiceProviderLocations)
 admin.site.register(ServiceProvider)
