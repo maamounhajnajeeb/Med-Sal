@@ -1,5 +1,5 @@
-from rest_framework import serializers, exceptions
-
+from rest_framework import serializers
+from rest_framework_gis.serializers import GeoFeatureModelSerializer
 from .models import ServiceProvider, ServiceProviderLocations
 
 class ServiceProviderSerializer(serializers.ModelSerializer):
@@ -9,9 +9,15 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ServiceProviderLocationSerializer(serializers.ModelSerializer):
+class ServiceProviderLocationSerializer(GeoFeatureModelSerializer):
 
     class Meta:
         model = ServiceProviderLocations
-        fields = '__all__'
+        geo_field = 'location'
+        fields = ('service_provider_id',
+                  'opening',
+                  'closing',
+                  'crew',
+                  'created_at',
+                  )
 

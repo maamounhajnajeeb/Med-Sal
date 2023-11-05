@@ -12,5 +12,5 @@ urlpatterns = [
 
     path('', include(router.urls)),
 
-    path('location', locationss)
+    path('location', Location.as_view())
 ]
