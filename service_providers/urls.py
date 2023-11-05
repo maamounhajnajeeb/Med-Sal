@@ -5,6 +5,7 @@ from service_providers.views import *
 
 
 app_name = "serivce_providers"
+
 router = DefaultRouter()
 router.register("", CRUDServiceProviders, basename = 'service_providers')
 

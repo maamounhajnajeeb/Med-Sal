@@ -21,7 +21,6 @@ urlpatterns = [
     path("users/register/", CustomUserViewSet.as_view({"post": "create", "get": "list"}), name="user-registration"),
     
     # login
-    path('users/token/', TokenObtainSlidingView.as_view(), name='token_obtain'),
     path("users/login/", CustomTokenObtainPairView.as_view(), name="jwt-create"),
     path("users/refresh/", CustomTokenRefreshView.as_view(), name="jwt-refresh"),
     path("", include("djoser.urls")),
@@ -33,9 +32,9 @@ urlpatterns = [
     # 2FA
     path("users/activate-2fa/", Activate2FAView.as_view(), name="activate-2fa"),
 ]
-    
-    # avtivate user on  (api/v1/users/activation/)
-    # resend activation email  (api/v1/users/resend_activation/)
-    # update user information and delete (api/v1/users/me/)
-    # set password   (api/v1/users/set_password/)
-    # CHANGE password  (api/v1/users/reset_password/)  and then confirm (api/users/reset_password_confirm/)
+
+# avtivate user on  (api/v1/users/activation/)
+# resend activation email  (api/v1/users/resend_activation/)
+# update user information and delete (api/v1/users/me/)
+# authenticated set password   (api/v1/users/set_password/)
+# not authenticated CHANGE password  (api/v1/users/reset_password/)  and then confirm (api/users/reset_password_confirm/)

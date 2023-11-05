@@ -18,61 +18,38 @@ from .serializers import UserRegistrationSerializer
 from service_providers.models import ServiceProvider
 
 
-# users : create ......
+# users : create 
 class CustomUserViewSet(UserViewSet):
     serializer_class = UserRegistrationSerializer
     permission_classes = (AllowAny, )
-    # permission_classes = ( )
     http_method_names = ["get", "post", "patch", "put", "delete"]
     
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         user_data = request.data
-        user_type = user_data.get("user_type")
         
-        # response = super().create(request)
+        response = super().create(request, *args, **kwargs)# default register
+        if response.data["user_type"] != Users.Types.SERVICE_PROVIDER:
+            return Response(response.data, status=response.status_code)
         
-        if user_type == Users.Types.SERVICE_PROVIDER:
-            response = super().create(request)
-            
-            # if response.status_code != status.HTTP_201_CREATED:
-            #     return response
-            
-            # Check if the user was created successfully
-            if response.status_code == status.HTTP_201_CREATED:
-                super_user = response.data
-                super_user_id = super_user["id"]
-                
-                # Fetch the Category instance based on the user_data value
-                category_value = user_data.get("category")
-                category_instance = get_object_or_404(Category, name=category_value)
-                
-                ServiceProvider.objects.create(
-                    user_id=super_user_id,
-                    business_name=user_data.get("business_name"),
-                    contact_number=user_data.get("contact_number"),
-                    bank_name=user_data.get("bank_name"),
-                    category=category_instance,
-                    iban=user_data.get("iban"),
-                    swift_code=user_data.get("swift_code"),
-                )
-                # where's category
-                return Response(super_user, status=status.HTTP_201_CREATED)
-            else:
-                return response
+        # else continue and regiter the Service Provider
+        super_user = response.data
+        super_user_id = super_user["id"]
         
-        try:
-            response = super().create(request)
-            if (
-                response.status_code == status.HTTP_400_BAD_REQUEST
-                and "Unable to create account." in response.data
-            ):
-                return Response(
-                    {"error": "Failed to create the account."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            return response
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # Fetch the Category instance based on the user_data value
+        category_value = user_data.get("category")
+        category_instance = get_object_or_404(Category, id=category_value)
+        
+        ServiceProvider.objects.create(
+            user_id=super_user_id
+            , business_name=user_data.get("business_name")
+            , contact_number=user_data.get("contact_number")
+            , bank_name=user_data.get("bank_name")
+            , category=category_instance
+            , iban=user_data.get("iban")
+            , swift_code=user_data.get("swift_code")
+            , )
+        
+        return Response(super_user, status=response.status_code)
 
 
 # resend 2FA code

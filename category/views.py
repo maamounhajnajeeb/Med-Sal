@@ -1,10 +1,13 @@
-from rest_framework import viewsets
 from rest_framework import status, filters
 from rest_framework.response import Response
+from rest_framework import viewsets, decorators
 
 from .models import Category
 from .permissions import IsAdmin
 from .serializers import CategorySerializer
+
+from users.models import UserIP
+from utils.translate import get_arabic_translated, get_engilsh_translated
 
 
 class CRUDCategory(viewsets.ModelViewSet):
@@ -27,28 +30,67 @@ class CRUDCategory(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     queryset = Category.objects
     permission_classes = (IsAdmin, )
-    filter_backends = [filters.SearchFilter]
-    search_fields = ["name", ]
     
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        data = self.change_serializer_data(serializer.data)
-        return Response(data)
-    
-    def change_serializer_data(self, data):
-        data["name"] = data["name"]["langs"][self.request.LANGUAGE_CODE]
-        return data
-    
-    def list(self, request, *args, **kwargs):
-        resp = super().list(request, *args, **kwargs)
-        for counter in range(len(resp.data)):
-            obj = resp.data[counter]
-            resp.data[counter] = self.change_serializer_data(obj)
+        resp = super().retrieve(request, *args, **kwargs)
+        language = self.choose_lang()
+        
+        if language == "ar":
+            name = resp.data["name"]
+            resp.data["name"] = get_arabic_translated(name)
         
         return Response(
-            resp.data, status=resp.status_code
+            resp.data
+            , status=status.HTTP_200_OK
             , headers=self.get_success_headers(resp.data))
+    
+    def list(self, request, *args, **kwargs):
+        """
+        get all records, then see if there a change in language
+        if there is a change, it translate the name attr
+        """
+        
+        resp = super().list(request, *args, **kwargs)
+        language = self.choose_lang()
+        
+        if language == "ar":
+            for ordered_dict in resp.data:
+                name = ordered_dict["name"]
+                ordered_dict["name"] = get_arabic_translated(name)
+        
+        return Response(
+            resp.data
+            , status=status.HTTP_200_OK
+            , headers=self.get_success_headers(resp.data))
+    
+    def choose_lang(self):
+        """
+        this function checking two things:
+        1] if there is a language header 
+        2] and if there is a record with the same IP Address
+        
+        if not 1] and 2] => return language from DB
+        if 1] and 2] => update language from DB, then return it
+        if 1] and not 2] => create UserIP model record, then return language
+        
+        """
+        
+        IP_Address = self.request.META.get("REMOTE_ADDR")
+        language_code = self.request.headers.get("Accept-Language")
+        obj = UserIP.objects.filter(ip_address=IP_Address)
+        
+        if obj.exists():
+            obj = obj.first()
+            if language_code:
+                obj.language_code = language_code
+                obj.save()
+        
+        elif not obj.exists():
+            obj = UserIP.objects.create(
+                ip_address=IP_Address
+                , language_code=language_code)
+        
+        return obj.language_code
     
     def perform_create(self, serializer):
         """
@@ -78,10 +120,33 @@ class CRUDCategory(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
-    
     def update(self, request, *args, **kwargs):
         if request.data.get("parent"):
             parent_parameter = request.data["parent"]
             child_instance = Category.objects.select_related("parent").get(id=int(self.kwargs["pk"]))
             self.assign_parent(parent_parameter, child_instance)
         return super().update(request, *args, **kwargs)
+
+
+@decorators.api_view(["GET", ])
+def parent_sub_category(request, pk):
+    queryset = Category.objects.filter(parent=pk)
+    serialized_data = CategorySerializer(queryset, many=True)
+    return Response(
+        serialized_data.data
+        , status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+def search_category(request, name):
+    obj = Category.objects.filter(name__iexact=name)
+    
+    resp = []
+    status_code = status.HTTP_404_NOT_FOUND
+    if obj.exists():
+        resp = CategorySerializer(instance=obj.first())
+        resp = resp.data
+        
+        status_code = status.HTTP_200_OK
+    
+    return Response(resp, status=status_code)
