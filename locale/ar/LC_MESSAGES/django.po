@@ -26,3 +26,51 @@ msgstr ""
 #: .\core\settings.py:218
 msgid "English"
 msgstr ""
+
+#: .\utils\translate.py:11
+msgid "طبيب أسنان"
+msgstr "DENTIST"
+
+#: .\utils\translate.py:11
+msgid "طبيب"
+msgstr "DOCTOR"
+
+#: .\utils\translate.py:11
+msgid "OPTICS"
+msgstr "طبيب عيون"
+
+#: .\utils\translate.py:11
+msgid "NUTRITIONIST"
+msgstr "طبيب تغذية"
+
+#: .\utils\translate.py:11
+msgid "طبيب رعاية منزلية"
+msgstr "HOME_CARE"
+
+#: .\utils\translate.py:11
+msgid "طبيب جراحة تجميلية"
+msgstr "PLASTIC_SURGERY"
+
+#: .\utils\translate.py:11
+msgid "طبيب العناية بالجمال"
+msgstr "AESTHETICS"
+
+#: .\utils\translate.py:11
+msgid "طبيب الأشعة"
+msgstr "RADIOLOGIST"
+
+#: .\utils\translate.py:11
+msgid "صيدلية"
+msgstr "PHARMACY"
+
+#: .\utils\translate.py:11
+msgid "مستشفى"
+msgstr "HOSPITAL"
+
+#: .\utils\translate.py:11
+msgid "عيادة"
+msgstr "CLINIC"
+
+#: .\utils\translate.py:11
+msgid "مخبر"
+msgstr "LAB"

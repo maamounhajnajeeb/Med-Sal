@@ -7,7 +7,7 @@ from .permissions import IsAdmin
 from .serializers import CategorySerializer
 
 from users.models import UserIP
-from utils.translate import get_translated
+from utils.translate import get_arabic_translated, get_engilsh_translated
 
 
 class CRUDCategory(viewsets.ModelViewSet):
@@ -30,8 +30,6 @@ class CRUDCategory(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     queryset = Category.objects
     permission_classes = (IsAdmin, )
-    filter_backends = [filters.SearchFilter]
-    search_fields = ["name", ]
     
     def retrieve(self, request, *args, **kwargs):
         resp = super().retrieve(request, *args, **kwargs)
@@ -39,7 +37,7 @@ class CRUDCategory(viewsets.ModelViewSet):
         
         if language == "ar":
             name = resp.data["name"]
-            resp.data["name"] = get_translated(name)
+            resp.data["name"] = get_arabic_translated(name)
         
         return Response(
             resp.data
@@ -58,7 +56,7 @@ class CRUDCategory(viewsets.ModelViewSet):
         if language == "ar":
             for ordered_dict in resp.data:
                 name = ordered_dict["name"]
-                ordered_dict["name"] = get_translated(name)
+                ordered_dict["name"] = get_arabic_translated(name)
         
         return Response(
             resp.data
@@ -137,3 +135,18 @@ def parent_sub_category(request, pk):
     return Response(
         serialized_data.data
         , status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+def search_category(request, name):
+    obj = Category.objects.filter(name__iexact=name)
+    
+    resp = []
+    status_code = status.HTTP_404_NOT_FOUND
+    if obj.exists():
+        resp = CategorySerializer(instance=obj.first())
+        resp = resp.data
+        
+        status_code = status.HTTP_200_OK
+    
+    return Response(resp, status=status_code)
