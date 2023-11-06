@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "django.contrib.gis", # To deal with gis database
-
+    
     # third party packages
     "djoser",
     'rest_framework_simplejwt',
@@ -159,7 +159,7 @@ def get_env_details():
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "medsal_geo", # any name
+        "NAME": "Med-SAL_Project", # any name # my database name, you can change
         "USER": "postgres", # your chosen or default database system name
         "PASSWORD": get_env_details(), #
         "HOST": "", # localhost
@@ -207,6 +207,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "users.Users" #
 
+GDAL_LIBRARY_PATH = 'C:\OSGeo4W\\bin\gdal307.dll'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
