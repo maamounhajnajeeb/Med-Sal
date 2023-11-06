@@ -31,25 +31,28 @@ class CustomUserViewSet(UserViewSet):
         if response.data["user_type"] != Users.Types.SERVICE_PROVIDER:
             return Response(response.data, status=response.status_code)
         
-        # else continue and regiter the Service Provider
-        super_user = response.data
-        super_user_id = super_user["id"]
+        # 1] Fetch the Category id from user_data 2] and get user_id from register response data
+        prov_data = response.data
+        prov_id = prov_data.get("id")
         
-        # Fetch the Category instance based on the user_data value
         category_value = user_data.get("category")
         category_instance = get_object_or_404(Category, id=category_value)
         
-        ServiceProvider.objects.create(
-            user_id=super_user_id
-            , business_name=user_data.get("business_name")
-            , contact_number=user_data.get("contact_number")
-            , bank_name=user_data.get("bank_name")
-            , category=category_instance
-            , iban=user_data.get("iban")
-            , swift_code=user_data.get("swift_code")
-            , )
+        service_prov_data = self.create_service_provider(prov_id, category_instance, prov_data)
         
-        return Response(super_user, status=response.status_code)
+        return Response(service_prov_data, status=response.status_code)
+    
+    def create_service_provider(self, prov_id: int, category: Category, prov_data: dict):
+        service_prov_instance = ServiceProvider.objects.create(
+            user_id=prov_id
+            , business_name=prov_data.get("business_name")
+            , contact_number=prov_data.get("contact_number")
+            , bank_name=prov_data.get("bank_name")
+            , category=category, iban=prov_data.get("iban")
+            , swift_code=prov_data.get("swift_code")
+        )
+        
+        return service_prov_instance
 
 
 # resend 2FA code

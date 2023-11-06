@@ -10,7 +10,6 @@ from .serializers import ServiceProviderSerializer, ServiceProviderLocationSeria
 from .permissions import UpdateAndDeletePermissions, ListAndCreatePermissions
 
 
-    
 class CRUDServiceProviders(viewsets.ModelViewSet):
     
     """
@@ -22,7 +21,7 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
 
     Permissions on methods:
         - Only admins can List all service providers data
-        - Only NOT authenticated users can create a new service provider profile
+        - Only NOT authenticated users can create a new service provider profile # add admin
         - Both authenticated users and admins can retrieve a specific service provider profile 
         - Either admins can edit a service provider profile or a service provider can edit his own profile
 
@@ -30,13 +29,13 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
         - You can order by any field you choose either in asc or desc order => api/v1/service_providers/?ordering=-password
         - You can search by name = > api/v1/service_providers/?search=<service_provider_name>
     """
-
+    
     queryset = ServiceProvider.objects
     serializer_class = ServiceProviderSerializer
+    permission_classes = (ListAndCreatePermissions, )
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    search_fields = ["first_name", ]
-    permission_classes = [ListAndCreatePermissions, ]
-
+    search_fields = ["bussiness_name", ] # not first_name
+    
     @action(['PATCH'], detail=True, permission_classes = [UpdateAndDeletePermissions,])
     def update_profile(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)    
@@ -44,6 +43,11 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
     @action(['GET'], detail=True, permission_classes = [UpdateAndDeletePermissions,])
     def retrieve_profile(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {"message": "This method isn't allowed"}
+            , status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['GET'])
