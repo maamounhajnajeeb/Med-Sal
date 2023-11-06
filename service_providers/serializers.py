@@ -9,15 +9,20 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ServiceProviderLocationSerializer(GeoFeatureModelSerializer):
+# class ServiceProviderLocationSerializer(GeoFeatureModelSerializer):
 
+#     class Meta:
+#         model = ServiceProviderLocations
+#         geo_field = 'location'
+#         fields = ('service_provider_id',
+#                   'opening',
+#                   'closing',
+#                   'crew',
+#                   'created_at',
+#                   )
+
+class ServiceProviderLocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceProviderLocations
-        geo_field = 'location'
-        fields = ('service_provider_id',
-                  'opening',
-                  'closing',
-                  'crew',
-                  'created_at',
-                  )
-
+        fields = '__all__'
+        read_only_fields = ('location', )

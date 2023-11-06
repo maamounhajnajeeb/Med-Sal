@@ -1,4 +1,5 @@
-from rest_framework import viewsets
+from requests import request
+from rest_framework import viewsets, generics
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.views import APIView
@@ -9,8 +10,8 @@ from .serializers import ServiceProviderSerializer, ServiceProviderLocationSeria
 
 from .permissions import UpdateAndDeletePermissions, ListAndCreatePermissions
 
+import geocoder
 
-    
 class CRUDServiceProviders(viewsets.ModelViewSet):
     
     """
@@ -46,20 +47,6 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
         return super().retrieve(request, *args, **kwargs)
 
 
-@api_view(['GET', 'POST'])
-def locationss(request):
-        if request.method == 'GET':
-            try:
-                location = ServiceProviderLocations.objects.all()
-                serializer = ServiceProviderLocationSerializer(location, many = True).data
-                return Response(serializer, status=status.HTTP_200_OK)
-            except:
-                return Response({'Error':'Nothin found'})      
-        elif request.method == 'POST':
-            serializer = ServiceProviderLocationSerializer(data = request.data)
-            serializer.is_valid(raise_exception = True)
-            serializer.save()
-            return Response({"done"})
         
 class Location(APIView):
      serializer_class = ServiceProviderLocationSerializer
@@ -76,3 +63,17 @@ class Location(APIView):
             return Response(serializer.data, status = status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+
+
+# class Location(generics.ListCreateAPIView):
+#      queryset = ServiceProviderLocations.objects.all()
+#      serializer_class = ServiceProviderLocationSerializer
+     
+#      def perform_create(self, serializer):
+#         address = serializer.initial_data['address']
+#         g = geocoder.freegeoip(address)
+#         print(g)
+#         latitude = g.latlng[0]
+#         longitude = g.latlng[1]
+#         pnt = ['POINT(' + str(longitude) + ' ' + str(latitude) + ')']
+#         serializer.save(location=pnt)

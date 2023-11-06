@@ -159,7 +159,7 @@ def get_env_details():
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "medsal_geo", # any name
+        "NAME": "geo_database", # any name
         "USER": "postgres", # your chosen or default database system name
         "PASSWORD": get_env_details(), #
         "HOST": "", # localhost
