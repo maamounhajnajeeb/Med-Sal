@@ -1,4 +1,4 @@
-from django.db import models
+# from django.db import models # we don't need this after adding from django.contrib.gis.db import models
 from category.models import Category
 from users.models import Users, Admins
 
@@ -35,9 +35,8 @@ class ServiceProvider(Users):
 
 
 class ServiceProviderLocations(models.Model):
-
-    service_provider_id = models.ForeignKey(ServiceProvider, on_delete = models.CASCADE, null = True)
-    location = models.PointField(srid = 4326, null = True, blank = True)
+    service_provider_id = models.ForeignKey(ServiceProvider, on_delete = models.CASCADE)
+    location = models.PointField(srid=4326, null = True, blank = True) # null and blank must be False 
     opening = models.TimeField(blank = False)
     closing = models.TimeField(blank = False)
     crew = models.CharField(max_length = 32, blank = False)
@@ -48,4 +47,4 @@ class ServiceProviderLocations(models.Model):
         verbose_name_plural = "ServiceProviderLocations"
 
     def __str__(self):
-        return self.service_provider_id.business_name
+        return f"{self.service_provider_id.business_name} => {self.location}"
