@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.hashers import make_password
 from django.db.models.query import QuerySet
 from django.conf import settings
 from django.db import models
@@ -12,9 +13,10 @@ class MyUserManager(BaseUserManager):
             raise ValueError("Users must have an email address")
         
         user = self.model(
-            email=self.normalize_email(email), **kwargs
-        )
-        user.set_password(password)
+            email=self.normalize_email(email)
+            , password=make_password(password)
+            , **kwargs)
+        
         user.save(using=self._db)
         return user
     

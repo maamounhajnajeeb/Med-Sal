@@ -19,7 +19,7 @@ class ServiceProvider(Users):
     bank_name = models.CharField(max_length=128, null=False)
     iban = models.CharField(max_length=40, null=False, unique=True)
     swift_code = models.CharField(max_length=16, null=False, unique=True)
-    # provider_file = models.FileField(upload_to="service_providers/documents/", null=False)
+    provider_file = models.FileField(upload_to="service_providers/documents/", null=True) # null to be False
     account_status = models.CharField(max_length=16,
             choices=AccountStatus.choices, default=AccountStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)

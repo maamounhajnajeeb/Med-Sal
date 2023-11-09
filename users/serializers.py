@@ -6,10 +6,76 @@ from django.contrib.auth.password_validation import validate_password
 from djoser.serializers import UserCreateSerializer
 
 from users.models import Admins, SuperAdmins
+from category.models import Category
 from service_providers.models import ServiceProvider
 from service_providers.serializers import ServiceProviderSerializer
 
 Users = get_user_model()
+
+
+class ServiceProviderSerializer(serializers.Serializer):
+    password = serializers.CharField(
+        max_length=64, write_only=True, required=True
+        , validators=[validate_password]
+        , )
+    password2 = serializers.CharField(max_length=64, write_only=True, required=True)
+    email = serializers.EmailField(
+        max_length=64
+        , validators=[validators.UniqueValidator(queryset=Users.objects.all())]
+        , required=True
+        , )
+    category = serializers.IntegerField()
+    business_name = serializers.CharField(max_length=128)
+    bank_name = serializers.CharField(max_length=128)
+    iban = serializers.CharField(max_length=40)
+    swift_code = serializers.CharField(max_length=16)
+    provider_file = serializers.FileField()
+    image = serializers.ImageField()
+    phone = serializers.CharField(max_length=10)
+    user_type = serializers.CharField(max_length=16)
+    
+    # class Meta:
+    #     # model = Users
+    #     fields = (
+    #             "id", "email", "phone", "image", "password"
+    #             , "password2", "user_type", "category", "business_name"
+    #             , "bank_name", "iban", "swift_code", "provider_file"
+    #             , )
+    #     extra_kwargs = {
+    #         'phone': {'required': True},
+    #         'image': {'required': True}
+    #     , }
+    
+    def validate(self, attrs):
+        password, password2 = attrs.get("password"), attrs.pop("password2")
+        if password != password2:
+            raise serializers.ValidationError({"password": "Password fields didn't match."})
+        
+        return attrs
+    
+    def create(self, validated_data):
+        user = Users.objects.create_user(
+            password=validated_data['password']
+            , email=validated_data['email']
+            , phone=validated_data['phone']
+            , image=validated_data['image']
+            , user_type=validated_data["user_type"]
+            , )
+        
+        self.create_service_provider(user, validated_data)
+        
+        return user
+    
+    def create_service_provider(self, user: Users, validated_data):
+        category = Category.objects.get(id=validated_data.get("category"))
+        ServiceProvider.objects.create(
+            category=category, user=user
+            , iban=validated_data.get("iban")
+            , bank_name=validated_data.get("bank_name")
+            , swift_code=validated_data.get("swift_code")
+            , provider_file=validated_data.get("provider_file")
+            , business_name=validated_data.get("business_name")
+            )
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -57,6 +123,7 @@ class UserSerializer(serializers.ModelSerializer):
         models = {
             "user": Users
             , "admin": Admins
+            , "service_provider": Users
             , "super_admin": SuperAdmins
         }
         return models[user_type]
@@ -93,56 +160,3 @@ class ResetPasswordSerializer(serializers.Serializer):
     uid = serializers.CharField()
     token = serializers.CharField()
 
-
-class ServiceProviderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ServiceProvider
-        fields = ("business_name", "contact_number")
-
-
-
-
-
-"""
-{
-    "user_type": "SERVICE_PROVIDER",
-    "email": "provider@example.com",
-    "password": "your_password",
-    "re_password": "your_password",
-    "business_name": "Your Business Name",
-    "contact_number": "123-456-7890",
-    "bank_name": "Your Bank Name",
-    "category": "DOCTOR",
-    "iban": "Your IBAN",
-    "swift_code": "Your Swift Code"
-    "provider_file": "service provider documents"
-}
-
-
-"""
-
-
-"""
-
-{
-    "user_type": "USER",
-    "email": "user@example.com",
-    "password": "your_password",
-    "re_password": "your_password"
-}
-
-
-"""
-
-
-"""
-{"code": "344639"}
-"""
-
-
-"""
-
-{"email": "admin@admin.com"}
-
-
-"""

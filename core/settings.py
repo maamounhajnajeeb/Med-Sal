@@ -229,3 +229,8 @@ LANGUAGES = (
 
 LOCALE_PATHS = (
     BASE_DIR / "locale",)
+
+AUTHENTICATION_BACKENDS = [
+    'users.backend.CustomAuthBackend',
+]
+

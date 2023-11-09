@@ -2,6 +2,11 @@ from django.urls import path
 
 from rest_framework_simplejwt.views import TokenObtainSlidingView
 
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView
+    , )
+
 from . import views
 
 
@@ -9,7 +14,12 @@ app_name = "users"
 
 urlpatterns = [
     path("signup/", views.SignUp.as_view(), name="sign_up"),
+    path("service_provider_register/", views.register, name="service_provider_register"),
     path("email_confirmation/<str:token>", views.email_confirmation, name="email_confirmation"),
+    
+    path('login/', views.login, name='login'),
+    path('refresh_token/', TokenRefreshView.as_view(), name='token_refresh'),
+
     
     # list users
     # path("users/all/", CustomUserViewSet.as_view({"get": "list"}), name="list-users"),
