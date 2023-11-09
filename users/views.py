@@ -1,58 +1,70 @@
-from django.core.mail import send_mail
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from django.core.mail import send_mail
+from django.http import HttpRequest
+from django.conf import settings
 
-from rest_framework import status
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework import status, generics
+from rest_framework.views import APIView
+from rest_framework import permissions, decorators
 
-from djoser.views import UserViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .models import Users
-# from django.contrib.auth import get_user_model
-# User = get_user_model()
+from . import serializers, helpers
+from . import models
 from category.models import Category
-from .serializers import UserRegistrationSerializer
 from service_providers.models import ServiceProvider
+from service_providers.serializers import ServiceProviderSerializer
 
 
-# users : create 
-class CustomUserViewSet(UserViewSet):
-    serializer_class = UserRegistrationSerializer
-    permission_classes = (AllowAny, )
-    http_method_names = ["get", "post", "patch", "put", "delete"]
+
+Users = get_user_model()
+
+
+class ListAllUsers(generics.ListAPIView):
+    serializer_class = serializers.UserSerializer
+    permission_classes = (permissions.IsAdminUser, ) # Admin is_staff only
+    queryset = Users.objects
+
+
+class UsersView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = serializers.UserSerializer
+    permission_classes = (permissions.IsAuthenticated, )
+    queryset = Users.objects
+
+
+class SignUp(generics.CreateAPIView):
+    serializer_class = serializers.UserSerializer
+    permission_classes = (permissions.AllowAny, )
+    queryset = Users.objects
     
-    def create(self, request, *args, **kwargs):
-        user_data = request.data
+    def create(self, request: HttpRequest, *args, **kwargs):
+        resp = super().create(request, *args, **kwargs)
         
-        response = super().create(request, *args, **kwargs)# default register
-        if response.data["user_type"] != Users.Types.SERVICE_PROVIDER:
-            return Response(response.data, status=response.status_code)
+        confirm = helpers.SendMail(to=resp.data.get("email"), request=request)
+        confirm.send_mail()
         
-        # 1] Fetch the Category id from user_data 2] and get user_id from register response data
-        prov_data = response.data
-        prov_id = prov_data.get("id")
+        models.EmailConfirmation.objects.create(
+            user_id=resp.data.get("id"), token=confirm.token)
         
-        category_value = user_data.get("category")
-        category_instance = get_object_or_404(Category, id=category_value)
-        
-        service_prov_data = self.create_service_provider(prov_id, category_instance, prov_data)
-        
-        return Response(service_prov_data, status=response.status_code)
-    
-    def create_service_provider(self, prov_id: int, category: Category, prov_data: dict):
-        service_prov_instance = ServiceProvider.objects.create(
-            user_id=prov_id
-            , business_name=prov_data.get("business_name")
-            , contact_number=prov_data.get("contact_number")
-            , bank_name=prov_data.get("bank_name")
-            , category=category, iban=prov_data.get("iban")
-            , swift_code=prov_data.get("swift_code")
-        )
-        
-        return service_prov_instance
+        return Response({
+            "message": "Confirmation email sent"
+        , }, status=resp.status_code
+        , headers=self.get_success_headers(resp.data))
+
+
+@decorators.api_view(["POST"])
+def email_confirmation(request, token):
+    query = models.EmailConfirmation.objects.filter(token=token)
+    if not query.exists():
+        return Response(
+            {"message": "Invalid email confirmation token"}
+            , status=status.HTTP_404_NOT_FOUND)
+    return Response(
+        {"message": "Valid email you can log in now"}
+        , status=status.HTTP_202_ACCEPTED)
 
 
 # resend 2FA code
