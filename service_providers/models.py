@@ -11,7 +11,7 @@ class ServiceProvider(Users):
         PENDING = ('pending', 'Pending')
         ACCEPTED = ('accepted', 'Accepted')
     
-    user = models.OneToOneField(Users, on_delete=models.CASCADE, related_name='service_provider')
+    user = models.OneToOneField(Users, on_delete=models.CASCADE, related_name='service_provider', null=True)
     approved_by = models.ForeignKey(Admins,
                 on_delete=models.PROTECT, null=True, related_name='accepted_services')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="services_providerd")

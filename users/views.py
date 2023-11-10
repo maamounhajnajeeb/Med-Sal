@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model, authenticate
 from django.shortcuts import get_object_or_404
 from django.http import HttpRequest
 from django.conf import settings
+from django.db import connection
 
 from rest_framework.response import Response
 from rest_framework import status, generics
@@ -78,38 +79,40 @@ def register(request):
     user = serializer.save()
     
     category = Category.objects.get(id=request.data.get("category"))
-    ServiceProvider.objects.create(
-        category=category, user=user
+    a = ServiceProvider(
+        category=category
         , iban=request.data.get("iban")
         , bank_name=request.data.get("bank_name")
         , swift_code=request.data.get("swift_code")
         , provider_file=request.data.get("provider_file")
         , business_name=request.data.get("business_name")
         )
+    a.save()
+    
+    return Response({"message": "done"}, status=status.HTTP_201_CREATED)
+
+@decorators.api_view(["POST"])
+def signignup(request):
+    serializer = serializers.UserSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = serializer.save()
+    
+    category = Category.objects.get(id=request.data.get("category"))
+    with connection.cursor() as c:
+        
+        c.execute(f"insert into service_providers_serviceprovider (business_name, bank_name, iban, \
+        swift_code , category_id, user_id, users_ptr_id, account_status, created_at, updated_at) \
+        values('{request.data.get('business_name')}' \
+        , 'no bank', '{request.data.get('iban')}', '{request.data.get('swift_code')}' \
+        , '{category.id}', '{user.id}', '{user.id}', 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP )" )
     
     return Response({"message": "done"}, status=status.HTTP_201_CREATED)
 
 
-class ServiceProviderRegister(generics.CreateAPIView):
-    permission_classes = ( )
-    serializer_class = serializers.ServiceProviderSerializer
-    queryset = Users.objects
-
-
-@decorators.api_view(["POST", ])
-def login(request):
-    email, password = request.data.get("email"), request.data.get("password")
-    user = authenticate(email=email, password=password)
-    if user is not None:
-        token = RefreshToken.for_user(user)
-        return Response({
-            "access": str(token.access_token)
-            , "refresh": str(token)
-        }, status=status.HTTP_202_ACCEPTED)
-    
-    return Response({
-        "message": "Invalid user credentials"
-    }, status=status.HTTP_404_NOT_FOUND)
+# class ServiceProviderRegister(generics.CreateAPIView):
+#     permission_classes = ( )
+#     serializer_class = serializers.ServiceProviderSerializer
+#     queryset = Users.objects
 
 
 # resend 2FA code

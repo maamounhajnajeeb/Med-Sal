@@ -12,7 +12,6 @@ router = DefaultRouter()
 router.register("", views.CRUDServiceProviders, basename='providers_crud')
 
 urlpatterns = [
-    # path('', router.urls, name="provider_crud"),
     path('location', views.locationss)
 ]
 
