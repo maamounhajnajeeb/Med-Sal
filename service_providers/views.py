@@ -32,6 +32,7 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
     
     queryset = ServiceProvider.objects
     serializer_class = ServiceProviderSerializer
+    permission_classes = (ListAndCreatePermissions, )
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     search_fields = ["first_name", ]
     permission_classes = [ListAndCreatePermissions, ]
@@ -66,6 +67,11 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
     @action(['GET'], detail=True, permission_classes = [UpdateAndRetrievePermissions,])
     def retrieve_profile(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {"message": "This method isn't allowed"}
+            , status=status.HTTP_404_NOT_FOUND)
 
         
 class Location(APIView):

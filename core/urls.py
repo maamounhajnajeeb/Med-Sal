@@ -15,7 +15,7 @@ urlpatterns = [
     path("api/v1/change_lang/", views.change_language, name="change_lang"),
     
     # users app
-    path('api/v1/', include("users.urls", namespace="users")),
+    path('api/v1/users/', include("users.urls", namespace="users")),
     
     # rest framework default [login, logout]
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework_auth')),
