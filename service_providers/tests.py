@@ -7,11 +7,11 @@ from users.models import Users, Admins
 class ServiceProviderApprovalTest(TestCase):
     def test_service_provider_approval(self):
 
-        admin = Admins.objects.create(username = 'admin', email = 'admin@gmail.com')
+        admin = Admins.objects.create(email = 'admin@gmail.com')
 
         category = Category.objects.create(name = 'Doctor')
 
-        user = Users.objects.create(username="provider", email="provider@gmail.com")
+        user = Users.objects.create(email="provider@gmail.com")
 
         service_provider = ServiceProvider.objects.create(user = user, category = category)
 
