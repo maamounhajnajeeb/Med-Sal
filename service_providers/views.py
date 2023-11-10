@@ -1,16 +1,13 @@
-from requests import request
-from rest_framework import viewsets, generics
+from rest_framework import viewsets
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
 from .models import ServiceProvider, ServiceProviderLocations
-from .serializers import ServiceProviderSerializer, ServiceProviderLocationSerializer
+from .serializers import ServiceProviderSerializer, ServiceProviderLocationSerializer, CalculateDistanceSerializer
+import geopy.distance
+from .permissions import UpdateAndRetrievePermissions, ListAndCreatePermissions
 
-from .permissions import UpdateAndDeletePermissions, ListAndCreatePermissions
-
-import geocoder
 
 class CRUDServiceProviders(viewsets.ModelViewSet):
     
@@ -24,28 +21,51 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
     Permissions on methods:
         - Only admins can List all service providers data
         - Only NOT authenticated users can create a new service provider profile
+        - Only admins can change account_status field for a specific service provider
         - Both authenticated users and admins can retrieve a specific service provider profile 
         - Either admins can edit a service provider profile or a service provider can edit his own profile
-
+        
     Filtering:
         - You can order by any field you choose either in asc or desc order => api/v1/service_providers/?ordering=-password
         - You can search by name = > api/v1/service_providers/?search=<service_provider_name>
     """
-
+    
     queryset = ServiceProvider.objects
     serializer_class = ServiceProviderSerializer
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     search_fields = ["first_name", ]
     permission_classes = [ListAndCreatePermissions, ]
 
-    @action(['PATCH'], detail=True, permission_classes = [UpdateAndDeletePermissions,])
+    # A function for updating a service_provider data (Admins only can update account_status field)
+    @action(['PATCH'], detail=True, permission_classes = [UpdateAndRetrievePermissions,])
     def update_profile(self, request, *args, **kwargs):
+        # Check if the user is trying to update the account_status field
+        if request.data.get('account_status'):
+            # Check If the user is a service provider, he can't update the account_status field
+            if not request.user.is_staff:
+                # Send an error response
+                return Response({'Error': 'Service providers cannot update the account_status field'},status=status.HTTP_400_BAD_REQUEST)
+            else:
+                available_account_status = ['accepted','pending','rejected']
+                new_account_status = request.data.get('account_status')
+                # Check if the new account status is either accepted or pending or rejected
+                if new_account_status in available_account_status:
+                    # Update the account status
+                    obj = ServiceProvider.objects.get(pk=kwargs['pk'])
+                    obj.account_status = new_account_status
+                    obj.save()
+                    # Send a success response
+                    return Response({'Message': f'Account status changed to {new_account_status}'})
+                else:
+                    # Send an error response
+                    return Response({'Error': f'Account status should be in {available_account_status}'})
         return super().partial_update(request, *args, **kwargs)    
     
-    @action(['GET'], detail=True, permission_classes = [UpdateAndDeletePermissions,])
+    
+    # A function for retrieving a specific service_provider data 
+    @action(['GET'], detail=True, permission_classes = [UpdateAndRetrievePermissions,])
     def retrieve_profile(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
-
 
         
 class Location(APIView):
@@ -65,15 +85,29 @@ class Location(APIView):
             return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
 
-# class Location(generics.ListCreateAPIView):
-#      queryset = ServiceProviderLocations.objects.all()
-#      serializer_class = ServiceProviderLocationSerializer
-     
-#      def perform_create(self, serializer):
-#         address = serializer.initial_data['address']
-#         g = geocoder.freegeoip(address)
-#         print(g)
-#         latitude = g.latlng[0]
-#         longitude = g.latlng[1]
-#         pnt = ['POINT(' + str(longitude) + ' ' + str(latitude) + ')']
-#         serializer.save(location=pnt)
+class ServiceProviderDistanceListView(APIView):
+    def post(self, request):
+        serializer = CalculateDistanceSerializer(data=request.data)
+        if serializer.is_valid():
+            origin = geopy.Point(serializer.validated_data['origin_lat'], serializer.validated_data['origin_lng'])
+            domain = serializer.validated_data.get('domain', 100)  # Default domain of 100 km
+
+            service_provider_locations = ServiceProviderLocations.objects.all()
+            results = []
+
+            for location in service_provider_locations:
+                destination = geopy.Point(location.location.y, location.location.x)
+                distance = geopy.distance.distance(origin, destination).km
+
+                if distance <= domain:
+                    result = {
+                        'service_provider':location.service_provider_id.business_name,
+                        'distance':distance
+                    }   
+                    results.append(result) 
+                    return Response(results, status=status.HTTP_200_OK)
+                else:
+                    return Response({'There is no service provider in the area you are searching in'})
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        

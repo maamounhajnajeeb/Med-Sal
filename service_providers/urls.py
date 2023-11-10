@@ -13,5 +13,8 @@ urlpatterns = [
 
     path('', include(router.urls)),
 
-    path('location', Location.as_view())
+    path('location', Location.as_view()),
+    
+    path('distance', ServiceProviderDistanceListView.as_view())
+    
 ]

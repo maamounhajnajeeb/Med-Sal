@@ -9,14 +9,14 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        ('orders', '0002_initial'),
         ('service_providers', '0001_initial'),
-        ('products', '0001_initial'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='product',
+            model_name='orders',
             name='service_provider_location',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='service_providers.serviceproviderlocations'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='service_providers.serviceproviderlocations'),
         ),
     ]

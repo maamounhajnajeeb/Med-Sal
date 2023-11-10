@@ -1,9 +1,10 @@
 # from django.db import models # we don't need this after adding from django.contrib.gis.db import models
+
 from category.models import Category
 from users.models import Users, Admins
 
 from django.contrib.gis.db import models
-
+from django.db.models import JSONField
 
 class ServiceProvider(Users):
     
@@ -46,5 +47,11 @@ class ServiceProviderLocations(models.Model):
         verbose_name = "ServiceProviderLocations"
         verbose_name_plural = "ServiceProviderLocations"
 
-    def __str__(self):
-        return f"{self.service_provider_id.business_name} => {self.location}"
+
+# class UpdateRequest(models.Model):
+#     user = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE)
+#     updated_data = JSONField(null=True)
+#     updated_at = models.DateTimeField(auto_now_add = True, null = False)
+
+#     def __str__(self):
+#         return f"UpdateRequest for {self.user.user.username}"
