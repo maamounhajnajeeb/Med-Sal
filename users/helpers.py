@@ -43,3 +43,4 @@ def activate_user(id: int):
     user_instance: Users = Users.objects.get(id=id)
     user_instance.is_active = True
     user_instance.save()
+    

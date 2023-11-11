@@ -1,10 +1,11 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import make_password
 from django.db.models.query import QuerySet
-from django.conf import settings
 from django.db import models
 
 from typing import Any
+
+from .models_helpers import get_image_path
 
 
 class MyUserManager(BaseUserManager):
@@ -48,7 +49,7 @@ class Users(AbstractBaseUser):
     email = models.EmailField(max_length=128, unique=True, null=False)
     phone = models.CharField(max_length=16, unique=True, null=True) # null to be False
     image = models.ImageField(
-        upload_to="profile_images/", default="defaults/default_profile.jpg")
+        upload_to=get_image_path, default="defaults/default_profile.jpg")
     
     base_type = Types.USER
     user_type = models.CharField(
@@ -56,6 +57,7 @@ class Users(AbstractBaseUser):
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(auto_now_add=True)
     
     REQUIRED_FIELDS = ["user_type"]
     USERNAME_FIELD = "email"
@@ -115,5 +117,5 @@ class UserIP(models.Model):
 
 
 class EmailConfirmation(models.Model):
-    user_id = models.IntegerField(unique=True)
+    user_id = models.BigIntegerField(primary_key=True)
     token = models.CharField(max_length=16, unique=True)

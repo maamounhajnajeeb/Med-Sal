@@ -80,8 +80,8 @@ def email_confirmation(request: HttpRequest, token: str):
             {"message": "Invalid email confirmation token"}
             , status=status.HTTP_404_NOT_FOUND)
     
-    user = query.first()
-    helpers.activate_user(user.id)
+    confirm_record = query.first()
+    helpers.activate_user(confirm_record.user_id)
     
     query.first().delete()
     return Response(
