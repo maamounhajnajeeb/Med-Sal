@@ -9,8 +9,7 @@ from rest_framework import views
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from . import serializers, helpers
-from . import models
-
+from . import models, permissions as local_permissions
 
 
 Users = get_user_model()
@@ -23,8 +22,12 @@ class ListAllUsers(generics.ListAPIView):
 
 
 class UsersView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = serializers.UserSerializer
-    permission_classes = (permissions.IsAuthenticated, )
+    """
+    general retrieve, update, destroy api
+    not for updating email of password
+    """
+    serializer_class = serializers.SpecificUserSerializer
+    permission_classes = (local_permissions.IsAdminOrOwner, )
     queryset = Users.objects
 
 

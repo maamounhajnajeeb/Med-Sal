@@ -13,6 +13,7 @@ urlpatterns = [
     path("email_confirmation/<str:token>", views.email_confirmation, name="email_confirmation"),
     
     path("all/", views.ListAllUsers.as_view(), name="all_users"),
+    path("<int:pk>/", views.UsersView.as_view(), name="specific_user"),
     
     path('login/', views.LogIn.as_view(), name='login'),
     path('refresh_token/', TokenRefreshView.as_view(), name='token_refresh'),

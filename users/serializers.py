@@ -157,5 +157,11 @@ class LogInSerializer(TokenObtainPairSerializer):
         
         attrs.update({"id": self.user.id})
         attrs.update({"user_type": self.user.user_type})
-        
         return attrs
+
+
+class SpecificUserSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Users
+        fields = ("id", "phone", "email", "image", "user_type", "date_joined")
