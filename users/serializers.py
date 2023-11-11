@@ -86,7 +86,7 @@ class ServiceProviderSerializer(serializers.Serializer):
                     , '{validated_data.get('category')}', '{validated_data.get('provider_file')}' \
                     , '{user.id}', '{user.id}', 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP ) "
                 , )
-
+            
         return "Done"
 
 
@@ -119,16 +119,26 @@ class UserSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         model = self.model_hashing(validated_data.get("user_type"))
+        admin_attrs = self.admins_attrs(validated_data.get("user_type"))
         user = model.objects.create_user(
             password=validated_data['password']
             , email=validated_data['email']
             , phone=validated_data['phone']
             , image=validated_data['image']
             , user_type=validated_data["user_type"]
-            , )
+            , **admin_attrs)
         
         user.save()
         return user
+    
+    def admins_attrs(self, user_type: str):
+        attrs = dict()
+        if user_type.lower() == "admin":
+            attrs["is_staff"] = True
+        elif user_type.lower() == "super_admin":
+            attrs["is_staff"] = True
+            attrs["is_superuser"] = True
+        return attrs
     
     def model_hashing(self, user_type: str):
         user_type = user_type.lower()
