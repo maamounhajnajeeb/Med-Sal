@@ -10,9 +10,10 @@ Users = get_user_model()
 
 class SendMail:
     
-    def __init__(self, to: str, request: HttpRequest) -> None:
+    def __init__(self, to: str, request: HttpRequest, view: str) -> None:
         self.to, self.request = to, request
         self.subject = "Med Sal Email Confirmation"
+        self.view = view
     
     def generate_token(self):
         token = ""
@@ -24,9 +25,8 @@ class SendMail:
     def get_content(self):
         protocol = "https" if self.request.is_secure() else "http"
         host = self.request.get_host()
-        view = "/api/v1/users/email_confirmation/"
         self.token = self.generate_token()
-        full_path = f"{protocol}://{host}{view}{self.token}"
+        full_path = f"{protocol}://{host}{self.view}{self.token}"
         return f"please use this link to verify your account: \n {full_path}"
         
     def send_mail(self):
@@ -44,3 +44,9 @@ def activate_user(id: int):
     user_instance.is_active = True
     user_instance.save()
     
+
+
+def change_user_email(id: int, new_email: str):
+    user_instance: Users = Users.objects.get(id=id)
+    user_instance.email = new_email
+    user_instance.save()

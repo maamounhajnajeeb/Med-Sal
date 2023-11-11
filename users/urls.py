@@ -10,7 +10,10 @@ app_name = "users"
 urlpatterns = [
     path("signup/", views.SignUp.as_view(), name="sign_up"),
     path("service_provider_register/", views.ServiceProviderRegister.as_view(), name="service_provider_register"),
+    
     path("email_confirmation/<str:token>", views.email_confirmation, name="email_confirmation"),
+    path("change_email/", views.change_email, name="email_change"),
+    path("accept_new_email/<str:token>", views.accept_email_change, name="accept_email_changing"),
     
     path("all/", views.ListAllUsers.as_view(), name="all_users"),
     path("<int:pk>/", views.UsersView.as_view(), name="specific_user"),

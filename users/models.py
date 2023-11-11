@@ -124,3 +124,12 @@ class EmailConfirmation(models.Model):
     """
     user_id = models.BigIntegerField(primary_key=True)
     token = models.CharField(max_length=16, unique=True)
+
+
+class EmailChange(models.Model):
+    """
+    to activate new email
+    """
+    user_id = models.BigIntegerField(primary_key=True)
+    token = models.CharField(max_length=16, unique=True)
+    new_email = models.EmailField(max_length=64, unique=True)
