@@ -1,10 +1,11 @@
+from typing import Any, Dict
 from rest_framework import serializers, validators
 
 from django.db import connection
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 
-from djoser.serializers import UserCreateSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from users.models import Admins, SuperAdmins
 
@@ -140,34 +141,11 @@ class UserSerializer(serializers.ModelSerializer):
         return models[user_type]
 
 
-class UserRegistrationSerializer(UserCreateSerializer):
-    
-    class Meta(UserCreateSerializer.Meta):
-        model = Users
-        fields = UserCreateSerializer.Meta.fields
-    #     fields = (
-    #         "email", "password", "re_password", "phone"
-    #         , "user_type", "service_provider")
-    
-    # def validate(self, attrs):
-    #     print(attrs)
-    #     return super().validate(attrs)
-    
-    # def create(self, validated_data: dict):
-    #     service_provider = validated_data.pop("service_provider")
-    #     User = Users.objects.create(**validated_data)
-    #     Provider = ServiceProvider.objects.create(user=User, **service_provider)
+class LogInSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, str]:
+        attrs = super().validate(attrs)
         
-    #     return User
-
-# class SignUpSerializer(serializers.ModelSerializer):
-    
-#     class Meta:
-#         model = Users
-#         fields = ("email", "password", "")
-
-
-class ResetPasswordSerializer(serializers.Serializer):
-    uid = serializers.CharField()
-    token = serializers.CharField()
-
+        attrs.update({"id": self.user.id})
+        attrs.update({"user_type": self.user.user_type})
+        
+        return attrs

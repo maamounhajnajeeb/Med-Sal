@@ -107,8 +107,10 @@ class Admins(Users):
         verbose_name = "Admins"
 
 
-
 class UserIP(models.Model):
+    """
+    for languages [ip_address, language preference]
+    """
     ip_address = models.CharField(max_length=32, primary_key=True, null=False)
     language_code = models.CharField(max_length=8, null=False)
     
@@ -117,5 +119,8 @@ class UserIP(models.Model):
 
 
 class EmailConfirmation(models.Model):
+    """
+    to activate user via code
+    """
     user_id = models.BigIntegerField(primary_key=True)
     token = models.CharField(max_length=16, unique=True)
