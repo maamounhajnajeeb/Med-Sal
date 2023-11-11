@@ -74,7 +74,7 @@ class SignUp(generics.CreateAPIView):
         , headers=self.get_success_headers(resp.data))
 
 
-@decorators.api_view(["POST"])
+@decorators.api_view(["GET"])
 def email_confirmation(request: HttpRequest, token: str):
     query = models.EmailConfirmation.objects.filter(token=token)
     
