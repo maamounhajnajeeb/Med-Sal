@@ -14,7 +14,7 @@ app_name = "users"
 
 urlpatterns = [
     path("signup/", views.SignUp.as_view(), name="sign_up"),
-    path("service_provider_register/", views.signignup, name="service_provider_register"),
+    path("service_provider_register/", views.ServiceProviderRegister.as_view(), name="service_provider_register"),
     path("email_confirmation/<str:token>", views.email_confirmation, name="email_confirmation"),
     
     path('login/', TokenObtainPairView.as_view(), name='login'),

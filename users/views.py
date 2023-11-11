@@ -1,21 +1,12 @@
-from django.contrib.auth import get_user_model, authenticate
-from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from django.http import HttpRequest
-from django.conf import settings
-from django.db import connection
 
 from rest_framework.response import Response
-from rest_framework import status, generics
+from rest_framework import status, generics, views
 from rest_framework import permissions, decorators
-
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from . import serializers, helpers
 from . import models
-from category.models import Category
-from service_providers.models import ServiceProvider
-from service_providers.serializers import ServiceProviderSerializer
 
 
 
@@ -32,6 +23,32 @@ class UsersView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = serializers.UserSerializer
     permission_classes = (permissions.IsAuthenticated, )
     queryset = Users.objects
+
+
+class ServiceProviderRegister(views.APIView):
+    """
+    Signing Up service providers only
+    """
+    serializer_class = serializers.ServiceProviderSerializer
+    permission_classes = (permissions.AllowAny, )
+    
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+    
+    def create(self, request: HttpRequest, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user_instance = serializer.save()
+        
+        confirm = helpers.SendMail(to=user_instance[0], request=request)
+        confirm.send_mail()
+        
+        models.EmailConfirmation.objects.create(
+            user_id=user_instance[1], token=confirm.token)
+        
+        return Response({
+            "message": "Confirmation email sent"
+        , }, status=status.HTTP_201_CREATED)
 
 
 class SignUp(generics.CreateAPIView):
@@ -70,49 +87,6 @@ def email_confirmation(request: HttpRequest, token: str):
     return Response(
         {"message": "Valid email you can log in now"}
         , status=status.HTTP_202_ACCEPTED)
-
-
-@decorators.api_view(["POST"])
-def register(request):
-    serializer = serializers.UserSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    user = serializer.save()
-    
-    category = Category.objects.get(id=request.data.get("category"))
-    a = ServiceProvider(
-        category=category
-        , iban=request.data.get("iban")
-        , bank_name=request.data.get("bank_name")
-        , swift_code=request.data.get("swift_code")
-        , provider_file=request.data.get("provider_file")
-        , business_name=request.data.get("business_name")
-        )
-    a.save()
-    
-    return Response({"message": "done"}, status=status.HTTP_201_CREATED)
-
-@decorators.api_view(["POST"])
-def signignup(request):
-    serializer = serializers.UserSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    user = serializer.save()
-    
-    category = Category.objects.get(id=request.data.get("category"))
-    with connection.cursor() as c:
-        
-        c.execute(f"insert into service_providers_serviceprovider (business_name, bank_name, iban, \
-        swift_code , category_id, user_id, users_ptr_id, account_status, created_at, updated_at) \
-        values('{request.data.get('business_name')}' \
-        , 'no bank', '{request.data.get('iban')}', '{request.data.get('swift_code')}' \
-        , '{category.id}', '{user.id}', '{user.id}', 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP )" )
-    
-    return Response({"message": "done"}, status=status.HTTP_201_CREATED)
-
-
-# class ServiceProviderRegister(generics.CreateAPIView):
-#     permission_classes = ( )
-#     serializer_class = serializers.ServiceProviderSerializer
-#     queryset = Users.objects
 
 
 # resend 2FA code
