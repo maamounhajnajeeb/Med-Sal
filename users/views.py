@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth.hashers import make_password
+from django.core.mail import send_mail
 from django.http import HttpRequest
 
 from rest_framework import permissions, decorators
@@ -201,6 +203,67 @@ def change_password(request: HttpRequest):
     
     return Response({
         "message": "Password changed successfully"
+    }, status=status.HTTP_202_ACCEPTED)
+
+
+@decorators.api_view(["POST", ])
+def reset_password(request: HttpRequest):
+    email = request.data.get("email")
+    user_instance = Users.objects.filter(email=email)
+    if not user_instance.exists():
+        return Response({
+            "message": "There is no account associated with this email"
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    code = helpers.generate_code()
+    ip_address = request.META.get("REMOTE_ADDR")
+    models.PasswordReset.objects.create(
+        code=code, user=user_instance.first(), ip_address=ip_address)
+    
+    send_mail(subject="Password Reset"
+        , message=f"put this code: {code} in the input field"
+        , from_email="med-sal-adminstration@gmail.com"
+        , recipient_list=[email, ])
+    
+    return Response({
+        "message": "A 6 numbers code sent to your mail, check it"
+    }, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["POST", ])
+def enter_code(request):
+    code = request.data.get("code")
+    
+    record = models.PasswordReset.objects.filter(code=code)
+    if not record.exists():
+        return Response({
+            "message": "sorry, but there is no code like this in the database, try to reset password again"
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    # record.first().delete()
+    return Response({
+        "message":"Right code, you can put new password now"
+    }, status=status.HTTP_202_ACCEPTED)
+
+
+@decorators.api_view(["POST", ])
+def new_password(request: HttpRequest):
+    pwd, re_pwd = request.data.get("password"), request.data.get("re_password")
+    if pwd != re_pwd:
+        return Response({
+            "message": "Password fields are not the same"
+        }, status=status.HTTP_409_CONFLICT)
+    
+    ip_address = request.META.get("REMOTE_ADDR")
+    record = models.PasswordReset.objects.select_related("user").get(ip_address=ip_address)
+    user = record.user
+    user.password = make_password(pwd)
+    user.save()
+    
+    record.delete()
+    
+    return Response({
+        "message": "Password changed successfully, now you can log in with the new password"
     }, status=status.HTTP_202_ACCEPTED)
 
 

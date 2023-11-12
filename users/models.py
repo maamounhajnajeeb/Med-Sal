@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import make_password
 from django.db.models.query import QuerySet
+from django.conf import settings
 from django.db import models
 
 from typing import Any
@@ -134,3 +135,9 @@ class EmailChange(models.Model):
     user_id = models.BigIntegerField(primary_key=True)
     token = models.CharField(max_length=16, unique=True)
     new_email = models.EmailField(max_length=64, unique=True)
+
+
+class PasswordReset(models.Model):
+    code = models.CharField(max_length=6, unique=True, null=False)
+    ip_address = models.CharField(max_length=32, unique=True, null=False)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, null=False, on_delete=models.CASCADE)

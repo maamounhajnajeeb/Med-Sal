@@ -61,3 +61,11 @@ def change_user_email(id: int, new_email: str):
 def set_password(user: Users, new_pwd: str):
     user.set_password(new_pwd)
     user.save()
+
+
+def generate_code() -> str:
+    code = ""
+    for _ in range(6):
+        code += str(random.randint(0, 9))
+    
+    return code
