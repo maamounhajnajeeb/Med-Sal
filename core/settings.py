@@ -73,23 +73,24 @@ REST_FRAMEWORK = {
         , )
     
     , 'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
+        'rest_framework.throttling.ScopedRateThrottle'
         , ]
     
     , 'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/day',
-        'user': '1000/day'
+        'un_authenticated': '1/hour'
+        , 'authenticated': '2/hour'
         , }
     }
 
 
-CAHCES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.db.DatabaseCache"
-        , "LOCATION": "my_cache_table" # this is the table name
-    }
-}
+# CAHCES = {
+#     "default": {
+#         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache"
+#         , "LOCATION": "c:/Users/Shaam/Desktop/cache" # this is the table name
+#         , "TIMEOUT": 3600
+#         , 
+#     }
+# }
 
 
 SIMPLE_JWT = {

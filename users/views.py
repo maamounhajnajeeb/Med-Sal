@@ -14,7 +14,7 @@ import os
 
 from . import serializers, helpers
 from . import models, permissions as local_permissions
-
+from . import throttles as local_throttles
 
 Users = get_user_model()
 
@@ -124,6 +124,7 @@ def email_confirmation(request: HttpRequest):
 
 
 @decorators.api_view(["POST", ])
+@decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
 def resend_email_validation(request: HttpRequest):
     """
     this function is used when email_confirmation failed to send email
