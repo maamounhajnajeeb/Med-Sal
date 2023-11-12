@@ -123,7 +123,8 @@ class EmailConfirmation(models.Model):
     to activate user via code
     """
     user_id = models.BigIntegerField(primary_key=True)
-    token = models.CharField(max_length=16, unique=True)
+    ip_address = models.CharField(max_length=32, unique=True, null=False)
+    email = models.EmailField(max_length=64, unique=True, null=False)
 
 
 class EmailChange(models.Model):

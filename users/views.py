@@ -1,4 +1,4 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from django.http import HttpRequest
 
 from rest_framework import permissions, decorators
@@ -78,12 +78,13 @@ class SignUp(generics.CreateAPIView):
         resp = super().create(request, *args, **kwargs)
         
         confirm = helpers.SendMail(
-            to=resp.data.get("email"), request=request
+            to=resp.data.get("email"), request=request, out=True
             , view="/api/v1/users/email_confirmation/")
         confirm.send_mail()
         
         models.EmailConfirmation.objects.create(
-            user_id=resp.data.get("id"), token=confirm.token)
+            user_id=resp.data.get("id"), email=resp.data.get("email")
+            , ip_address=self.request.META.get("REMOTE_ADDR"))
         
         return Response({
             "message": "Confirmation email sent"
@@ -92,8 +93,9 @@ class SignUp(generics.CreateAPIView):
 
 
 @decorators.api_view(["GET"])
-def email_confirmation(request: HttpRequest, token: str):
-    query = models.EmailConfirmation.objects.filter(token=token)
+def email_confirmation(request: HttpRequest):
+    ip_address = request.META.get("REMOTE_ADDR")
+    query = models.EmailConfirmation.objects.filter(ip_address=ip_address)
     
     if not query.exists():
         return Response(
@@ -106,6 +108,27 @@ def email_confirmation(request: HttpRequest, token: str):
     query.first().delete()
     return Response(
         {"message": "Valid email you can log in now"}
+        , status=status.HTTP_202_ACCEPTED)
+
+
+@decorators.api_view(["POST", ])
+def resend_email_validation(request: HttpRequest):
+    ip_address = request.META.get("REMOTE_ADDR")
+    query = models.EmailConfirmation.objects.filter(ip_address=ip_address)
+    
+    if not query.exists():
+        return Response(
+            {"message": "Invalid Ip Address, there is no associated account with this IP"}
+            , status=status.HTTP_404_NOT_FOUND)
+    
+    confirm_record = query.first()
+    confirm = helpers.SendMail(
+        to=confirm_record.email, request=request, out=True
+        , view="/api/v1/users/email_confirmation/")
+    confirm.send_mail()
+    
+    return Response(
+        {"message": "Confirmation email resent"}
         , status=status.HTTP_202_ACCEPTED)
 
 
@@ -146,6 +169,38 @@ def accept_email_change(request: HttpRequest, token: str):
     
     return Response({
         "message": "user email changed successfully"
+    }, status=status.HTTP_202_ACCEPTED)
+
+
+@decorators.api_view(["POST", ])
+@decorators.permission_classes((permissions.IsAuthenticated, ))
+def check_password(request: HttpRequest):
+    pwd, re_pwd = request.data.get("password"), request.data.get("re_password")
+    if pwd != re_pwd:
+        return Response({
+            "message": "Password fields are not the same"
+        }, status=status.HTTP_409_CONFLICT)
+    
+    user_email = request.user.email
+    match = authenticate(email=user_email, password=pwd)
+    if not match:
+        return Response({
+            "message": "The passowrd inputed isn't same authenticated user password"
+        }, status=status.HTTP_409_CONFLICT)
+    
+    return Response({
+        "message": "Valid passwords you can go to change password"
+    }, status=status.HTTP_202_ACCEPTED)
+
+
+@decorators.api_view(["POST", ])
+@decorators.permission_classes((permissions.IsAuthenticated, ))
+def change_password(request: HttpRequest):
+    new_pwd = request.data.get("new_password")
+    helpers.set_password(request.user, new_pwd)
+    
+    return Response({
+        "message": "Password changed successfully"
     }, status=status.HTTP_202_ACCEPTED)
 
 
