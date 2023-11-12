@@ -6,7 +6,7 @@ from django.http import HttpRequest
 from rest_framework import permissions, decorators
 from rest_framework.response import Response
 from rest_framework import status, generics
-from rest_framework import views
+from rest_framework import views, viewsets
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -15,6 +15,9 @@ import os
 from . import serializers, helpers
 from . import models, permissions as local_permissions
 from . import throttles as local_throttles
+
+from service_providers.models import ServiceProvider
+from category.models import Category
 
 Users = get_user_model()
 
@@ -256,6 +259,28 @@ def reset_password(request: HttpRequest):
         , message=f"put this code: {code} in the input field"
         , from_email="med-sal-adminstration@gmail.com"
         , recipient_list=[email, ])
+    
+    return Response({
+        "message": "A 6 numbers code sent to your mail, check it"
+    }, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
+def resend_code(request: HttpRequest):
+    ip_address = request.META.get("REMOTE_ADDR")
+    record = models.PasswordReset.objects.filter(ip_address=ip_address)
+    
+    if not record.exists():
+        return Response({
+            "message": "We've not send an code for this specific email"
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    record = record.select_related("user").first()
+    send_mail(subject="Password Reset"
+        , message=f"put this code: {record.code} in the input field"
+        , from_email="med-sal-adminstration@gmail.com"
+        , recipient_list=[record.user.email, ])
     
     return Response({
         "message": "A 6 numbers code sent to your mail, check it"
