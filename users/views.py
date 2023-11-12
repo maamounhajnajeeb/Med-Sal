@@ -20,6 +20,10 @@ Users = get_user_model()
 
 
 class ListAllUsers(generics.ListAPIView):
+    """
+    get all users and show them to admins
+    then each user can be edited via admin or user
+    """
     serializer_class = serializers.UserSerializer
     permission_classes = (permissions.IsAdminUser, ) # Admin is_staff only
     queryset = Users.objects
@@ -27,8 +31,8 @@ class ListAllUsers(generics.ListAPIView):
 
 class UsersView(generics.RetrieveUpdateDestroyAPIView):
     """
-    general retrieve, update, destroy api
-    not for updating email of password
+    general retrieve, update, destroy api for profile owners and admins
+    not for updating email or password
     """
     serializer_class = serializers.SpecificUserSerializer
     permission_classes = (local_permissions.IsAdminOrOwner, )
@@ -72,6 +76,9 @@ class ServiceProviderRegister(views.APIView):
 
 
 class SignUp(generics.CreateAPIView):
+    """
+    sign up as user, admin, and super_admin
+    """
     serializer_class = serializers.UserSerializer
     permission_classes = (permissions.AllowAny, )
     queryset = Users.objects
@@ -96,6 +103,9 @@ class SignUp(generics.CreateAPIView):
 
 @decorators.api_view(["GET"])
 def email_confirmation(request: HttpRequest):
+    """
+    this function is to use after sign up for confirmation email confirmation puprose
+    """
     ip_address = request.META.get("REMOTE_ADDR")
     query = models.EmailConfirmation.objects.filter(ip_address=ip_address)
     
@@ -115,6 +125,9 @@ def email_confirmation(request: HttpRequest):
 
 @decorators.api_view(["POST", ])
 def resend_email_validation(request: HttpRequest):
+    """
+    this function is used when email_confirmation failed to send email
+    """
     ip_address = request.META.get("REMOTE_ADDR")
     query = models.EmailConfirmation.objects.filter(ip_address=ip_address)
     
@@ -137,6 +150,10 @@ def resend_email_validation(request: HttpRequest):
 @decorators.api_view(["POST", ])
 @decorators.permission_classes((permissions.IsAuthenticated, ))
 def change_email(request: HttpRequest):
+    """
+    give authenticated user ability to change its email
+    send a confirmation message to the new email.
+    """
     user_id = request.user.id
     new_email = request.data.get("new_email")
     
@@ -156,6 +173,10 @@ def change_email(request: HttpRequest):
 @decorators.api_view(["GET", ])
 @decorators.permission_classes((permissions.IsAuthenticated, ))
 def accept_email_change(request: HttpRequest, token: str):
+    """
+    check if the link sent to email is real
+    and make the new email official email for user
+    """
     query = models.EmailChange.objects.filter(token=token)
     if not query.exists():
         return Response({
@@ -177,6 +198,9 @@ def accept_email_change(request: HttpRequest, token: str):
 @decorators.api_view(["POST", ])
 @decorators.permission_classes((permissions.IsAuthenticated, ))
 def check_password(request: HttpRequest):
+    """
+    first step to change password to authenticated users
+    """
     pwd, re_pwd = request.data.get("password"), request.data.get("re_password")
     if pwd != re_pwd:
         return Response({
@@ -198,6 +222,9 @@ def check_password(request: HttpRequest):
 @decorators.api_view(["POST", ])
 @decorators.permission_classes((permissions.IsAuthenticated, ))
 def change_password(request: HttpRequest):
+    """
+    change authenticated user password
+    """
     new_pwd = request.data.get("new_password")
     helpers.set_password(request.user, new_pwd)
     
@@ -208,6 +235,10 @@ def change_password(request: HttpRequest):
 
 @decorators.api_view(["POST", ])
 def reset_password(request: HttpRequest):
+    """
+    first step to unauthenticated users to reset there password
+    it send an email with a 6 digits code
+    """
     email = request.data.get("email")
     user_instance = Users.objects.filter(email=email)
     if not user_instance.exists():
@@ -232,6 +263,11 @@ def reset_password(request: HttpRequest):
 
 @decorators.api_view(["POST", ])
 def enter_code(request):
+    """
+    second step
+    check if the inputed code the same
+    and depending on that it giv user ability to write new password
+    """
     code = request.data.get("code")
     
     record = models.PasswordReset.objects.filter(code=code)
@@ -248,6 +284,10 @@ def enter_code(request):
 
 @decorators.api_view(["POST", ])
 def new_password(request: HttpRequest):
+    """
+    third step
+    saving the new password to user record if every scenario goes will
+    """
     pwd, re_pwd = request.data.get("password"), request.data.get("re_password")
     if pwd != re_pwd:
         return Response({
