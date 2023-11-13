@@ -12,7 +12,13 @@ router = DefaultRouter()
 router.register("", views.CRUDServiceProviders, basename='providers_crud')
 
 urlpatterns = [
-    path('location', views.locationss)
+
+    path('', include(router.urls)),
+
+    # path('location', Location.as_view()),
+    
+    # path('distance', ServiceProviderDistanceListView.as_view())
+    
 ]
 
 urlpatterns += router.urls
