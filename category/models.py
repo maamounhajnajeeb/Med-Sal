@@ -16,7 +16,8 @@ class Category(models.Model):
         LAB = ("LAB", "Lab")
         CLINIC = ("CLINIC", "Clinic")
     
-    name = models.CharField(max_length=32, null=False, unique=True)
+    en_name = models.CharField(max_length=32, null=False, unique=True)
+    ar_name = models.CharField(max_length=32, null=False) # unique=True
     parent = models.ForeignKey("category.Category", on_delete=models.CASCADE, null=True)
     
     def __str__(self) -> str:

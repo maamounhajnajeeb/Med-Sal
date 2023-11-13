@@ -1,152 +1,77 @@
-from rest_framework import status, filters
 from rest_framework.response import Response
-from rest_framework import viewsets, decorators
+from rest_framework import viewsets, decorators, status
+
+from django.http import HttpRequest
 
 from .models import Category
 from .permissions import IsAdmin
+from .helpers import choose_lang, searching_func
 from .serializers import CategorySerializer
 
-from users.models import UserIP
-from utils.translate import get_arabic_translated, get_engilsh_translated
 
 
-class CRUDCategory(viewsets.ModelViewSet):
+@decorators.api_view(["GET", ])
+def parent_sub_category(request, pk):
+    third_field = choose_lang(request)
+    
+    queryset = Category.objects.filter(parent=pk)
+    serializer = CategorySerializer(queryset, fields={"id", "parent", third_field}, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+def prime_categories(request):
+    third_field = choose_lang(request)
+    
+    queryset = Category.objects.filter(parent=None)
+    serializer = CategorySerializer(queryset, fields={"id", "parent", third_field}, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+def search_category(request: HttpRequest):
+    third_field = choose_lang(request)
+    queryset = searching_func(request, third_field)
+    
+    if not queryset.exists():
+        return Response({
+            "message": "There is not result with this search key"
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = CategorySerializer(queryset, fields={"id", "parent", third_field}, many=True)
+    
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
     """
     path : "api/v1/category/"
     
     this view offers four api methods
     
-    every body method: get method
+    everybody method: get method (inluding: searching, listing and get specific record)
     admins methods: post, update[patch, put] and delete methods
     
     you can call specific category by its id
     also you can search for specific category by its name (via api/v1/category?serach=<category_name>)
     
-    you can assign parent category for each sub category by using parent in the form data
-    create and update methods accept parent as [integer id, string name]
-    
+    you can assign parent category for each sub category by using the parent id with the form data
     """
     
     serializer_class = CategorySerializer
     queryset = Category.objects
     permission_classes = (IsAdmin, )
     
-    def retrieve(self, request, *args, **kwargs):
-        resp = super().retrieve(request, *args, **kwargs)
-        language = self.choose_lang()
-        
-        if language == "ar":
-            name = resp.data["name"]
-            resp.data["name"] = get_arabic_translated(name)
-        
-        return Response(
-            resp.data
-            , status=status.HTTP_200_OK
-            , headers=self.get_success_headers(resp.data))
-    
     def list(self, request, *args, **kwargs):
-        """
-        get all records, then see if there a change in language
-        if there is a change, it translate the name attr
-        """
+        third_field = choose_lang(request)
         
-        resp = super().list(request, *args, **kwargs)
-        language = self.choose_lang()
-        
-        if language == "ar":
-            for ordered_dict in resp.data:
-                name = ordered_dict["name"]
-                ordered_dict["name"] = get_arabic_translated(name)
-        
-        return Response(
-            resp.data
-            , status=status.HTTP_200_OK
-            , headers=self.get_success_headers(resp.data))
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, fields={"id", "parent", third_field}, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
-    def choose_lang(self):
-        """
-        this function checking two things:
-        1] if there is a language header 
-        2] and if there is a record with the same IP Address
+    def retrieve(self, request, *args, **kwargs):
+        third_field = choose_lang(request)
         
-        if not 1] and 2] => return language from DB
-        if 1] and 2] => update language from DB, then return it
-        if 1] and not 2] => create UserIP model record, then return language
-        
-        """
-        
-        IP_Address = self.request.META.get("REMOTE_ADDR")
-        language_code = self.request.headers.get("Accept-Language")
-        obj = UserIP.objects.filter(ip_address=IP_Address)
-        
-        if obj.exists():
-            obj = obj.first()
-            if language_code:
-                obj.language_code = language_code
-                obj.save()
-        
-        elif not obj.exists():
-            obj = UserIP.objects.create(
-                ip_address=IP_Address
-                , language_code=language_code)
-        
-        return obj.language_code
-    
-    def perform_create(self, serializer):
-        """
-        edit the pre-built function just to return the model instance after saving
-        """
-        return serializer.save()
-    
-    def get_parent(self, parent_parameter):
-        parent_parameter = int(parent_parameter)
-        parent_instance = Category.objects.get(id=parent_parameter)
-        return parent_instance
-    
-    def assign_parent(self, parent_parameter, child_instance):
-        parent_instance = self.get_parent(parent_parameter)
-        child_instance.parent = parent_instance
-        child_instance.save()
-    
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        child_instance = self.perform_create(serializer)
-        
-        if request.data.get("parent"):
-            parent_parameter = request.data.get("parent")
-            self.assign_parent(parent_parameter, child_instance)
-        
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-    
-    def update(self, request, *args, **kwargs):
-        if request.data.get("parent"):
-            parent_parameter = request.data["parent"]
-            child_instance = Category.objects.select_related("parent").get(id=int(self.kwargs["pk"]))
-            self.assign_parent(parent_parameter, child_instance)
-        return super().update(request, *args, **kwargs)
-
-
-@decorators.api_view(["GET", ])
-def parent_sub_category(request, pk):
-    queryset = Category.objects.filter(parent=pk)
-    serialized_data = CategorySerializer(queryset, many=True)
-    return Response(
-        serialized_data.data
-        , status=status.HTTP_200_OK)
-
-
-@decorators.api_view(["GET", ])
-def search_category(request, name):
-    obj = Category.objects.filter(name__iexact=name)
-    
-    resp = []
-    status_code = status.HTTP_404_NOT_FOUND
-    if obj.exists():
-        resp = CategorySerializer(instance=obj.first())
-        resp = resp.data
-        
-        status_code = status.HTTP_200_OK
-    
-    return Response(resp, status=status_code)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, fields={"id", "parent", third_field})
+        return Response(serializer.data, status=status.HTTP_200_OK)

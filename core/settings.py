@@ -83,16 +83,6 @@ REST_FRAMEWORK = {
     }
 
 
-# CAHCES = {
-#     "default": {
-#         "BACKEND": "django.core.cache.backends.filebased.FileBasedCache"
-#         , "LOCATION": "c:/Users/Shaam/Desktop/cache" # this is the table name
-#         , "TIMEOUT": 3600
-#         , 
-#     }
-# }
-
-
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=20),
