@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.views import APIView
@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from .models import ServiceProvider, ServiceProviderLocations
 from .serializers import ServiceProviderSerializer, ServiceProviderLocationSerializer, CalculateDistanceSerializer
 import geopy.distance
-from .permissions import UpdateAndRetrievePermissions, ListAndCreatePermissions
+from .permissions import UpdateAndRetrievePermissions, ListAndCreatePermissions, UpdateAccountPermissions
 
 
 class CRUDServiceProviders(viewsets.ModelViewSet):
@@ -16,14 +16,14 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
     
     To retrieve a specific service_provider: path => "api/v1/service_providers/<id>/retrieve_profile"
 
-    To update a specific service_provider: path => "api/v1/service_providers/<id>/update_profile"
+    To update a specific service_provider account_status field: path => "api/v1/service_providers/<id>/update_profile"
 
     Permissions on methods:
         - Only admins can List all service providers data
         - Only NOT authenticated users can create a new service provider profile
         - Only admins can change account_status field for a specific service provider
         - Both authenticated users and admins can retrieve a specific service provider profile 
-        - Either admins can edit a service provider profile or a service provider can edit his own profile
+        
         
     Filtering:
         - You can order by any field you choose either in asc or desc order => api/v1/service_providers/?ordering=-password
@@ -35,10 +35,10 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
     permission_classes = (ListAndCreatePermissions, )
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     search_fields = ["first_name", ]
-    permission_classes = [ListAndCreatePermissions, ]
-
-    # A function for updating a service_provider data (Admins only can update account_status field)
-    @action(['PATCH'], detail=True, permission_classes = [UpdateAndRetrievePermissions,])
+    http_method_names = ['get', 'patch', 'retrieve', 'head']
+    
+    # A function to prevent updating a service_provider account_status field by any user (Admins only can update account_status field)
+    @action(['PATCH'], detail = True, permission_classes = [permissions.IsAdminUser,])
     def update_profile(self, request, *args, **kwargs):
         # Check if the user is trying to update the account_status field
         if request.data.get('account_status'):
@@ -60,20 +60,21 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
                 else:
                     # Send an error response
                     return Response({'Error': f'Account status should be in {available_account_status}'})
+                # Check if the user is trying to update any other field
+        else:
+            # Prevent the user from updating any other field
+            return Response({'Error':'Only the account status field can be updated'}, status = status.HTTP_400_BAD_REQUEST)
+        
         return super().partial_update(request, *args, **kwargs)    
     
     
     # A function for retrieving a specific service_provider data 
-    @action(['GET'], detail=True, permission_classes = [UpdateAndRetrievePermissions,])
+    @action(['GET'], detail = True, permission_classes = [UpdateAndRetrievePermissions, ])
     def retrieve_profile(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
     
-    def create(self, request, *args, **kwargs):
-        return Response(
-            {"message": "This method isn't allowed"}
-            , status=status.HTTP_404_NOT_FOUND)
 
-        
+
 class Location(APIView):
      serializer_class = ServiceProviderLocationSerializer
 

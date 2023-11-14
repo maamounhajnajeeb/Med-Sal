@@ -37,3 +37,11 @@ class UpdateAndRetrievePermissions(permissions.BasePermission):
         # Check if the requested method is not in safe_methods(Patch/Update), apply permission that only admins have access to it or a service provider on his own data
         else:
             return obj.user.id == request.user.id or request.user.is_staff
+
+
+class UpdateAccountPermissions(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method not in permissions.SAFE_METHODS:
+            return obj.user.id 
+        else:
+            return False

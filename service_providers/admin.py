@@ -12,6 +12,5 @@ class ServiceProviderLocationsAdmin(OSMGeoAdmin):
     list_display = ['service_provider_id','location']
 
 admin.site.register(ServiceProvider)
-admin.site.register(UpdateRequest)
 
 # admin.site.register(ServiceProviderLocations)

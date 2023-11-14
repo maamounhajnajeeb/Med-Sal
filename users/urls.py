@@ -17,7 +17,7 @@ urlpatterns = [
     path("service_provider_register/", views.register, name="service_provider_register"),
     path("email_confirmation/<str:token>", views.email_confirmation, name="email_confirmation"),
     
-    path('login/', views.login, name='login'),
+    path('login/',TokenObtainPairView.as_view(), name='login'),
     path('refresh_token/', TokenRefreshView.as_view(), name='token_refresh'),
 
     
