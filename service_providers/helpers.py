@@ -8,4 +8,4 @@ def get_file_path(instance, filename):
     month = datetime.datetime.now().month
     year = datetime.datetime.now().year
     day = datetime.datetime.now().day
-    return os.path.join(f"service_providers/{year}/{month}/{day}", new_filename)
+    return os.path.join(f"service_providers/documents/{year}/{month}/{day}/", new_filename)

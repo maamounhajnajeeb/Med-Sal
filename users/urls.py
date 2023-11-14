@@ -10,7 +10,7 @@ app_name = "users"
 urlpatterns = [
     # not authenticated
     path("signup/", views.SignUp.as_view(), name="sign_up"),
-    path("service_provider_register/", views.ServiceProviderRegister.as_view(), name="service_provider_register"),
+    path("sign_up_service_provider/", views.SingUpServiceProvider.as_view(), name="another_signup"),
     
     # not authenticated
     path("email_confirmation/", views.email_confirmation, name="email_confirmation"),
