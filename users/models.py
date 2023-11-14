@@ -50,7 +50,7 @@ class Users(AbstractBaseUser):
     email = models.EmailField(max_length=128, unique=True, null=False)
     phone = models.CharField(max_length=16, unique=True, null=True) # null to be False
     image = models.ImageField(
-        upload_to=get_image_path, default="defaults/default_profile.jpg")
+        upload_to=get_image_path, default="defaults/default_profile.jpg", null=True)
     
     base_type = Types.USER
     user_type = models.CharField(

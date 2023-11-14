@@ -50,31 +50,28 @@ class UsersView(generics.RetrieveUpdateDestroyAPIView):
         return super().update(request, *args, **kwargs)
 
 
-class ServiceProviderRegister(views.APIView):
+class SingUpServiceProvider(generics.CreateAPIView):
     """
     Signing Up service providers only
     """
     serializer_class = serializers.ServiceProviderSerializer
-    permission_classes = (permissions.AllowAny, )
-    
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
+    queryset = ServiceProvider.objects
+    permission_classes = ()
     
     def create(self, request: HttpRequest, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user_instance = serializer.save()
+        resp = super().create(request, *args, **kwargs)
+        pk, email = resp.data["user"]["id"], resp.data["user"]["email"]
         
         confirm = helpers.SendMail(
-            to=user_instance[0], request=request
+            to=email, request=request, out=True
             , view="/api/v1/users/email_confirmation/")
         confirm.send_mail()
         
         models.EmailConfirmation.objects.create(
-            user_id=user_instance[1], token=confirm.token)
+            user_id=pk, email=email, ip_address=self.request.META.get("REMOTE_ADDR"))
         
         return Response({
-            "message": "Confirmation email sent"
+            "message": f"Confirmation email sent to: {email}"
         , }, status=status.HTTP_201_CREATED)
 
 

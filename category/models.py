@@ -21,4 +21,4 @@ class Category(models.Model):
     parent = models.ForeignKey("category.Category", on_delete=models.CASCADE, null=True)
     
     def __str__(self) -> str:
-        return self.name
+        return f"{self.en_name}"
