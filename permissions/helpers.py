@@ -8,8 +8,8 @@ Users = get_user_model()
 
 class Groups:
     
-    def __init__(self, name: str) -> None:
-        self.group = Group.objects.get(name=name)
+    # def __init__(self, name: str) -> None:
+    #     self.group = Group.objects.get(name=name)
     
     # just groups
     def add_group(self, name) -> str:
@@ -34,8 +34,10 @@ class Groups:
         return group
     
     # user with groups
-    def add_user(self, user: Users) -> str:
-        user.groups.add(self.group)
+    def add_user(self, user_id: int, group_id: int) -> str:
+        user = Users.objects.prefetch_related("groups").get(id=user_id)
+        user.groups.add(group_id)
+        user.save()
         
         return f"{user} added to group {self.group.name}"
     
@@ -56,10 +58,17 @@ class Groups:
         
         return True
     
-    def add_permission(self, perm_obj: Permission) -> str:
-        self.group.permissions.add(perm_obj)
+    def add_permission(self, perm_id: int, group_id: str) -> str:
+        group = Group.objects.prefetch_related("permissions").get(id=group_id)
+        group.permissions.add(perm_id)
         
-        return f"{self.group.name} now has the perms: {perm_obj.name}"
+        return f"new perm added to: {group.name}"
+    
+    def add_permissions(self, group_id: str, perms_ids: list[int]) -> str:
+        group = Group.objects.prefetch_related("permissions").get(id=group_id)
+        group.permissions.add(*perms_ids)
+        
+        return f"new perms added to: {group.name}"
     
     def delete_permissions(self, perm_objs: list[Permission]) -> str:
         self.group.permissions.remove(*perm_objs)

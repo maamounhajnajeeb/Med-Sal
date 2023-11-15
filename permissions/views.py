@@ -26,14 +26,10 @@ class PermissionView(viewsets.ModelViewSet):
 
 @decorators.api_view(["POST", ])
 def assign_user_to_group(request: HttpRequest):
+    user_id, group_id = request.data.get("user_id"), request.data.get("group_id")
     
-    user_id = request.data.get("user_id")
-    user_instance = Users.objects.get(id=user_id)
-    
-    group_name = request.data.get("group_name")
-    group = helpers.Groups(group_name)
-    
-    result = group.add_user(user=user_instance)
+    group = helpers.Groups()
+    result = group.add_user(user_id=user_id, group_id=group_id)
     
     return Response({
         "message": result
@@ -42,9 +38,23 @@ def assign_user_to_group(request: HttpRequest):
 
 @decorators.api_view(["POST", ])
 def assign_permission_to_group(request: HttpRequest):
-    pass
+    permission_id, group_id = request.data.get("permission_id"), request.data.get("group_id")
+    
+    group = helpers.Groups()
+    result = group.add_permission(perm_id=permission_id, group_id=group_id)
+    
+    return Response({
+        "message": result
+    }, status=status.HTTP_201_CREATED)
 
 
 @decorators.api_view(["POST", ])
 def assign_permissions_to_group(request: HttpRequest):
-    pass
+    perms_ids, group_id = request.data.get("permissions_ids"), request.data.get("group_id")
+    
+    group = helpers.Groups()
+    result = group.add_permissions(group_id=group_id, perms_ids=list(perms_ids))
+    
+    return Response({
+        "message": result
+    }, status=status.HTTP_201_CREATED)
