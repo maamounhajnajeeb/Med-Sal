@@ -21,35 +21,31 @@ class Groups:
         group = self.group.delete()
         return f"<group deleted: {group.name}>"
     
-    def change_name(self, new_name) -> str:
-        old_name = self.group.name
-        self.group.name = new_name
-        self.group.save()
-        
-        return f"<group with name: {old_name} changed to => :{self.group.name}>"
-    
     def get_group(self, name) -> Group:
         group = Group.objects.get(name=name)
         
         return group
     
+    def get_user_groups(self, user_id: int) -> QuerySet[Group]:
+        return Users.objects.prefetch_related("groups").get(pk=user_id).groups
+    
     # user with groups
-    def add_user(self, user_id: int, group_id: int) -> str:
+    def add_user(self, user_id: int, group_id: int) -> str: #
         user = Users.objects.prefetch_related("groups").get(id=user_id)
         user.groups.add(group_id)
         user.save()
         
-        return f"{user} added to group {self.group.name}"
+        return f"{user} added to group"
     
-    def delete_user_from_group(self, user: Users) -> str:
-        user.groups.delete(self.group)
+    def delete_user_from_group(self, user_id: int, group_id: int) -> str: #
+        user: Users = Users.objects.prefetch_related("groups").get(pk=user_id)
+        user.groups.remove(group_id)
         
-        return f"{user} deleted from group {self.group}"
+        return f"{user} deleted from group"
     
     # permissions with groups
-    def get_permissions(self) -> QuerySet[Permission] | QuerySet:
-        group = self.group
-        return group.permissions.all()
+    def get_permissions(self, group_id: str) -> QuerySet[Permission] | QuerySet: #
+        return Group.objects.prefetch_related("permissions").get(id=group_id).permissions
     
     def has_permission(self, perm_name: str) -> bool:
         permission = self.group.permissions.filter(codename=perm_name)
@@ -58,13 +54,13 @@ class Groups:
         
         return True
     
-    def add_permission(self, perm_id: int, group_id: str) -> str:
+    def add_permission(self, perm_id: int, group_id: str) -> str: #
         group = Group.objects.prefetch_related("permissions").get(id=group_id)
         group.permissions.add(perm_id)
         
         return f"new perm added to: {group.name}"
     
-    def add_permissions(self, group_id: str, perms_ids: list[int]) -> str:
+    def add_permissions(self, group_id: str, perms_ids: list[int]) -> str: #
         group = Group.objects.prefetch_related("permissions").get(id=group_id)
         group.permissions.add(*perms_ids)
         

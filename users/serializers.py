@@ -1,6 +1,7 @@
 from rest_framework import serializers, validators
 
 from django.db import connection
+from django.contrib.auth.models import Group
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 
@@ -44,11 +45,14 @@ class UserSerializer(serializers.ModelSerializer):
         return attrs
     
     def create(self, validated_data):
-        model = self.model_hashing(validated_data.get("user_type"))
-        admin_attrs = self.admins_attrs(validated_data.get("user_type"))
+        user_type= validated_data.get("user_type")
+        model = self.model_hashing(user_type)
+        admin_attrs = self.admins_attrs(user_type)
+        group = Group.objects.get(name=user_type)
         user = model.objects.create_user(**validated_data, **admin_attrs)
         
-        user.save()
+        user.groups.add(group)
+        
         return user
     
     def admins_attrs(self, user_type: str):
@@ -70,6 +74,7 @@ class UserSerializer(serializers.ModelSerializer):
         }
         return models[user_type]
 
+
 class ServiceProviderSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     
@@ -79,7 +84,11 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
                 , "bank_name", "iban", "swift_code")
     
     def create(self, validated_data):
-        user = Users.objects.create(**validated_data.pop('user'))
+        user_data = validated_data.pop('user')
+        user = Users.objects.create_user(**user_data)
+        group = Group.objects.get(name=user_data.get("user_type"))
+        user.groups.add(group)
+        
         category = validated_data.pop("category")
         
         keys = [f"{key}" for key in validated_data.keys()]
@@ -112,4 +121,4 @@ class SpecificUserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Users
-        fields = ("id", "phone", "email", "image", "user_type", "date_joined")
+        fields = ("id", "phone", "email", "image", "user_type", "date_joined", "groups")

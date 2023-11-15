@@ -24,9 +24,37 @@ class PermissionView(viewsets.ModelViewSet):
     serializer_class = serializers.PermissionSerializer
 
 
+@decorators.api_view(["GET", ])
+def group_permissions(request, pk: int):
+    group = helpers.Groups()
+    queryset = group.get_permissions(group_id=pk)
+    
+    serializer = serializers.GroupSerializer(queryset, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+def get_user_group(request: HttpRequest, pk):
+    group = helpers.Groups()
+    query_set = group.get_user_groups(pk)
+    
+    serializer = serializers.GroupSerializer(query_set, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["DELETE", ])
+def execlude_user_from_group(request: HttpRequest):
+    user_id, group_id = int(request.data.get("user_id")), int(request.data.get("group_id"))
+    
+    group = helpers.Groups()
+    group.delete_user_from_group(user_id=user_id, group_id=group_id)
+    
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 @decorators.api_view(["POST", ])
 def assign_user_to_group(request: HttpRequest):
-    user_id, group_id = request.data.get("user_id"), request.data.get("group_id")
+    user_id, group_id = int(request.data.get("user_id")), int(request.data.get("group_id"))
     
     group = helpers.Groups()
     result = group.add_user(user_id=user_id, group_id=group_id)
@@ -38,7 +66,7 @@ def assign_user_to_group(request: HttpRequest):
 
 @decorators.api_view(["POST", ])
 def assign_permission_to_group(request: HttpRequest):
-    permission_id, group_id = request.data.get("permission_id"), request.data.get("group_id")
+    permission_id, group_id = int(request.data.get("permission_id")), int(request.data.get("group_id"))
     
     group = helpers.Groups()
     result = group.add_permission(perm_id=permission_id, group_id=group_id)
@@ -50,7 +78,7 @@ def assign_permission_to_group(request: HttpRequest):
 
 @decorators.api_view(["POST", ])
 def assign_permissions_to_group(request: HttpRequest):
-    perms_ids, group_id = request.data.get("permissions_ids"), request.data.get("group_id")
+    perms_ids, group_id = request.data.get("permissions_ids"), int(request.data.get("group_id"))
     
     group = helpers.Groups()
     result = group.add_permissions(group_id=group_id, perms_ids=list(perms_ids))
