@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # local apps
     "service_providers.apps.ServiceProvidersConfig",
     "appointments.apps.AppointmentsConfig",
+    "permissions.apps.PermissionsConfig",
     "deliveries.apps.DeliveriesConfig",
     "bookings.apps.BookingsConfig",
     "category.apps.CategoryConfig",
