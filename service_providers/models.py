@@ -5,6 +5,8 @@ from users.models import Users, Admins
 
 from django.contrib.gis.db import models
 
+
+
 class ServiceProvider(Users):
     
     class AccountStatus(models.TextChoices):

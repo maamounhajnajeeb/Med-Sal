@@ -1,4 +1,6 @@
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import (
+        AbstractBaseUser, BaseUserManager, PermissionsMixin
+        )
 from django.contrib.auth.hashers import make_password
 from django.db.models.query import QuerySet
 from django.conf import settings
@@ -39,7 +41,7 @@ class MyUserManager(BaseUserManager):
         return self.get(**{self.model.USERNAME_FIELD: email})
 
 
-class Users(AbstractBaseUser):
+class Users(AbstractBaseUser, PermissionsMixin):
     
     class Types(models.TextChoices):
         SERVICE_PROVIDER = ("SERVICE_PROVIDER", "Service_Provider")
