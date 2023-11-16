@@ -6,6 +6,7 @@ from . import views
 
 router = SimpleRouter()
 router.register("groups", views.GroupView, basename="group_view")
+router.register("content_type", views.ContentTypeView, basename="content_type")
 router.register("permissions", views.PermissionView, basename="permission_view")
 
 app_name = "permissions"

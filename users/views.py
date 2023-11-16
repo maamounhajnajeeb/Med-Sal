@@ -6,7 +6,6 @@ from django.http import HttpRequest
 from rest_framework import permissions, decorators
 from rest_framework.response import Response
 from rest_framework import status, generics
-from rest_framework import views, viewsets
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -17,7 +16,6 @@ from . import models, permissions as local_permissions
 from . import throttles as local_throttles
 
 from service_providers.models import ServiceProvider
-from category.models import Category
 
 Users = get_user_model()
 
@@ -28,7 +26,8 @@ class ListAllUsers(generics.ListAPIView):
     then each user can be edited via admin or user
     """
     serializer_class = serializers.UserSerializer
-    permission_classes = (permissions.IsAdminUser, ) # Admin is_staff only
+    permission_classes = (
+        permissions.IsAuthenticated, local_permissions.HasListUsers, )
     queryset = Users.objects
 
 
@@ -38,7 +37,8 @@ class UsersView(generics.RetrieveUpdateDestroyAPIView):
     not for updating email or password
     """
     serializer_class = serializers.SpecificUserSerializer
-    permission_classes = (local_permissions.IsAdminOrOwner, )
+    permission_classes = (
+        permissions.IsAuthenticated, local_permissions.IsAdminOrOwner, )
     queryset = Users.objects
     
     def update(self, request, *args, **kwargs):

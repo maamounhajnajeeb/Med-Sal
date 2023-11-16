@@ -47,8 +47,8 @@ class Groups:
     def get_permissions(self, group_id: str) -> QuerySet[Permission] | QuerySet: #
         return Group.objects.prefetch_related("permissions").get(id=group_id).permissions
     
-    def has_permission(self, perm_name: str) -> bool:
-        permission = self.group.permissions.filter(codename=perm_name)
+    def has_permission(self, perm_name: str, group: Group) -> bool: #
+        permission = group.permissions.filter(codename=perm_name)
         if not permission.exists():
             return False
         

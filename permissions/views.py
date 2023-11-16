@@ -1,7 +1,8 @@
-from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework import viewsets, status
 from rest_framework import decorators
 
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Group, Permission
 from django.contrib.auth import get_user_model
 from django.http import HttpRequest
@@ -10,6 +11,12 @@ from . import serializers, helpers
 
 
 Users = get_user_model()
+
+
+class ContentTypeView(viewsets.ModelViewSet):
+    queryset = ContentType.objects
+    serializer_class = serializers.ContentTypeSerializer
+    permission_classes = ()
 
 
 class GroupView(viewsets.ModelViewSet):
