@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     "rest_framework_gis",
     "rest_framework",
     "corsheaders",
-        
+    
     # local apps
     "service_providers.apps.ServiceProvidersConfig",
     "appointments.apps.AppointmentsConfig",
@@ -224,5 +224,5 @@ LOCALE_PATHS = (
 
 AUTHENTICATION_BACKENDS = [
     'users.backend.CustomAuthBackend',
+    "django.contrib.auth.backends.ModelBackend"
 ]
-
