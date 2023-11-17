@@ -33,11 +33,10 @@ INSTALLED_APPS = [
     "django.contrib.gis", # To deal with gis database
     
     # third party packages
-    "djoser",
     'rest_framework_simplejwt',
+    "rest_framework_gis",
     "rest_framework",
     "corsheaders",
-    "rest_framework_gis",
         
     # local apps
     "service_providers.apps.ServiceProvidersConfig",
@@ -65,41 +64,33 @@ MIDDLEWARE = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
-    ]
+        'rest_framework.permissions.AllowAny'
+        , ]
+    
     , 'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-    ),
-}
+        'rest_framework.authentication.SessionAuthentication'
+        , )
+    
+    , 'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.ScopedRateThrottle'
+        , ]
+    
+    , 'DEFAULT_THROTTLE_RATES': {
+        'un_authenticated': '1/hour'
+        , 'authenticated': '2/hour'
+        , }
+    }
+
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=20),
     'REFRESH_TOKEN_LIFETIME': timedelta(minutes=30),
     "ROTATE_REFRESH_TOKENS": True,
     "UPDATE_LAST_LOGIN": False,
 }
 
-DJOSER = {
-    'LOGIN_FIELD': 'email',
-    'USER_CREATE_PASSWORD_RETYPE': True,
-    'ACTIVATION_URL': "/activate/{uid}/{token}",
-    'SEND_ACTIVATION_EMAIL': True,
-    'SEND_CONFIRMATION_EMAIL': True,
-    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
-    'PASSWORD_RESET_CONFIRM_URL': '/password-reset/{uid}/{token}',
-    'SET_PASSWORD_RETYPE': True,
-    'PASSWORD_RESET_SHOW_EMAIL_NOT_FOUND': True,
-    'TOKEN_MODEL': None,
-    'SERIALIZERS': {
-            'user': 'users.serializers.UserRegistrationSerializer',
-            'user_create': 'users.serializers.UserRegistrationSerializer',
-    },
-    'VIEWS': {
-        'user_create': 'users.views.CustomUserViewSet',
-    }, 
-}
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_USE_TLS = True
@@ -164,7 +155,7 @@ def get_env_details():
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "Med-SAL_Project", # any name # my database name, you can change
+        "NAME": "medsalgis", # any name # my database name, you can change
         "USER": "postgres", # your chosen or default database system name
         "PASSWORD": get_env_details(), #
         "HOST": "", # localhost
@@ -208,6 +199,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "users.Users" #
 
+# GDAL_LIBRARY_PATH = 'C:\OSGeo4W\\bin\gdal307.dll'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/

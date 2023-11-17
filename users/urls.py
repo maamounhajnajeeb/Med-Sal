@@ -1,11 +1,6 @@
 from django.urls import path
 
-from rest_framework_simplejwt.views import TokenObtainSlidingView
-
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView
-    , )
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from . import views
 
@@ -13,25 +8,32 @@ from . import views
 app_name = "users"
 
 urlpatterns = [
+    # not authenticated
     path("signup/", views.SignUp.as_view(), name="sign_up"),
-    path("service_provider_register/", views.register, name="service_provider_register"),
-    path("email_confirmation/<str:token>", views.email_confirmation, name="email_confirmation"),
+    path("sign_up_service_provider/", views.SingUpServiceProvider.as_view(), name="another_signup"),
     
-    path('login/',TokenObtainPairView.as_view(), name='login'),
+    # not authenticated
+    path("email_confirmation/", views.email_confirmation, name="email_confirmation"),
+    path("resend_email_validation/", views.resend_email_validation, name="resend_email_validation"),
+    
+    # authenticated
+    path("accept_new_email/<str:token>", views.accept_email_change, name="accept_email_changing"),
+    path("change_email/", views.change_email, name="email_change"),
+    
+    # authenticated
+    path("check_password/", views.check_password, name="check_password"),
+    path("change_password/", views.change_password, name="change_password"),
+    
+    # not authenticated
+    path("reset_password/", views.reset_password, name="reset_password"),
+    path("enter_code/", views.enter_code, name="enter_code"),
+    path("new_password/", views.new_password, name="new_password"),
+    
+    path("all/", views.ListAllUsers.as_view(), name="all_users"),
+    path("<int:pk>/", views.UsersView.as_view(), name="specific_user"),
+    
+    path('login/', views.LogIn.as_view(), name='login'),
     path('refresh_token/', TokenRefreshView.as_view(), name='token_refresh'),
-
-    
-    # list users
-    # path("users/all/", CustomUserViewSet.as_view({"get": "list"}), name="list-users"),
-    
-    # register users and service provider
-    # path("users/register/", CustomUserViewSet.as_view({"post": "create", "get": "list"}), name="user-registration"),
-    
-    # login
-    # path("users/login/", CustomTokenObtainPairView.as_view(), name="jwt-create"),
-    # path("users/refresh/", CustomTokenRefreshView.as_view(), name="jwt-refresh"),
-    # path("", include("djoser.urls")),
-    # path("", include("djoser.urls.jwt")),
     
     # # resend code
     # path("users/resend-activation/", ResendActivationCodeView.as_view(), name="resend-activation"),
@@ -39,9 +41,3 @@ urlpatterns = [
     # # 2FA
     # path("users/activate-2fa/", Activate2FAView.as_view(), name="activate-2fa"),
 ]
-
-# avtivate user on  (api/v1/users/activation/)
-# resend activation email  (api/v1/users/resend_activation/)
-# update user information and delete (api/v1/users/me/)
-# authenticated set password   (api/v1/users/set_password/)
-# not authenticated CHANGE password  (api/v1/users/reset_password/)  and then confirm (api/users/reset_password_confirm/)

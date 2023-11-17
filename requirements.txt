@@ -9,13 +9,10 @@ defusedxml==0.8.0rc2
 Django==4.2.6
 django-cors-headers==4.3.0
 django-modeltranslation==0.18.11
-django-parler==2.3
-django-parler-rest==2.2
 django-templated-mail==1.1.1
 djangorestframework==3.14.0
 djangorestframework-gis==1.0
 djangorestframework-simplejwt==5.3.0
-djoser==2.2.0
 docopt==0.6.2
 environs==9.5.0
 idna==3.4

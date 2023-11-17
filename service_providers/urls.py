@@ -15,6 +15,11 @@ urlpatterns = [
 
     path('', include(router.urls)),
 
+    path('profile/update_data/', views.ServiceProviderUpdateRequestCreateAPI.as_view(), ),
+   
+    path('profile/approve_request/<int:pk>/', views.ServiceProviderApproveAPI.as_view()),
+
+
     # path('location', Location.as_view()),
     
     # path('distance', ServiceProviderDistanceListView.as_view())

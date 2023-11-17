@@ -1,9 +1,9 @@
-from django.contrib import admin
+# from django.contrib import admin
 
-from . import models
+# from . import models
 
-# Register your models here.
-admin.site.register(models.Admins)
-# admin.site.register(models.ServiceProvider)
-admin.site.register(models.Users)
-admin.site.register(models.SuperAdmins)
+# # Register your models here.
+# admin.site.register(models.Admins)
+# # admin.site.register(models.ServiceProvider)
+# admin.site.register(models.Users)
+# admin.site.register(models.SuperAdmins)

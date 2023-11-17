@@ -1,81 +1,19 @@
 from rest_framework import serializers, validators
 
+from django.db import connection
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 
-from djoser.serializers import UserCreateSerializer
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from typing import Any, Dict
 
 from users.models import Admins, SuperAdmins
-from category.models import Category
 from service_providers.models import ServiceProvider
-from service_providers.serializers import ServiceProviderSerializer
+
+
 
 Users = get_user_model()
-
-
-class ServiceProviderSerializer(serializers.Serializer):
-    password = serializers.CharField(
-        max_length=64, write_only=True, required=True
-        , validators=[validate_password]
-        , )
-    password2 = serializers.CharField(max_length=64, write_only=True, required=True)
-    email = serializers.EmailField(
-        max_length=64
-        , validators=[validators.UniqueValidator(queryset=Users.objects.all())]
-        , required=True
-        , )
-    category = serializers.IntegerField()
-    business_name = serializers.CharField(max_length=128)
-    bank_name = serializers.CharField(max_length=128)
-    iban = serializers.CharField(max_length=40)
-    swift_code = serializers.CharField(max_length=16)
-    provider_file = serializers.FileField()
-    image = serializers.ImageField()
-    phone = serializers.CharField(max_length=10)
-    user_type = serializers.CharField(max_length=16)
-    
-    # class Meta:
-    #     # model = Users
-    #     fields = (
-    #             "id", "email", "phone", "image", "password"
-    #             , "password2", "user_type", "category", "business_name"
-    #             , "bank_name", "iban", "swift_code", "provider_file"
-    #             , )
-    #     extra_kwargs = {
-    #         'phone': {'required': True},
-    #         'image': {'required': True}
-    #     , }
-    
-    def validate(self, attrs):
-        password, password2 = attrs.get("password"), attrs.pop("password2")
-        if password != password2:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
-        
-        return attrs
-    
-    def create(self, validated_data):
-        user = Users.objects.create_user(
-            password=validated_data['password']
-            , email=validated_data['email']
-            , phone=validated_data['phone']
-            , image=validated_data['image']
-            , user_type=validated_data["user_type"]
-            , )
-        
-        self.create_service_provider(user, validated_data)
-        
-        return user
-    
-    def create_service_provider(self, user: Users, validated_data):
-        category = Category.objects.get(id=validated_data.get("category"))
-        ServiceProvider.objects.create(
-            category=category, user=user
-            , iban=validated_data.get("iban")
-            , bank_name=validated_data.get("bank_name")
-            , swift_code=validated_data.get("swift_code")
-            , provider_file=validated_data.get("provider_file")
-            , business_name=validated_data.get("business_name")
-            )
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -107,16 +45,20 @@ class UserSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         model = self.model_hashing(validated_data.get("user_type"))
-        user = model.objects.create_user(
-            password=validated_data['password']
-            , email=validated_data['email']
-            , phone=validated_data['phone']
-            , image=validated_data['image']
-            , user_type=validated_data["user_type"]
-            , )
+        admin_attrs = self.admins_attrs(validated_data.get("user_type"))
+        user = model.objects.create_user(**validated_data, **admin_attrs)
         
         user.save()
         return user
+    
+    def admins_attrs(self, user_type: str):
+        attrs = dict()
+        if user_type.lower() == "admin":
+            attrs["is_staff"] = True
+        elif user_type.lower() == "super_admin":
+            attrs["is_staff"] = True
+            attrs["is_superuser"] = True
+        return attrs
     
     def model_hashing(self, user_type: str):
         user_type = user_type.lower()
@@ -128,35 +70,46 @@ class UserSerializer(serializers.ModelSerializer):
         }
         return models[user_type]
 
-
-class UserRegistrationSerializer(UserCreateSerializer):
+class ServiceProviderSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
     
-    class Meta(UserCreateSerializer.Meta):
-        model = Users
-        fields = UserCreateSerializer.Meta.fields
-    #     fields = (
-    #         "email", "password", "re_password", "phone"
-    #         , "user_type", "service_provider")
+    class Meta:
+        model = ServiceProvider
+        fields = ("user", "provider_file", "category", "business_name"
+                , "bank_name", "iban", "swift_code")
     
-    # def validate(self, attrs):
-    #     print(attrs)
-    #     return super().validate(attrs)
-    
-    # def create(self, validated_data: dict):
-    #     service_provider = validated_data.pop("service_provider")
-    #     User = Users.objects.create(**validated_data)
-    #     Provider = ServiceProvider.objects.create(user=User, **service_provider)
+    def create(self, validated_data):
+        user = Users.objects.create(**validated_data.pop('user'))
+        category = validated_data.pop("category")
         
-    #     return User
+        keys = [f"{key}" for key in validated_data.keys()]
+        keys = ", ".join(keys)
+        
+        values = [f"'{val}'" for val in validated_data.values()]
+        values = ", ".join(values)
+        
+        keys = keys + ", users_ptr_id, user_id, category_id, account_status, created_at, updated_at"
+        values = values + f", '{user.id}', '{user.id}', '{category.id}', 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP"
+        
+        query = f"insert into service_providers_serviceprovider ({keys}) values ({values})"
+        with connection.cursor() as cur:
+            cur.execute(query)
+        
+        serv_prov_obj = ServiceProvider.objects.select_related("user").last()
+        return serv_prov_obj
 
-# class SignUpSerializer(serializers.ModelSerializer):
+
+class LogInSerializer(TokenObtainPairSerializer):
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, str]:
+        attrs = super().validate(attrs)
+        
+        attrs.update({"id": self.user.id})
+        attrs.update({"user_type": self.user.user_type})
+        return attrs
+
+
+class SpecificUserSerializer(serializers.ModelSerializer):
     
-#     class Meta:
-#         model = Users
-#         fields = ("email", "password", "")
-
-
-class ResetPasswordSerializer(serializers.Serializer):
-    uid = serializers.CharField()
-    token = serializers.CharField()
-
+    class Meta:
+        model = Users
+        fields = ("id", "phone", "email", "image", "user_type", "date_joined")

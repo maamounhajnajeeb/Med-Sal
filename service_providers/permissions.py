@@ -16,16 +16,12 @@ from rest_framework import permissions
 """
 
 # Permissions for Get and Post 
-class ListAndCreatePermissions(permissions.BasePermission):
+class OnlyAdminsCanListPermissions(permissions.BasePermission):
     def has_permission(self, request, view):        
         # Check if the requested method is in safe_methods(List), apply permission that only admins have access to it
         if request.method in permissions.SAFE_METHODS:
             return request.user.is_staff
-        
-        # Check if the requested method is not in safe_methods(Create), un_authenticated users have access to it
-        else:
-            return not request.user.is_authenticated
-
+    
 
 # Permissions for Patch and Retrieve
 class UpdateAndRetrievePermissions(permissions.BasePermission):

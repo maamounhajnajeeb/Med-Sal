@@ -9,5 +9,3 @@ def handle_profile_update_request(sender, **kwargs):
 
     # Get the updated profile data
     updated_data = request.updated_data
-
- 
