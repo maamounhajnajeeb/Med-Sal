@@ -1,9 +1,8 @@
-from .helpers import get_file_path
-
-from category.models import Category
-from users.models import Users, Admins
-
 from django.contrib.gis.db import models
+
+from users.models import Users, Admins
+from category.models import Category
+from .helpers import get_file_path
 
 
 

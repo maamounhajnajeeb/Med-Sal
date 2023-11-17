@@ -29,15 +29,10 @@ urlpatterns = [
     path("enter_code/", views.enter_code, name="enter_code"),
     path("new_password/", views.new_password, name="new_password"),
     
-    path("all/", views.ListAllUsers.as_view(), name="all_users"),
+    path("", views.ListAllUsers.as_view(), name="all_users"),
     path("<int:pk>/", views.UsersView.as_view(), name="specific_user"),
     
     path('login/', views.LogIn.as_view(), name='login'),
     path('refresh_token/', TokenRefreshView.as_view(), name='token_refresh'),
     
-    # # resend code
-    # path("users/resend-activation/", ResendActivationCodeView.as_view(), name="resend-activation"),
-    
-    # # 2FA
-    # path("users/activate-2fa/", Activate2FAView.as_view(), name="activate-2fa"),
 ]
