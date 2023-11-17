@@ -155,7 +155,7 @@ def get_env_details():
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "Med-SAL_Project", # any name # my database name, you can change
+        "NAME": "medsalgis", # any name # my database name, you can change
         "USER": "postgres", # your chosen or default database system name
         "PASSWORD": get_env_details(), #
         "HOST": "", # localhost
@@ -199,7 +199,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "users.Users" #
 
-GDAL_LIBRARY_PATH = 'C:\OSGeo4W\\bin\gdal307.dll'
+# GDAL_LIBRARY_PATH = 'C:\OSGeo4W\\bin\gdal307.dll'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/

@@ -34,7 +34,7 @@ class MyUserManager(BaseUserManager):
         
         return self.create_user(**kwargs)
     
-    def get_by_natural_key(self, email: str | None) -> Any:
+    def get_by_natural_key(self, email: None) -> Any:
         email = self.normalize_email(email)
         return self.get(**{self.model.USERNAME_FIELD: email})
 

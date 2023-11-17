@@ -49,7 +49,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     
     this view offers four api methods
     
-    everybody method: get method (inluding: searching, listing and get specific record)
+    everybody method: get method (including: searching, listing and get specific record)
     admins methods: post, update[patch, put] and delete methods
     
     you can call specific category by its id
@@ -66,7 +66,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
         third_field = choose_lang(request)
         
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, fields={"id", "parent", third_field}, many=True)
+        serializer = self.get_serializer(queryset, fields={"en_name","id", "parent", third_field}, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def retrieve(self, request, *args, **kwargs):

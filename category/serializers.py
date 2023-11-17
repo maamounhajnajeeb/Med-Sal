@@ -27,12 +27,12 @@ class CategorySerializer(serializers.ModelSerializer):
                 self.fields.pop(field_name)
     
     def create(self, validated_data):
-        query = f"insert into category_category (name, ar_name) \
-            values ('{validated_data['name']}', '{validated_data['ar_name']}')"
+        query = f"insert into category_category (en_name, ar_name) \
+            values ('{validated_data['en_name']}', '{validated_data['ar_name']}')"
         
         if validated_data.get("parent"):
-            query = f"insert into category_category (name, ar_name, parent_id) \
-                values ('{validated_data['name']}', '{validated_data['ar_name']}' \
+            query = f"insert into category_category (en_name, ar_name, parent_id) \
+                values ('{validated_data['en_name']}', '{validated_data['ar_name']}' \
                 , '{validated_data['parent'].id}')"
         
         with connection.cursor() as cursor:

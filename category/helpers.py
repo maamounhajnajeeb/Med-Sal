@@ -37,7 +37,7 @@ def choose_lang(request):
 
 
 def searching_func(request: HttpRequest, third_field: str):
-    search_key: str | None = request.query_params.get("query")
+    search_key: str = request.query_params.get("query") # str | None
     text_seq = search_key.split(" ")
     if third_field == "ar_name":
         text_qs = reduce(lambda x, y: x & y

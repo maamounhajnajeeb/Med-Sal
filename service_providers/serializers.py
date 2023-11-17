@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
-from .models import ServiceProvider, ServiceProviderLocations
+from .models import ServiceProvider, ServiceProviderLocations, UpdateProfileRequests
 
 class ServiceProviderSerializer(serializers.ModelSerializer):
     
@@ -13,6 +13,22 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
         
     def validate(self, attrs):
         return super().validate(attrs)
+
+
+class ServiceProviderUpdateRequestSerializer(serializers.ModelSerializer):
+    sent_data = serializers.JSONField(required=True)
+    
+    class Meta:
+        model = UpdateProfileRequests
+        fields = '__all__'
+    
+    
+class ServiceProviderApproveRequestSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = UpdateProfileRequests
+        fields = ['request_status', 'approved_by']
+
 
 # class ServiceProviderLocationSerializer(GeoFeatureModelSerializer):
 
@@ -43,7 +59,4 @@ class CalculateDistanceSerializer(serializers.ModelSerializer):
         fields = ('location', 'origin_lat', 'origin_lng', 'domain')
 
 
-# class UpdatRequestSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = UpdateRequest
-#         fields = '__all__'
+
