@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('bank_name', models.CharField(max_length=128)),
                 ('iban', models.CharField(max_length=40, unique=True)),
                 ('swift_code', models.CharField(max_length=16, unique=True)),
-                ('provider_file', models.FileField(upload_to=service_providers.helpers.get_file_path)),
+                ('provider_file', models.FileField(upload_to=service_providers.helpers.upload_file)),
                 ('account_status', models.CharField(choices=[('rejected', 'Rejected'), ('pending', 'Pending'), ('accepted', 'Accepted')], default='pending', max_length=16)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),

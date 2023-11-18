@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='serviceprovider',
             name='provider_file',
-            field=models.FileField(null=True, upload_to=service_providers.helpers.get_file_path),
+            field=models.FileField(null=True, upload_to=service_providers.helpers.upload_file),
         ),
     ]

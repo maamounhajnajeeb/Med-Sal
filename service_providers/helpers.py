@@ -1,13 +1,21 @@
-from uuid import uuid4
-import datetime, os
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
 
-def get_file_path(instance, filename):
-    extension = os.path.splitext(filename)[1]
+from uuid import uuid4
+import datetime
+
+def upload_file(instance):
+    # renaming
+    extension = instance.name.split()[1]
     new_filename = uuid4().hex + extension
     
-    month = datetime.datetime.now().month
-    year = datetime.datetime.now().year
-    day = datetime.datetime.now().day
+    # choose the location
+    date_obj = datetime.datetime
+    month, year, day = date_obj.now().month, date_obj.now().year, date_obj.now().day
     
-    print(os.path.join(f"service_providers/documents/{year}/{month}/{day}/", new_filename))
-    return os.path.join(f"service_providers/documents/{year}/{month}/{day}/", new_filename)
+    # storaging
+    location = f"{settings.MEDIA_ROOT}/service_providers/documents/{year}/{month}/{day}/"
+    fs = FileSystemStorage(location=location)
+    result = fs.save(name=new_filename, content=instance)
+    
+    return location+result

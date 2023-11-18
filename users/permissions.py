@@ -30,7 +30,7 @@ class HasListUsers(permissions.BasePermission):
     def has_permission(self, request: HttpRequest, view):
         group = helpers.Groups()
         result = group.has_permission("list_users", request.user.groups.first())
-        print(result)
+        
         return result
 
 

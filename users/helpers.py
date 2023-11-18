@@ -1,8 +1,10 @@
+from django.core.files.storage import FileSystemStorage
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.http import HttpRequest
 
-import random
+import datetime, os, random
+from uuid import uuid4
 
 
 Users = get_user_model()
@@ -69,3 +71,21 @@ def generate_code() -> str:
         code += str(random.randint(0, 9))
     
     return code
+
+
+def get_file_path(filename):
+    extension = os.path.splitext(filename)[1]
+    new_filename = uuid4().hex + extension
+    
+    month = datetime.datetime.now().month
+    year = datetime.datetime.now().year
+    day = datetime.datetime.now().day
+    return f"profile_images/{year}/{month}/{day}", new_filename
+
+
+def upload_file(image_obj):
+    image_full_path, image_new_name = get_file_path(image_obj.name)
+    fs = FileSystemStorage(location=image_full_path)
+    fs.save(image_new_name, image_obj)
+    
+    return image_new_name

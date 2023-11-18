@@ -11,6 +11,7 @@ from typing import Any, Dict
 
 from users.models import Admins, SuperAdmins
 from service_providers.models import ServiceProvider
+from service_providers import helpers as service_helpers
 
 
 
@@ -77,11 +78,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ServiceProviderSerializer(serializers.ModelSerializer):
     user = UserSerializer()
+    provider_file = serializers.FileField()
     
     class Meta:
         model = ServiceProvider
         fields = ("user", "provider_file", "category", "business_name"
-                , "bank_name", "iban", "swift_code")
+                , "bank_name", "iban", "swift_code", )
     
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -90,7 +92,14 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
         user.groups.add(group)
         
         category = validated_data.pop("category")
+        validated_data["provider_file"] = service_helpers.upload_file(validated_data.get("provider_file"))
         
+        self.create_query(validated_data, user, category)
+        
+        serv_prov_obj = ServiceProvider.objects.select_related("user").last()
+        return serv_prov_obj
+    
+    def create_query(self, validated_data: dict[str, Any], user: Users, category):
         keys = [f"{key}" for key in validated_data.keys()]
         keys = ", ".join(keys)
         
@@ -104,8 +113,7 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
         with connection.cursor() as cur:
             cur.execute(query)
         
-        serv_prov_obj = ServiceProvider.objects.select_related("user").last()
-        return serv_prov_obj
+        return "Done"
 
 
 class LogInSerializer(TokenObtainPairSerializer):

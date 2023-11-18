@@ -6,6 +6,7 @@ from django.http import HttpRequest
 from rest_framework import permissions, decorators
 from rest_framework.response import Response
 from rest_framework import status, generics
+from rest_framework import parsers
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -57,6 +58,7 @@ class SingUpServiceProvider(generics.CreateAPIView):
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
     permission_classes = (local_permissions.UnAuthenticated, )
+    parser_classes = (parsers.MultiPartParser, )
     
     def create(self, request: HttpRequest, *args, **kwargs):
         resp = super().create(request, *args, **kwargs)
