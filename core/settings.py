@@ -142,7 +142,19 @@ def get_env_details():
     
     return os.getenv("PASSWORD")
 
+# Maamoun
+DATABASES = {
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": "Med-SAL_Project", # my database name, you can change
+        "USER": "postgres", # your chosen or default database system name
+        "PASSWORD": get_env_details(), #
+        "HOST": "", # localhost
+        "PORT": "", # 5432
+    }
+}
 
+# Tareq
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
