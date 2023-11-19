@@ -37,10 +37,11 @@ INSTALLED_APPS = [
     "rest_framework_gis",
     "rest_framework",
     "corsheaders",
-        
+    
     # local apps
     "service_providers.apps.ServiceProvidersConfig",
     "appointments.apps.AppointmentsConfig",
+    "permissions.apps.PermissionsConfig",
     "deliveries.apps.DeliveriesConfig",
     "bookings.apps.BookingsConfig",
     "category.apps.CategoryConfig",
@@ -64,7 +65,7 @@ MIDDLEWARE = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny'
+        'rest_framework.permissions.IsAuthenticated'
         , ]
     
     , 'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -132,16 +133,6 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {        
-#         # 'ENGINE': 'django.contrib.gis.db.backends.spatialite', 
-#     'default': {
-        
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 import os
 from environs import Env
 
@@ -151,17 +142,29 @@ def get_env_details():
     
     return os.getenv("PASSWORD")
 
-
+# Maamoun
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "medsalgis", # any name # my database name, you can change
+        "NAME": "Med-SAL_Project", # my database name, you can change
         "USER": "postgres", # your chosen or default database system name
         "PASSWORD": get_env_details(), #
         "HOST": "", # localhost
         "PORT": "", # 5432
     }
 }
+
+# # Tareq
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.contrib.gis.db.backends.postgis",
+#         "NAME": "Med-SAL_Project", # my database name, you can change
+#         "USER": "postgres", # your chosen or default database system name
+#         "PASSWORD": get_env_details(), #
+#         "HOST": "", # localhost
+#         "PORT": "", # 5432
+#     }
+# }
 
 
 # Password validation
@@ -199,7 +202,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "users.Users" #
 
-# GDAL_LIBRARY_PATH = 'C:\OSGeo4W\\bin\gdal307.dll'
+GDAL_LIBRARY_PATH = 'C:\OSGeo4W\\bin\gdal307.dll'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
@@ -223,5 +226,5 @@ LOCALE_PATHS = (
 
 AUTHENTICATION_BACKENDS = [
     'users.backend.CustomAuthBackend',
+    "django.contrib.auth.backends.ModelBackend"
 ]
-

@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions, generics
 from rest_framework import filters, status
-from rest_framework.decorators import action
 from rest_framework.views import APIView
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import ServiceProvider, ServiceProviderLocations
 from .serializers import *
@@ -120,12 +120,15 @@ class ServiceProviderApproveAPI(APIView):
 class Location(APIView):
      serializer_class = ServiceProviderLocationSerializer
 
-     def get(self,request):
-          queryset = ServiceProviderLocations.objects.all()
-          serializer = ServiceProviderLocationSerializer(queryset, many = True)
-          return Response(serializer.data)
-     
-     def post(self,request):
+class Location(APIView):
+    serializer_class = ServiceProviderLocationSerializer
+    
+    def get(self,request):
+        queryset = ServiceProviderLocations.objects.all()
+        serializer = ServiceProviderLocationSerializer(queryset, many = True)
+        return Response(serializer.data)
+    
+    def post(self,request):
         serializer = ServiceProviderLocationSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -140,14 +143,14 @@ class ServiceProviderDistanceListView(APIView):
         if serializer.is_valid():
             origin = geopy.Point(serializer.validated_data['origin_lat'], serializer.validated_data['origin_lng'])
             domain = serializer.validated_data.get('domain', 100)  # Default domain of 100 km
-
+            
             service_provider_locations = ServiceProviderLocations.objects.all()
             results = []
-
+            
             for location in service_provider_locations:
                 destination = geopy.Point(location.location.y, location.location.x)
                 distance = geopy.distance.distance(origin, destination).km
-
+                
                 if distance <= domain:
                     result = {
                         'service_provider':location.service_provider_id.business_name,
@@ -159,4 +162,3 @@ class ServiceProviderDistanceListView(APIView):
                     return Response({'There is no service provider in the area you are searching in'})
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        

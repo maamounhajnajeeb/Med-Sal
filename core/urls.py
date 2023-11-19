@@ -34,6 +34,9 @@ urlpatterns = [
     
     # category app
     path("api/v1/category/", include("category.urls", namespace="category")),
+    
+    # permissions app
+    path("api/v1/", include("permissions.urls", namespace="permissions")),
 ]
 
 if settings.DEBUG:
