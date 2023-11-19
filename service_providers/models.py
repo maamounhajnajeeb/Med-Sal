@@ -1,5 +1,6 @@
 from typing import Any
 from django.contrib.gis.db import models
+from django.db.models import JSONField
 
 from users.models import Users, Admins
 from category.models import Category
@@ -30,7 +31,6 @@ class ServiceProvider(Users):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        # ordering = ['user__date_joined']
         verbose_name = "ServiceProvider"
         verbose_name_plural = "ServiceProviders"
     
@@ -59,10 +59,13 @@ class ServiceProviderLocations(models.Model):
         verbose_name_plural = "ServiceProviderLocations"
 
 
-# class UpdateRequest(models.Model):
-#     user = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE)
-#     updated_data = JSONField(null=True)
-#     updated_at = models.DateTimeField(auto_now_add = True, null = False)
+class UpdateProfileRequests(models.Model):
+    user_requested = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE)
+    approved_by = models.ForeignKey(Admins, null=True, on_delete = models.CASCADE, related_name='admin_approved_profile_requests')
+    sent_data = JSONField(null=True)
+    updated_at = models.DateTimeField(auto_now_add = True)
+    request_type = models.CharField(max_length = 25, null=True) # Create or Update
+    request_status = models.CharField(max_length = 25,null=True) # Approved or Declined
 
-#     def __str__(self):
-#         return f"UpdateRequest for {self.user.user.username}"
+    def __str__(self):
+        return f"UpdateRequest for {self.user_requested.service_provider.business_name}"
