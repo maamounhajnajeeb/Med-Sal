@@ -6,7 +6,7 @@ from django.http import HttpRequest
 from rest_framework import permissions, decorators
 from rest_framework.response import Response
 from rest_framework import status, generics
-from rest_framework import views, viewsets
+from rest_framework import parsers
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -17,7 +17,6 @@ from . import models, permissions as local_permissions
 from . import throttles as local_throttles
 
 from service_providers.models import ServiceProvider
-from category.models import Category
 
 Users = get_user_model()
 
@@ -28,7 +27,8 @@ class ListAllUsers(generics.ListAPIView):
     then each user can be edited via admin or user
     """
     serializer_class = serializers.UserSerializer
-    permission_classes = (permissions.IsAdminUser, ) # Admin is_staff only
+    permission_classes = (
+        permissions.IsAuthenticated, local_permissions.HasListUsers, )
     queryset = Users.objects
 
 
@@ -38,7 +38,8 @@ class UsersView(generics.RetrieveUpdateDestroyAPIView):
     not for updating email or password
     """
     serializer_class = serializers.SpecificUserSerializer
-    permission_classes = (local_permissions.IsAdminOrOwner, )
+    permission_classes = (
+        permissions.IsAuthenticated, local_permissions.IsAdminOrOwner, )
     queryset = Users.objects
     
     def update(self, request, *args, **kwargs):
@@ -56,7 +57,8 @@ class SingUpServiceProvider(generics.CreateAPIView):
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
-    permission_classes = ()
+    permission_classes = (local_permissions.UnAuthenticated, )
+    parser_classes = (parsers.MultiPartParser, )
     
     def create(self, request: HttpRequest, *args, **kwargs):
         resp = super().create(request, *args, **kwargs)
@@ -80,7 +82,7 @@ class SignUp(generics.CreateAPIView):
     sign up as user, admin, and super_admin
     """
     serializer_class = serializers.UserSerializer
-    permission_classes = (permissions.AllowAny, )
+    permission_classes = (local_permissions.UnAuthenticated, )
     queryset = Users.objects
     
     def create(self, request: HttpRequest, *args, **kwargs):
@@ -102,6 +104,7 @@ class SignUp(generics.CreateAPIView):
 
 
 @decorators.api_view(["GET"])
+@decorators.permission_classes([local_permissions.UnAuthenticated, ])
 def email_confirmation(request: HttpRequest):
     """
     this function is to use after sign up for confirmation email confirmation puprose
@@ -124,6 +127,7 @@ def email_confirmation(request: HttpRequest):
 
 
 @decorators.api_view(["POST", ])
+@decorators.permission_classes([local_permissions.UnAuthenticated, ])
 @decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
 def resend_email_validation(request: HttpRequest):
     """
@@ -235,6 +239,7 @@ def change_password(request: HttpRequest):
 
 
 @decorators.api_view(["POST", ])
+@decorators.permission_classes([local_permissions.UnAuthenticated, ])
 def reset_password(request: HttpRequest):
     """
     first step to unauthenticated users to reset there password
@@ -263,6 +268,7 @@ def reset_password(request: HttpRequest):
 
 
 @decorators.api_view(["GET", ])
+@decorators.permission_classes([local_permissions.UnAuthenticated, ])
 @decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
 def resend_code(request: HttpRequest):
     ip_address = request.META.get("REMOTE_ADDR")
@@ -285,6 +291,7 @@ def resend_code(request: HttpRequest):
 
 
 @decorators.api_view(["POST", ])
+@decorators.permission_classes([local_permissions.UnAuthenticated, ])
 def enter_code(request):
     """
     second step
@@ -306,6 +313,7 @@ def enter_code(request):
 
 
 @decorators.api_view(["POST", ])
+@decorators.permission_classes([local_permissions.UnAuthenticated, ])
 def new_password(request: HttpRequest):
     """
     third step
@@ -336,3 +344,4 @@ class LogIn(TokenObtainPairView):
     just editing the main login to add user(id, user_type) in the serializer
     """
     serializer_class = serializers.LogInSerializer
+    permission_classes = (local_permissions.UnAuthenticated, )

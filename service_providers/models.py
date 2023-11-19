@@ -1,10 +1,13 @@
-from .helpers import get_file_path
-
-from category.models import Category
-from users.models import Users, Admins
-
+from typing import Any
 from django.contrib.gis.db import models
 from django.db.models import JSONField
+
+from users.models import Users, Admins
+from category.models import Category
+
+import os
+
+
 
 class ServiceProvider(Users):
     
@@ -21,7 +24,7 @@ class ServiceProvider(Users):
     bank_name = models.CharField(max_length=128, null=False)
     iban = models.CharField(max_length=40, null=False, unique=True)
     swift_code = models.CharField(max_length=16, null=False, unique=True)
-    provider_file = models.FileField(upload_to=get_file_path, null=True) # null to be False
+    provider_file = models.CharField(max_length=255, null=False)
     account_status = models.CharField(max_length=16,
             choices=AccountStatus.choices, default=AccountStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -30,7 +33,15 @@ class ServiceProvider(Users):
     class Meta:
         verbose_name = "ServiceProvider"
         verbose_name_plural = "ServiceProviders"
-
+    
+    def delete(self, using: Any = ..., keep_parents: bool = ...) -> tuple[int, dict[str, int]]:
+        try:
+            os.remove(self.provider_file)
+            print("removed")
+        except FileNotFoundError:
+            print("No initial image")
+        return super().delete(using, keep_parents)
+    
     def __str__(self):
         return self.business_name
 
