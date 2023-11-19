@@ -17,6 +17,25 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
 
 class ServiceProviderUpdateRequestSerializer(serializers.ModelSerializer):
     sent_data = serializers.JSONField(required=True)
+   
+    def validate(self, data):
+        sent_data = data['sent_data']
+
+        for field_name, field_value in sent_data.items():
+            # Check if the field name exists in the ServiceProvider model
+            if not hasattr(ServiceProvider, field_name):
+                raise serializers.ValidationError(f'Invalid field name: {field_name}')
+            
+        # Check if the 'account_status' field is present in the sent_data
+        if 'account_status'in data['sent_data']:
+            # Raise an error if the 'account_status' field is present
+            raise serializers.ValidationError('Service providers cannot update the account_status ')
+
+        if 'approved_by' in data['sent_data']:
+        # Remove the 'approved_by' field from the sent_data
+            raise serializers.ValidationError('Service providers cannot update the approved_by field ')
+
+        return super().validate(data)
     
     class Meta:
         model = UpdateProfileRequests
