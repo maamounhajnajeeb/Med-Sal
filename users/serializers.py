@@ -9,10 +9,9 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from typing import Any, Dict
 
+from .provider_file import FileMixin
 from users.models import Admins, SuperAdmins
 from service_providers.models import ServiceProvider
-from service_providers import helpers as service_helpers
-
 
 
 Users = get_user_model()
@@ -76,7 +75,7 @@ class UserSerializer(serializers.ModelSerializer):
         return models[user_type]
 
 
-class ServiceProviderSerializer(serializers.ModelSerializer):
+class ServiceProviderSerializer(serializers.ModelSerializer, FileMixin):
     user = UserSerializer()
     provider_file = serializers.FileField()
     
@@ -92,7 +91,7 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
         user.groups.add(group)
         
         category = validated_data.pop("category")
-        validated_data["provider_file"] = service_helpers.upload_file(validated_data.get("provider_file"))
+        validated_data["provider_file"] = self.upload(validated_data["provider_file"])
         
         self.create_query(validated_data, user, category)
         
