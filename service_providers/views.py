@@ -1,13 +1,17 @@
 from rest_framework import viewsets, permissions
+from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework import filters, status
 from rest_framework.views import APIView
-from rest_framework.decorators import action
-from rest_framework.response import Response
+
 from .models import ServiceProvider, ServiceProviderLocations
 from .serializers import *
-import geopy.distance
 from .permissions import *
 from users.models import *
+
+import geopy.distance
+
+
 
 class CRUDServiceProviders(viewsets.ModelViewSet):
     
@@ -72,10 +76,9 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
     @action(['GET'], detail = True) #, permission_classes = [UpdateAndRetrievePermissions, ] 
     def retrieve_profile(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
-    
 
 
-
+# to be modelviewset
 class ServiceProviderUpdateRequestCreateAPI(APIView):
     """
         A service_provider can request an update for his profile by this API
@@ -90,6 +93,9 @@ class ServiceProviderUpdateRequestCreateAPI(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # serializer.is_valid(raise_exception=True)
+        # serializer.save()
+        # return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class ServiceProviderApproveAPI(APIView):
@@ -106,16 +112,23 @@ class ServiceProviderApproveAPI(APIView):
             update_request = UpdateProfileRequests.objects.filter(user_requested=service_provider, request_type='update').first()
 
         except ServiceProvider.DoesNotExist:
-            return Response({"Error":f"No service provider with id = {pk}"},status=status.HTTP_404_NOT_FOUND)
+            return Response({
+                "Error":f"No service provider with id = {pk}"}
+                ,status=status.HTTP_404_NOT_FOUND)
         
         if not update_request:
-            return Response({"Error":f"service provider with id = {pk} did not requeted an update"},status=status.HTTP_404_NOT_FOUND)
-
+            return Response(
+                {"Error":f"service provider with id = {pk} did not requeted an update"}
+                ,status=status.HTTP_404_NOT_FOUND)
+        
         serializer = ServiceProviderApproveRequestSerializer(update_request, data=request.data)
-
+        
+        # serializer.is_valid(raise_exception=True)
+        # serializer.save()
+        
         if serializer.is_valid():
             serializer.save()
-
+            
             if request.data['request_status'] == 'approved':
                 admin_id = request.data['approved_by']
                 
@@ -125,32 +138,28 @@ class ServiceProviderApproveAPI(APIView):
                 sent_data = update_request.sent_data 
                 
                 # Update the service provider data with the updated values from the sent data
+                # wow 
                 for key, value in sent_data.items():
                     setattr(service_provider, key, value)
                 service_provider.save()
-
+                
                 # Updates in the UpdateProfileRequests model
                 update_request.approved_by = Admins.objects.get(pk=admin_id)
                 update_request.request_status = 'approved'
                 update_request.save()
-
+                
             else:
                 update_request.request_status = 'declined'
                 update_request.save()
-
+                
             return Response({f"Profile data for user with id = {pk} updated successfully "}, status=status.HTTP_200_OK)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
-
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) # to be deleted
 
 
 
 class Location(APIView):
-     serializer_class = ServiceProviderLocationSerializer
+    serializer_class = ServiceProviderLocationSerializer
 
 class Location(APIView):
     serializer_class = ServiceProviderLocationSerializer
