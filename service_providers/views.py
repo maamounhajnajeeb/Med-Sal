@@ -4,10 +4,10 @@ from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import ServiceProvider, ServiceProviderLocations
-from .serializers import *
+from service_providers import serializers 
 import geopy.distance
-from .permissions import *
-from users.models import *
+from service_providers import permissions
+from users.models import Admins
 from rest_framework.permissions import IsAdminUser
 
 class CRUDServiceProviders(viewsets.ModelViewSet):
@@ -27,8 +27,8 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
     """
     
     queryset = ServiceProvider.objects
-    serializer_class = ServiceProviderSerializer
-    # permission_classes = (OnlyAdminsCanListPermissions, )
+    serializer_class = serializers.ServiceProviderSerializer
+    # permission_classes = (permissions.OnlyAdminsCanListPermissions, )
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     search_fields = ["first_name", ]
     http_method_names = ['get', 'retrieve', 'head']
@@ -48,7 +48,7 @@ class ServiceProviderUpdateRequestCreateAPI(APIView):
             -the data he want to update as a JSONfield data => sent_data:{data}
     """
     def post(self, request):
-        serializer = ServiceProviderUpdateRequestSerializer(data=request.data)
+        serializer = serializers.ServiceProviderUpdateRequestSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -61,8 +61,8 @@ class ListUpdateRequests(generics.ListAPIView):
         Only Admins can access this API
     """
     # permission_classes = (IsAdminUser,)
-    serializer_class = ServiceProviderUpdateRequestSerializer
-    queryset = UpdateProfileRequests.objects.all()
+    serializer_class = serializers.ServiceProviderUpdateRequestSerializer
+    queryset = serializers.UpdateProfileRequests.objects.all()
 
 
 class ServiceProviderApproveAPI(APIView):
@@ -76,7 +76,7 @@ class ServiceProviderApproveAPI(APIView):
         
         try:
             service_provider = ServiceProvider.objects.get(pk=pk)
-            update_request = UpdateProfileRequests.objects.filter(user_requested=service_provider, request_type='update').first()
+            update_request = serializers.UpdateProfileRequests.objects.filter(user_requested=service_provider, request_type='update').first()
 
         except ServiceProvider.DoesNotExist:
             return Response({"Error":f"No service provider with id = {pk}"},status=status.HTTP_404_NOT_FOUND)
@@ -84,7 +84,7 @@ class ServiceProviderApproveAPI(APIView):
         if not update_request:
             return Response({"Error":f"service provider with id = {pk} did not requeted an update"},status=status.HTTP_404_NOT_FOUND)
 
-        serializer = ServiceProviderApproveRequestSerializer(update_request, data=request.data)
+        serializer = serializers.ServiceProviderApproveRequestSerializer(update_request, data=request.data)
 
         if serializer.is_valid():
             serializer.save()
@@ -118,18 +118,18 @@ class ServiceProviderApproveAPI(APIView):
 
 
 class Location(APIView):
-     serializer_class = ServiceProviderLocationSerializer
+     serializer_class = serializers.ServiceProviderLocationSerializer
 
 class Location(APIView):
-    serializer_class = ServiceProviderLocationSerializer
+    serializer_class = serializers.ServiceProviderLocationSerializer
     
     def get(self,request):
         queryset = ServiceProviderLocations.objects.all()
-        serializer = ServiceProviderLocationSerializer(queryset, many = True)
+        serializer = serializers.ServiceProviderLocationSerializer(queryset, many = True)
         return Response(serializer.data)
     
     def post(self,request):
-        serializer = ServiceProviderLocationSerializer(data=request.data)
+        serializer = serializers.ServiceProviderLocationSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status = status.HTTP_201_CREATED)
@@ -139,7 +139,7 @@ class Location(APIView):
 
 class ServiceProviderDistanceListView(APIView):
     def post(self, request):
-        serializer = CalculateDistanceSerializer(data=request.data)
+        serializer = serializers.CalculateDistanceSerializer(data=request.data)
         if serializer.is_valid():
             origin = geopy.Point(serializer.validated_data['origin_lat'], serializer.validated_data['origin_lng'])
             domain = serializer.validated_data.get('domain', 100)  # Default domain of 100 km
