@@ -51,28 +51,23 @@ class UsersView(generics.RetrieveUpdateDestroyAPIView):
         return super().update(request, *args, **kwargs)
 
 
-class ServiceProviderView(viewsets.ModelViewSet):
+class ServiceProviderList(generics.ListAPIView):
     """
-    Signing Up service providers only
+    showing service providers list for admins only
+    """
+    serializer_class = serializers.ServiceProviderSerializer
+    queryset = ServiceProvider.objects
+    permission_classes = (
+        permissions.IsAuthenticated, local_permissions.ListServiceProvider, )
+
+
+class ServiceProviderCreate(generics.CreateAPIView):
+    """
+    signing up service providers for everybody
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
     permission_classes = (local_permissions.UnAuthenticated, )
-    
-    def update(self, request, *args, **kwargs):
-        self.update_user_instance()
-        return super().update(request, *args, **kwargs)
-    
-    def update_user_instance(self):
-        self.request._mutable = True
-        user_data = self.request.data.pop("user", None)
-        if user_data:
-            pk = self.kwargs.get("pk")
-            user_instance = Users.objects.filter(pk=pk)
-            if user_data.get("image"):
-                imag_path = user_instance.image.path
-                os.remove(imag_path)
-            user_instance.update(**user_data)
     
     def create(self, request: HttpRequest, *args, **kwargs):
         resp = super().create(request, *args, **kwargs)
@@ -89,9 +84,39 @@ class ServiceProviderView(viewsets.ModelViewSet):
         return Response({
             "message": f"Confirmation email sent to: {email}"
         , }, status=status.HTTP_201_CREATED)
+
+
+class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Signing Up service providers only
+    """
+    serializer_class = serializers.ServiceProviderSerializer
+    queryset = ServiceProvider.objects
+    permission_classes = (
+        permissions.IsAuthenticated, local_permissions.HavePermission, )
+    
+    def update(self, request, *args, **kwargs):
+        self.update_user_instance()
+        return super().update(request, *args, **kwargs)
+    
+    def update_user_instance(self):
+        """
+        updating the user_instance in the service_provider record
+        """
+        self.request._mutable = True
+        user_data = self.request.data.pop("user", None)
+        if user_data:
+            pk = self.kwargs.get("pk")
+            user_instance = Users.objects.filter(pk=pk)
+            if user_data.get("image"):
+                imag_path = user_instance.image.path
+                os.remove(imag_path)
+            user_instance.update(**user_data)
     
     def perform_destroy(self, instance):
-        
+        """
+        remove files from the media folder before destroying record
+        """
         def delete_file(path):
             os.remove(path)
         

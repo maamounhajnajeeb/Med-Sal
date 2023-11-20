@@ -1,20 +1,21 @@
 from django.urls import path
 
-from rest_framework.routers import SimpleRouter
-
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from . import views
-
-router = SimpleRouter()
-router.register("service_provider", views.ServiceProviderView, basename="service_provider")
-
 
 app_name = "users"
 
 urlpatterns = [
     # not authenticated
     path("signup/", views.SignUp.as_view(), name="sign_up"),
+    path("service_providers/", views.ServiceProviderCreate.as_view(), name="service_provider"),
+    
+    # admin
+    path("service_providers/all/", views.ServiceProviderList.as_view(), name="service_provider_list"),
+    
+    # mixed: safe method for everybody, else owners and admins only
+    path("service_provider/<int:pk>/", views.ServiceProviderRUD.as_view(), name="service_provider_rud"),
     
     # not authenticated
     path("email_confirmation/", views.email_confirmation, name="email_confirmation"),
@@ -39,5 +40,3 @@ urlpatterns = [
     path('login/', views.LogIn.as_view(), name='login'),
     path('refresh_token/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
-
-urlpatterns += router.urls
