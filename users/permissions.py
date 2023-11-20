@@ -37,4 +37,3 @@ class HasListUsers(permissions.BasePermission):
 class UnAuthenticated(permissions.BasePermission):
     def has_permission(self, request: HttpRequest, view):
         return not request.user.is_authenticated
-    
