@@ -1,5 +1,8 @@
 from rest_framework import permissions
 
+from django.http import HttpRequest
+
+
 """
 - Admins Permissions (staff user):
     - Modify any service_provider data 
@@ -41,3 +44,9 @@ class UpdateAccountPermissions(permissions.BasePermission):
             return obj.user.id 
         else:
             return False
+
+
+class UnAuthenticated(permissions.BasePermission):
+    def has_permission(self, request: HttpRequest, view):
+        return not request.user.is_authenticated
+    
