@@ -1,11 +1,8 @@
-from typing import Any
 from django.contrib.gis.db import models
 from django.db.models import JSONField
 
 from users.models import Users, Admins
 from category.models import Category
-
-import os
 
 
 
@@ -19,7 +16,7 @@ class ServiceProvider(Users):
     user = models.OneToOneField(Users, on_delete=models.CASCADE, related_name='service_provider', null=False)
     approved_by = models.ForeignKey(Admins,
                 on_delete=models.PROTECT, null=True, related_name='accepted_services')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="services_providerd")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="services_providers")
     business_name = models.CharField(max_length=128, null=False, unique=True)
     bank_name = models.CharField(max_length=128, null=False)
     iban = models.CharField(max_length=40, null=False, unique=True)
@@ -40,7 +37,7 @@ class ServiceProvider(Users):
 
 
 class ServiceProviderLocations(models.Model):
-    service_provider = models.ForeignKey(ServiceProvider, on_delete = models.CASCADE)
+    service_provider = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE, related_name="locations")
     location = models.PointField(srid=4326, null=True, blank=True) # null and blank must be False
     opening = models.TimeField(null=False)
     closing = models.TimeField(null=False)
@@ -60,6 +57,6 @@ class UpdateProfileRequests(models.Model):
     updated_at = models.DateTimeField(auto_now_add=True)
     request_type = models.CharField(max_length = 25, null=True) # Create or Update # no need
     request_status = models.CharField(max_length = 25,null=True) # Approved, Declined or Pending
-
+    
     def __str__(self):
         return f"UpdateRequest for {self.user_requested.service_provider.business_name}"

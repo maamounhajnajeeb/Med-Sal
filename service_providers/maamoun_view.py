@@ -2,9 +2,14 @@ from rest_framework import generics, decorators
 from rest_framework import permissions, status
 from rest_framework.response import Response
 
+from django.http import HttpRequest
+
+from category.models import Category
+
 from . import permissions as local_permissions
 from . import models, serializers
 
+from functools import reduce
 
 
 class LocationRUD(generics.RetrieveUpdateDestroyAPIView):
@@ -35,3 +40,4 @@ def show_providers_locations(request):
     serializer = serializers.LocationSerializerSafe(queryset, many=True)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
+

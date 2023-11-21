@@ -24,6 +24,7 @@ urlpatterns = [
     path("locations/create/", maamoun_view.CreateLocation.as_view(), name="create_location"),
     path("location/<int:pk>/", maamoun_view.LocationRUD.as_view(), name="location_rud"),
     
+    
     # path('location', Location.as_view()),
     # path('distance', ServiceProviderDistanceListView.as_view())
 ]
