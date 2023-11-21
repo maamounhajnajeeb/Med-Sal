@@ -75,3 +75,5 @@ class CategoryViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance, fields={"id", "parent", third_field})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+

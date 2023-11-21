@@ -34,29 +34,23 @@ class ServiceProvider(Users):
         verbose_name = "ServiceProvider"
         verbose_name_plural = "ServiceProviders"
     
-    # def delete(self, using: Any = ..., keep_parents: bool = ...) -> tuple[int, dict[str, int]]:
-    #     try:
-    #         os.remove(self.provider_file.path)
-    #         print("removed")
-    #     except FileNotFoundError:
-    #         print("No initial image")
-    #     return super().delete(using, keep_parents)
-    
     def __str__(self):
         return self.business_name
 
 
+
 class ServiceProviderLocations(models.Model):
-    service_provider_id = models.ForeignKey(ServiceProvider, on_delete = models.CASCADE)
+    service_provider = models.ForeignKey(ServiceProvider, on_delete = models.CASCADE)
     location = models.PointField(srid=4326, null=True, blank=True) # null and blank must be False
     opening = models.TimeField(null=False)
     closing = models.TimeField(null=False)
-    crew = models.CharField(max_length=32, null=False)
+    crew = models.TextField(null=False)
     created_at = models.DateTimeField(auto_now_add=True, null=False)
     
     class Meta:
         verbose_name = "ServiceProviderLocations"
         verbose_name_plural = "ServiceProviderLocations"
+
 
 
 class UpdateProfileRequests(models.Model):

@@ -49,11 +49,27 @@ class ServiceProviderApproveRequestSerializer(serializers.ModelSerializer):
 #                   'created_at',
 #                   )
 
-class ServiceProviderLocationSerializer(serializers.ModelSerializer):
+class LocationSerializerSafe(serializers.ModelSerializer):
+    service_provider = serializers.StringRelatedField()
+    
     class Meta:
         model = ServiceProviderLocations
         fields = '__all__'
-        # read_only_fields = ('location', )
+
+
+class LocationSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = ServiceProviderLocations
+        fields = '__all__'
+
+
+class ServiceProviderLocationSerializer(serializers.ModelSerializer):
+    service_provider = serializers.StringRelatedField()
+    
+    class Meta:
+        model = ServiceProviderLocations
+        fields = '__all__'
 
 
 class CalculateDistanceSerializer(serializers.ModelSerializer):

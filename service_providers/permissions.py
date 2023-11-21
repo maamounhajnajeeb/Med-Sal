@@ -2,6 +2,9 @@ from rest_framework import permissions
 
 from django.http import HttpRequest
 
+from permissions.helpers import Groups
+from utils.method_truth import request_method_table
+
 
 """
 - Admins Permissions (staff user):
@@ -49,4 +52,18 @@ class UpdateAccountPermissions(permissions.BasePermission):
 class UnAuthenticated(permissions.BasePermission):
     def has_permission(self, request: HttpRequest, view):
         return not request.user.is_authenticated
-    
+
+
+class LocationsPermissions(permissions.BasePermission):
+    def has_permission(self, request: HttpRequest, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        if request.user.is_anonymous:
+            return False
+        
+        codename = f"{request_method_table(request.method)}_serviceproviderlocations"
+        group = Groups()
+        result = group.has_permission(codename, request.user.groups.first())
+        
+        return result
