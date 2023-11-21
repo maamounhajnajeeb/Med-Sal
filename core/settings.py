@@ -143,18 +143,6 @@ def get_env_details():
     return os.getenv("PASSWORD")
 
 # Maamoun
-DATABASES = {
-    "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "Med-SAL_Project", # my database name, you can change
-        "USER": "postgres", # your chosen or default database system name
-        "PASSWORD": get_env_details(), #
-        "HOST": "", # localhost
-        "PORT": "", # 5432
-    }
-}
-
-# # Tareq
 # DATABASES = {
 #     "default": {
 #         "ENGINE": "django.contrib.gis.db.backends.postgis",
@@ -165,6 +153,18 @@ DATABASES = {
 #         "PORT": "", # 5432
 #     }
 # }
+
+# Tareq
+DATABASES = {
+    "default": {
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "NAME": "med_sal_gis", # my database name, you can change
+        "USER": "postgres", # your chosen or default database system name
+        "PASSWORD": get_env_details(), #
+        "HOST": "", # localhost
+        "PORT": "", # 5432
+    }
+}
 
 
 # Password validation
@@ -202,7 +202,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "users.Users" #
 
-GDAL_LIBRARY_PATH = 'C:\OSGeo4W\\bin\gdal307.dll'
+# GDAL_LIBRARY_PATH = 'C:\OSGeo4W\\bin\gdal307.dll'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/

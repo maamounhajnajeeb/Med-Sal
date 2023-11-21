@@ -11,12 +11,9 @@ app_name = "serivce_providers"
 router = DefaultRouter()
 # router.register("", views.CRUDServiceProviders, basename='providers_crud') # Tareq
 
+router.register("profile/update_requests", views.ServiceProviderUpdateRequestViewSet, basename='update_requests_crud')
+
 urlpatterns = [
-    path('profile/update_data/', views.ServiceProviderUpdateRequestCreateAPI.as_view(), ),
-    path('profile/approve_request/<int:pk>/', views.ServiceProviderApproveAPI.as_view()),
-    
-    # path('location', Location.as_view()),
-    # path('distance', ServiceProviderDistanceListView.as_view())
 ]
 
 urlpatterns += router.urls

@@ -1,178 +1,134 @@
+from rest_framework import viewsets
+from rest_framework import filters, status
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import viewsets, status
-from rest_framework.views import APIView
-from rest_framework import filters, generics
-
-from django.http import HttpRequest
-
-from . import serializers, permissions as local_permissions
-from .models import ServiceProvider, ServiceProviderLocations
-
-from users import helpers as user_helpers
-from users import models as user_models
-
+from .models import ServiceProvider, ServiceProviderLocations, UpdateProfileRequests
 import geopy.distance
+from service_providers import permissions, serializers
+from users.models import Admins
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 
 
-# class CRUDServiceProviders(viewsets.ModelViewSet):
+class CRUDServiceProviders(viewsets.ModelViewSet):
+  
+    queryset = ServiceProvider.objects
+    serializer_class = serializers.ServiceProviderSerializer
+    permission_classes = (IsAdminUser, )
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    search_fields = ["first_name", ]
+    http_method_names = ['get', 'retrieve', 'head']
+
+
+    @action(['GET'], detail = True, permission_classes = (IsAuthenticated,) ) #, 
+    def retrieve_profile(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
     
-#     """
-#     List and Create: path => "api/v1/service_provider/"
-    
-#     To retrieve a specific service_provider: path => "api/v1/service_providers/<id>/retrieve_profile"
-
-#     To update a specific service_provider account_status field: path => "api/v1/service_providers/<id>/update_profile"
-
-#     Permissions on methods:
-#         - Only admins can List all service providers data
-#         - Only NOT authenticated users can create a new service provider profile
-#         - Only admins can change account_status field for a specific service provider
-#         - Both authenticated users and admins can retrieve a specific service provider profile 
-        
-        
-#     Filtering:
-#         - You can order by any field you choose either in asc or desc order => api/v1/service_providers/?ordering=-password
-#         - You can search by name = > api/v1/service_providers/?search=<service_provider_name>
-#     """
-    
-#     queryset = ServiceProvider
-#     serializer_class = serializers.ServiceProviderSerializer
-#     # permission_classes = (OnlyAdminsCanListPermissions, )
-#     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-#     search_fields = ["first_name", ]
-#     http_method_names = ['get', 'patch', 'retrieve', 'head']
-    
-#     # A function to prevent updating a service_provider account_status field by any user (Admins only can update account_status field)
-#     @action(['PATCH'], detail = True)#[permissions.IsAdminUser,] OR # , permission_classes = [UpdateAndRetrievePermissions,]
-#     def update_profile(self, request, *args, **kwargs):
-#         # Check if the user is trying to update the account_status field
-#         if request.data.get('account_status'):
-#             # Check If the user is a service provider, he can't update the account_status field
-#             if not request.user.is_staff:
-#                 # Send an error response
-#                 return Response({'Error': 'Service providers cannot update the account_status field'},status=status.HTTP_400_BAD_REQUEST)
-#             else:
-#                 available_account_status = ['accepted','pending','rejected']
-#                 new_account_status = request.data.get('account_status')
-#                 # Check if the new account status is either accepted or pending or rejected
-#                 if new_account_status in available_account_status:
-#                     # Update the account status
-#                     obj = ServiceProvider.objects.get(pk=kwargs['pk'])
-#                     obj.account_status = new_account_status
-#                     obj.save()
-#                     # Send a success response
-#                     return Response({'Message': f'Account status changed to {new_account_status}'})
-#                 else:
-#                     # Send an error response
-#                     return Response({'Error': f'Account status should be in {available_account_status}'})
-#                 # Check if the user is trying to update any other field
-#         else:
-#             # Prevent from updating any other field
-#             return Response({'Error':'Only the account status field can be updated'}, status = status.HTTP_400_BAD_REQUEST)
-        
-#         return super().partial_update(request, *args, **kwargs)    
-    
-    
-#     # A function for retrieving a specific service_provider data 
-#     @action(['GET'], detail = True) #, permission_classes = [UpdateAndRetrievePermissions, ] 
-#     def retrieve_profile(self, request, *args, **kwargs):
-#         return super().retrieve(request, *args, **kwargs)
 
 
-# to be modelviewset
-class ServiceProviderUpdateRequestCreateAPI(APIView):
+class ServiceProviderUpdateRequestViewSet(viewsets.ModelViewSet):
     """
-        A service_provider can request an update for his profile by this API
-        he should provide :
-            -user_requested (his id) Note: this will be removed when we solve the password hashing problem so it can be done automatically and get the id from the user who requests
-            -request_type (either update or create)
-            -the data he want to update as a JSONfield data => sent_data:{data}
+
+    Path => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests
+    
+    GET Methods (Only Admins):
+        -List update requests via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests
+        -List a specific update request using request id via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests/<int:pk> 
+    
+    POST Method (Only Service Providers):
+        -Create a new update request via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests/    
+            -sent_data field is required (JSON field)
+  
+    PATCH Method (Only Admins):
+        -Approve or decline an update request via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests/<int:pk>/approve_or_decline
+            - request_status field is required (Approved or Declined)
     """
-    def post(self, request):
-        serializer = serializers.ServiceProviderUpdateRequestSerializer(data=request.data)
+    
+    queryset = UpdateProfileRequests.objects.all()
+    serializer_class = serializers.ServiceProviderUpdateRequestSerializer
+    permission_classes = (permissions.UpdateRequestsPermission,)
+
+    # Service_provider can send an update request
+    def create(self, request, *args, **kwargs):
+        service_provider_id = request.user.id
+        serializer = self.get_serializer(data=request.data)
+        
         if serializer.is_valid():
-            serializer.save()
+            service_provider = ServiceProvider.objects.get(pk=service_provider_id)
+            serializer.save(user_requested = service_provider)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        # serializer.is_valid(raise_exception=True)
-        # serializer.save()
-        # return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class ServiceProviderApproveAPI(APIView):
-    """
-        Admins can approve or decline requests for service_providers by this API
-        the admin should provide:
-            - approved_or_declined ({approved} If he approve the request, {declined} If he decline the request)
-            - approved_by (his id) Note: this will be removed when we solve the password hashing problem so it can be done automatically and get the id from the admin who requests
-    """
-    def post(self, request, pk):
+    # Retrieve a specific update request using id
+    def retrieve(self, request, pk=None):
+        try:
+            update_request = UpdateProfileRequests.objects.get(pk=pk)
+        except UpdateProfileRequests.DoesNotExist:
+            return Response({"Error": f"No update request found with id = {pk}"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(update_request)
+        return Response(serializer.data)
+
+    
+    # Admin can approve or decline the request
+    @action(['PATCH'],detail=True)
+    def approve_or_decline(self, request, pk):
+        serializer = serializers.ServiceProviderApproveRequestSerializer(data = request.data)
         
         try:
-            service_provider = ServiceProvider.objects.get(pk=pk)
-            update_request = serializers.UpdateProfileRequests.objects.filter(user_requested=service_provider, request_type='update').first()
-
-        except ServiceProvider.DoesNotExist:
-            return Response({
-                "Error":f"No service provider with id = {pk}"}
-                ,status=status.HTTP_404_NOT_FOUND)
-        
-        if not update_request:
-            return Response(
-                {"Error":f"service provider with id = {pk} did not requeted an update"}
-                ,status=status.HTTP_404_NOT_FOUND)
+            update_request = UpdateProfileRequests.objects.get(pk=pk)
+            service_provider = ServiceProvider.objects.get(pk=update_request.user_requested.id)
+        except (UpdateProfileRequests.DoesNotExist, ServiceProvider.DoesNotExist):
+            return Response({"Error": f"Invalid update request or service provider id = {pk}"}, status=status.HTTP_404_NOT_FOUND)
         
         serializer = serializers.ServiceProviderApproveRequestSerializer(update_request, data=request.data)
-        
-        # serializer.is_valid(raise_exception=True)
-        # serializer.save()
-        
+       
         if serializer.is_valid():
-            serializer.save()
-            
-            if request.data['request_status'] == 'approved':
-                admin_id = request.data['approved_by']
-                
-                # Updates in the ServiceProvider model
-                service_provider.approved_by = user_models.Admins.objects.get(pk=admin_id)
+            if request.data['request_status'].lower() == 'approved':
+                service_provider.approved_by = self.request.user
                 service_provider.account_status = ServiceProvider.AccountStatus.ACCEPTED
-                sent_data = update_request.sent_data 
-                
-                # Update the service provider data with the updated values from the sent data
-                # wow 
+                sent_data = update_request.sent_data
+
                 for key, value in sent_data.items():
                     setattr(service_provider, key, value)
                 service_provider.save()
-                
-                # Updates in the UpdateProfileRequests model
-                update_request.approved_by = user_models.Admins.objects.get(pk=admin_id)
+
+                update_request.approved_by = self.request.user
                 update_request.request_status = 'approved'
                 update_request.save()
-                
-            else:
+                return Response({f"Profile data for user with id = {pk} updated successfully "}, status=status.HTTP_200_OK)
+
+            elif request.data['request_status'].lower() == 'declined':
                 update_request.request_status = 'declined'
                 update_request.save()
-                
-            return Response({f"Profile data for user with id = {pk} updated successfully "}, status=status.HTTP_200_OK)
+                return Response({f"Update Profile data requets for user with id = {pk} has been declined "}, status=status.HTTP_200_OK)
+
+            else:
+                return Response({"Error":"request_status must be either approved or declined"},status=status.HTTP_400_BAD_REQUEST)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) # to be deleted
+        serializer.save()
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-class Location(APIView):
-    serializer_class = serializers.ServiceProviderLocationSerializer
-
-class Location(APIView):
-    serializer_class = serializers.ServiceProviderLocationSerializer
+    # Admin can list all requests
+    def list_requests(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     
-    def get(self,request):
+
+class Location(APIView):
+     serializer_class = serializers.ServiceProviderLocationSerializer
+
+    
+     def get(self,request):
         queryset = ServiceProviderLocations.objects.all()
         serializer = serializers.ServiceProviderLocationSerializer(queryset, many = True)
         return Response(serializer.data)
     
-    def post(self,request):
+     def post(self,request):
         serializer = serializers.ServiceProviderLocationSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
