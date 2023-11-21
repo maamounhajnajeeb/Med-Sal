@@ -64,8 +64,7 @@ class UpdateProfileRequests(models.Model):
     approved_by = models.ForeignKey(Admins, null=True, on_delete = models.CASCADE, related_name='admin_approved_profile_requests')
     sent_data = JSONField(null=True)
     updated_at = models.DateTimeField(auto_now_add = True)
-    request_type = models.CharField(max_length = 25, null=True) # Create or Update
-    request_status = models.CharField(max_length = 25,null=True) # Approved or Declined
+    request_status = models.CharField(max_length = 25,null=True, default = 'Pending') # Approved or Declined
 
     def __str__(self):
         return f"UpdateRequest for {self.user_requested.service_provider.business_name}"

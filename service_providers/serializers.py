@@ -34,13 +34,16 @@ class ServiceProviderUpdateRequestSerializer(serializers.ModelSerializer):
         if 'approved_by' in data['sent_data']:
         # Remove the 'approved_by' field from the sent_data
             raise serializers.ValidationError('Service providers cannot update the approved_by field ')
+        
+        if 'user_requested' not in data:
+                data['user_requested'] = self.context['request'].user.id
 
         return super().validate(data)
     
     class Meta:
         model = UpdateProfileRequests
         fields = '__all__'
-    
+        read_only_fields = ['user_requested']
     
 class ServiceProviderApproveRequestSerializer(serializers.ModelSerializer):
 

@@ -86,10 +86,12 @@ class ServiceProviderSerializer(serializers.ModelSerializer, FileMixin):
     
     def create(self, validated_data):
         user_data = validated_data.pop('user')
+        print(user_data)
         user = Users.objects.create_user(**user_data)
         group = Group.objects.get(name=user_data.get("user_type"))
         user.groups.add(group)
-        
+        print(group)
+
         category = validated_data.pop("category")
         validated_data["provider_file"] = self.upload(validated_data["provider_file"])
         
@@ -100,8 +102,10 @@ class ServiceProviderSerializer(serializers.ModelSerializer, FileMixin):
     
     def create_query(self, validated_data: dict[str, Any], user: Users, category):
         keys = [f"{key}" for key in validated_data.keys()]
+        print(keys)
         keys = ", ".join(keys)
         
+
         values = [f"'{val}'" for val in validated_data.values()]
         values = ", ".join(values)
         
