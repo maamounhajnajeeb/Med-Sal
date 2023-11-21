@@ -1,6 +1,13 @@
 from rest_framework import serializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer
+
+from django.contrib.auth import get_user_model
+
 from .models import ServiceProvider, ServiceProviderLocations, UpdateProfileRequests
+
+Users = get_user_model()
+
+
 
 class ServiceProviderSerializer(serializers.ModelSerializer):
     
@@ -79,6 +86,3 @@ class CalculateDistanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceProviderLocations
         fields = ('location', 'origin_lat', 'origin_lng', 'domain')
-
-
-

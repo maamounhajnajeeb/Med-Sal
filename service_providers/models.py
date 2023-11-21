@@ -24,7 +24,7 @@ class ServiceProvider(Users):
     bank_name = models.CharField(max_length=128, null=False)
     iban = models.CharField(max_length=40, null=False, unique=True)
     swift_code = models.CharField(max_length=16, null=False, unique=True)
-    provider_file = models.CharField(max_length=255, null=False)
+    provider_file = models.FileField(null=False)
     account_status = models.CharField(max_length=16,
             choices=AccountStatus.choices, default=AccountStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -34,13 +34,13 @@ class ServiceProvider(Users):
         verbose_name = "ServiceProvider"
         verbose_name_plural = "ServiceProviders"
     
-    def delete(self, using: Any = ..., keep_parents: bool = ...) -> tuple[int, dict[str, int]]:
-        try:
-            os.remove(self.provider_file)
-            print("removed")
-        except FileNotFoundError:
-            print("No initial image")
-        return super().delete(using, keep_parents)
+    # def delete(self, using: Any = ..., keep_parents: bool = ...) -> tuple[int, dict[str, int]]:
+    #     try:
+    #         os.remove(self.provider_file.path)
+    #         print("removed")
+    #     except FileNotFoundError:
+    #         print("No initial image")
+    #     return super().delete(using, keep_parents)
     
     def __str__(self):
         return self.business_name

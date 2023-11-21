@@ -8,11 +8,12 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from typing import Any, Dict
+import os
 
-from .provider_file import FileMixin
-from users.models import Admins, SuperAdmins
+from .models import Admins, SuperAdmins
+from . import helpers
+
 from service_providers.models import ServiceProvider
-
 
 Users = get_user_model()
 
@@ -31,7 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Users
-        fields = ("id", "email", "phone", "image", "password", "password2", "user_type")
+        fields = ("id", "email", "phone", "image", "password", "password2", "user_type", )
         extra_kwargs = {
             'phone': {'required': True},
             'image': {'required': True}
@@ -75,14 +76,19 @@ class UserSerializer(serializers.ModelSerializer):
         return models[user_type]
 
 
-class ServiceProviderSerializer(serializers.ModelSerializer, FileMixin):
+class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
     user = UserSerializer()
-    provider_file = serializers.FileField()
     
     class Meta:
         model = ServiceProvider
-        fields = ("user", "provider_file", "category", "business_name"
+        fields = ("id", "user", "provider_file", "category", "business_name"
                 , "bank_name", "iban", "swift_code", )
+    
+    def update(self, instance, validated_data):
+        if validated_data.get("provider_file"):
+            path = instance.provider_file.path
+            os.remove(path)
+        return super().update(instance, validated_data)
     
     def create(self, validated_data):
         user_data = validated_data.pop('user')
@@ -93,7 +99,7 @@ class ServiceProviderSerializer(serializers.ModelSerializer, FileMixin):
         print(group)
 
         category = validated_data.pop("category")
-        validated_data["provider_file"] = self.upload(validated_data["provider_file"])
+        validated_data["provider_file"] = self.upload(validated_data.pop("provider_file"))
         
         self.create_query(validated_data, user, category)
         

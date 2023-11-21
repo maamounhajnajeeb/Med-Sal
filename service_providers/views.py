@@ -1,4 +1,4 @@
-from rest_framework import viewsets, generics
+from rest_framework import viewsets
 from rest_framework import filters, status
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -7,24 +7,12 @@ from .models import ServiceProvider, ServiceProviderLocations, UpdateProfileRequ
 import geopy.distance
 from service_providers import permissions, serializers
 from users.models import Admins
-from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+
+
 
 class CRUDServiceProviders(viewsets.ModelViewSet):
-    
-    """
-    List path => "api/v1/service_provider/"
-    
-    To retrieve a specific service_provider: path => "api/v1/service_providers/<id>/retrieve_profile"
-
-    Permissions on methods:
-        - Only admins can List all service providers data
-        - Both authenticated users and admins can retrieve a specific service provider profile         
-        
-    Filtering:
-        - You can order by any field you choose either in asc or desc order => api/v1/service_providers/?ordering=-password
-        - You can search by name = > api/v1/service_providers/?search=<service_provider_name>
-    """
-    
+  
     queryset = ServiceProvider.objects
     serializer_class = serializers.ServiceProviderSerializer
     permission_classes = (IsAdminUser, )
