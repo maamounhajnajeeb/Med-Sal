@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from service_providers.models import ServiceProviderLocations
 from products.models import Product
 
 
@@ -15,11 +14,14 @@ class Orders(models.Model):
         ACCEPTED = ("ACCEPTED", "Accepted")
     
     patient = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
-    service_provider_location = models.ForeignKey(ServiceProviderLocations, on_delete=models.PROTECT, null=False)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=False)
     status = models.CharField(max_length=16, null=False, choices=StatusChoices.choices)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Orders, on_delete=models.CASCADE, related_name="items", null=False)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="orders", null=False)
 
 
 class RejectedOrders(models.Model):
@@ -27,4 +29,3 @@ class RejectedOrders(models.Model):
     reason = models.TextField(null=False)
     attachment = models.FileField(null=True, upload_to="rejected_orders_attachments/")
     read = models.BooleanField(default=False, null=False)
-    

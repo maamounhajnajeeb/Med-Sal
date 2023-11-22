@@ -82,7 +82,7 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
     class Meta:
         model = ServiceProvider
         fields = ("id", "user", "provider_file", "category", "business_name"
-                , "bank_name", "iban", "swift_code", )
+                , "bank_name", "iban", "swift_code", "account_status")
     
     def update(self, instance, validated_data):
         if validated_data.get("provider_file"):

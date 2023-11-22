@@ -95,15 +95,17 @@ class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
         permissions.IsAuthenticated, local_permissions.HavePermission, )
     
     def update(self, request, *args, **kwargs):
-        self.update_user_instance()
+        if request.data.get("user"):
+            self.update_user_instance()
+        
         return super().update(request, *args, **kwargs)
     
     def update_user_instance(self):
         """
         updating the user_instance in the service_provider record
         """
-        self.request._mutable = True
-        user_data = self.request.data.pop("user", None)
+        request_data = self.request.data.copy()
+        user_data = request_data.pop("user", None)
         if user_data:
             pk = self.kwargs.get("pk")
             user_instance = Users.objects.filter(pk=pk)
