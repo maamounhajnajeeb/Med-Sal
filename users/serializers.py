@@ -106,8 +106,10 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
     
     def create_query(self, validated_data: dict[str, Any], user: Users, category):
         keys = [f"{key}" for key in validated_data.keys()]
+        print(keys)
         keys = ", ".join(keys)
         
+
         values = [f"'{val}'" for val in validated_data.values()]
         values = ", ".join(values)
         

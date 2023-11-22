@@ -57,8 +57,7 @@ class ServiceProviderList(generics.ListAPIView):
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
-    permission_classes = (
-        permissions.IsAuthenticated, local_permissions.ListServiceProvider, )
+    permission_classes = ( )
 
 
 class ServiceProviderCreate(generics.CreateAPIView):
@@ -88,7 +87,7 @@ class ServiceProviderCreate(generics.CreateAPIView):
 
 class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
     """
-    Signing Up service providers only
+    Read, Delete, Update specific service provider
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
@@ -117,11 +116,15 @@ class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
         """
         remove files from the media folder before destroying record
         """
-        def delete_file(path):
-            os.remove(path)
+        def delete_file(file):
+            try:
+                os.remove(file.path)
+                print("Image Deleted")
+            except:
+                print("No Image")
         
-        delete_file(instance.user.image.path)
-        delete_file(instance.provider_file.path)
+        delete_file(instance.user.image)
+        delete_file(instance.provider_file)
         
         return super().perform_destroy(instance)
 

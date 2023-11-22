@@ -9,12 +9,14 @@ from service_providers import maamoun_view
 
 app_name = "serivce_providers"
 
-# router = DefaultRouter()
+router = DefaultRouter()
 # router.register("", views.CRUDServiceProviders, basename='providers_crud') # Tareq
 
+router.register("update_request", views.ServiceProviderUpdateRequestViewSet, basename='update_requests_crud')
+
 urlpatterns = [
-    path('profile/update_data/', views.ServiceProviderUpdateRequestCreateAPI.as_view(), ),
-    path('profile/approve_request/<int:pk>/', views.ServiceProviderApproveAPI.as_view()),
+    # path('profile/update_data/', views.ServiceProviderUpdateRequestCreateAPI.as_view(), ),
+    # path('profile/approve_request/<int:pk>/', views.ServiceProviderApproveAPI.as_view()),
     
     # list locations - for everybody
     path("locations/<int:pk>/", maamoun_view.show_provider_locations, name="show_provider_locations"),
@@ -23,10 +25,6 @@ urlpatterns = [
     # create location - authorized only
     path("locations/create/", maamoun_view.CreateLocation.as_view(), name="create_location"),
     path("location/<int:pk>/", maamoun_view.LocationRUD.as_view(), name="location_rud"),
-    
-    
-    # path('location', Location.as_view()),
-    # path('distance', ServiceProviderDistanceListView.as_view())
 ]
 
-# urlpatterns += router.urls
+urlpatterns += router.urls

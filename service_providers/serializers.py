@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from rest_framework_gis.serializers import GeoFeatureModelSerializer
 
 from django.contrib.auth import get_user_model
 
@@ -28,10 +27,11 @@ class ServiceProviderUpdateRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = UpdateProfileRequests
         fields = '__all__'
-    
-    
-class ServiceProviderApproveRequestSerializer(serializers.ModelSerializer):
+        read_only_fields = ['user_requested']
 
+
+class ServiceProviderApproveRequestSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = UpdateProfileRequests
         fields = ['request_status', 'approved_by']
@@ -76,7 +76,7 @@ class CalculateDistanceSerializer(serializers.ModelSerializer):
     origin_lat = serializers.FloatField()
     origin_lng = serializers.FloatField()
     domain = serializers.FloatField(required=False)
-
+    
     class Meta:
         model = ServiceProviderLocations
         fields = ('location', 'origin_lat', 'origin_lng', 'domain')

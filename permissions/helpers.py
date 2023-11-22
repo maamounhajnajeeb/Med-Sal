@@ -44,12 +44,13 @@ class Groups:
         return f"{user} deleted from group"
     
     # permissions with groups
-    def get_permissions(self, group_id: str) -> QuerySet[Permission] | QuerySet: #
+    def get_permissions(self, group_id: str) -> QuerySet[Permission] : #  QuerySet[Permission] | QuerySet
         return Group.objects.prefetch_related("permissions").get(id=group_id).permissions
     
     def has_permission(self, perm_name: str, group: Group) -> bool: #
         permission = group.permissions.filter(codename=perm_name)
         if not permission.exists():
+            print("not exists")
             return False
         
         return True
