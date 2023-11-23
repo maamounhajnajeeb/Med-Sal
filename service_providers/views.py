@@ -13,7 +13,9 @@ from . import permissions, serializers
 
 
 class CRUDServiceProviders(viewsets.ModelViewSet):
-    
+    """
+    return all service providers
+    """
     queryset = ServiceProvider.objects
     serializer_class = serializers.ServiceProviderSerializer
     permission_classes = (IsAdminUser, )

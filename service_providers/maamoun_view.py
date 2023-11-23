@@ -4,12 +4,10 @@ from rest_framework.response import Response
 
 from django.http import HttpRequest
 
-from category.models import Category
-
 from . import permissions as local_permissions
 from . import models, serializers
 
-from functools import reduce
+from users.serializers import ServiceProviderSerializer
 
 
 class LocationRUD(generics.RetrieveUpdateDestroyAPIView):
@@ -26,7 +24,25 @@ class CreateLocation(generics.CreateAPIView):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])
-def show_provider_locations(request, pk):
+def show_providers_locations(request: HttpRequest):
+    """
+    get all service providers locations in the Database
+    for everybody
+    """
+    queryset = models.ServiceProviderLocations.objects.all()
+    serializer = serializers.LocationSerializerSafe(queryset, many=True)
+    
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([permissions.AllowAny, ])
+def show_provider_locations(request: HttpRequest, pk):
+    """
+    get specific service provider locations
+    pk here is service_provider id
+    for everybody
+    """
     queryset = models.ServiceProviderLocations.objects.filter(service_provider=pk)
     serializer = serializers.LocationSerializerSafe(queryset, many=True)
     
@@ -35,9 +51,27 @@ def show_provider_locations(request, pk):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])
-def show_providers_locations(request):
-    queryset = models.ServiceProviderLocations.objects.all()
+def show_category_locations(request: HttpRequest, pk):
+    """
+    get all category service providers locations
+    pk here is: category id
+    for everybody
+    """
+    queryset = models.ServiceProviderLocations.objects.filter(service_provider__category=pk)
     serializer = serializers.LocationSerializerSafe(queryset, many=True)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([permissions.AllowAny, ])
+def show_category_providers(request, pk):
+    """
+    get all category providers
+    pk here is: category id
+    for everybody
+    """
+    queryset = models.ServiceProvider.objects.filter(category=pk)
+    serializer = ServiceProviderSerializer(queryset, many=True)
+    
+    return Response(serializer.data, status=status.HTTP_200_OK)
