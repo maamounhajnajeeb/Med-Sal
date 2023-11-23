@@ -1,11 +1,8 @@
-from typing import Any
 from django.contrib.gis.db import models
 from django.db.models import JSONField
 
 from users.models import Users, Admins
 from category.models import Category
-
-import os
 
 
 
@@ -19,7 +16,7 @@ class ServiceProvider(Users):
     user = models.OneToOneField(Users, on_delete=models.CASCADE, related_name='service_provider', null=False)
     approved_by = models.ForeignKey(Admins,
                 on_delete=models.PROTECT, null=True, related_name='accepted_services')
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="services_providerd")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="services_providers")
     business_name = models.CharField(max_length=128, null=False, unique=True)
     bank_name = models.CharField(max_length=128, null=False)
     iban = models.CharField(max_length=40, null=False, unique=True)
@@ -34,24 +31,16 @@ class ServiceProvider(Users):
         verbose_name = "ServiceProvider"
         verbose_name_plural = "ServiceProviders"
     
-    # def delete(self, using: Any = ..., keep_parents: bool = ...) -> tuple[int, dict[str, int]]:
-    #     try:
-    #         os.remove(self.provider_file.path)
-    #         print("removed")
-    #     except FileNotFoundError:
-    #         print("No initial image")
-    #     return super().delete(using, keep_parents)
-    
     def __str__(self):
         return self.business_name
 
 
 class ServiceProviderLocations(models.Model):
-    service_provider_id = models.ForeignKey(ServiceProvider, on_delete = models.CASCADE)
+    service_provider = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE, related_name="locations")
     location = models.PointField(srid=4326, null=True, blank=True) # null and blank must be False
     opening = models.TimeField(null=False)
     closing = models.TimeField(null=False)
-    crew = models.CharField(max_length=32, null=False)
+    crew = models.TextField(null=False)
     created_at = models.DateTimeField(auto_now_add=True, null=False)
     
     class Meta:
@@ -60,11 +49,11 @@ class ServiceProviderLocations(models.Model):
 
 
 class UpdateProfileRequests(models.Model):
-    user_requested = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE)
-    approved_by = models.ForeignKey(Admins, null=True, on_delete = models.CASCADE, related_name='admin_approved_profile_requests')
+    provider_requested = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE)
+    checked_by = models.ForeignKey(Admins, null=True, on_delete = models.CASCADE, related_name='admin_approved_profile_requests')
     sent_data = JSONField(null=True)
     updated_at = models.DateTimeField(auto_now_add = True)
-    request_status = models.CharField(max_length = 25,null=True, default = 'Pending') # Approved or Declined
-
+    request_status = models.CharField(max_length = 25,null=True, default='Pending') # Approved or Declined
+    
     def __str__(self):
         return f"UpdateRequest for {self.user_requested.service_provider.business_name}"

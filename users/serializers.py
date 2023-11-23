@@ -82,7 +82,7 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
     class Meta:
         model = ServiceProvider
         fields = ("id", "user", "provider_file", "category", "business_name"
-                , "bank_name", "iban", "swift_code", )
+                , "bank_name", "iban", "swift_code", "account_status")
     
     def update(self, instance, validated_data):
         if validated_data.get("provider_file"):
@@ -92,12 +92,10 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
     
     def create(self, validated_data):
         user_data = validated_data.pop('user')
-        print(user_data)
         user = Users.objects.create_user(**user_data)
         group = Group.objects.get(name=user_data.get("user_type"))
         user.groups.add(group)
-        print(group)
-
+        
         category = validated_data.pop("category")
         validated_data["provider_file"] = self.upload(validated_data.pop("provider_file"))
         
@@ -108,15 +106,13 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
     
     def create_query(self, validated_data: dict[str, Any], user: Users, category):
         keys = [f"{key}" for key in validated_data.keys()]
-        print(keys)
         keys = ", ".join(keys)
         
-
         values = [f"'{val}'" for val in validated_data.values()]
         values = ", ".join(values)
         
-        keys = keys + ", users_ptr_id, user_id, category_id, account_status, created_at, updated_at"
-        values = values + f", '{user.id}', '{user.id}', '{category.id}', 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP"
+        keys = keys + ", users_ptr_id, user_id, category_id, created_at, updated_at"
+        values = values + f", '{user.id}', '{user.id}', '{category.id}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP"
         
         query = f"insert into service_providers_serviceprovider ({keys}) values ({values})"
         with connection.cursor() as cur:

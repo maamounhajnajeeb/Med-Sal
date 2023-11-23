@@ -6,6 +6,7 @@ from permissions import helpers
 from utils.method_truth import request_method_table
 
 
+
 class HavePermission(permissions.BasePermission):
     
     def has_permission(self, request, view):
