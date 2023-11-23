@@ -1,8 +1,6 @@
 from django.db import models
 
 from service_providers.models import ServiceProviderLocations
-from category.models import Category
-
 
 
 class ProductStock(models.Model):
@@ -16,7 +14,6 @@ class ProductStock(models.Model):
 
 class Product(models.Model):
     service_provider_location = models.ForeignKey(ServiceProviderLocations, on_delete=models.CASCADE, null=False)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=False)
     quantity = models.OneToOneField(ProductStock, on_delete=models.PROTECT, related_name="product")
     ar_title = models.CharField(max_length=128, null=False)
     en_title = models.CharField(max_length=128, null=False)

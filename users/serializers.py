@@ -106,15 +106,13 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
     
     def create_query(self, validated_data: dict[str, Any], user: Users, category):
         keys = [f"{key}" for key in validated_data.keys()]
-        print(keys)
         keys = ", ".join(keys)
         
-
         values = [f"'{val}'" for val in validated_data.values()]
         values = ", ".join(values)
         
-        keys = keys + ", users_ptr_id, user_id, category_id, account_status, created_at, updated_at"
-        values = values + f", '{user.id}', '{user.id}', '{category.id}', 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP"
+        keys = keys + ", users_ptr_id, user_id, category_id, created_at, updated_at"
+        values = values + f", '{user.id}', '{user.id}', '{category.id}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP"
         
         query = f"insert into service_providers_serviceprovider ({keys}) values ({values})"
         with connection.cursor() as cur:
