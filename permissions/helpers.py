@@ -50,6 +50,7 @@ class Groups:
     def has_permission(self, perm_name: str, group: Group) -> bool: #
         permission = group.permissions.filter(codename=perm_name)
         if not permission.exists():
+            print("not exists")
             return False
         
         return True

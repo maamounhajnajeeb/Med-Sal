@@ -57,8 +57,7 @@ class ServiceProviderList(generics.ListAPIView):
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
-    permission_classes = (
-        permissions.IsAuthenticated, local_permissions.ListServiceProvider, )
+    permission_classes = ( )
 
 
 class ServiceProviderCreate(generics.CreateAPIView):
@@ -88,7 +87,7 @@ class ServiceProviderCreate(generics.CreateAPIView):
 
 class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
     """
-    Signing Up service providers only
+    Read, Delete, Update specific service provider
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
@@ -96,15 +95,17 @@ class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
         permissions.IsAuthenticated, local_permissions.HavePermission, )
     
     def update(self, request, *args, **kwargs):
-        self.update_user_instance()
+        if request.data.get("user"):
+            self.update_user_instance()
+        
         return super().update(request, *args, **kwargs)
     
     def update_user_instance(self):
         """
         updating the user_instance in the service_provider record
         """
-        self.request._mutable = True
-        user_data = self.request.data.pop("user", None)
+        request_data = self.request.data.copy()
+        user_data = request_data.pop("user", None)
         if user_data:
             pk = self.kwargs.get("pk")
             user_instance = Users.objects.filter(pk=pk)
@@ -117,11 +118,15 @@ class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
         """
         remove files from the media folder before destroying record
         """
-        def delete_file(path):
-            os.remove(path)
+        def delete_file(file):
+            try:
+                os.remove(file.path)
+                print("Image Deleted")
+            except:
+                print("No Image")
         
-        delete_file(instance.user.image.path)
-        delete_file(instance.provider_file.path)
+        delete_file(instance.user.image)
+        delete_file(instance.provider_file)
         
         return super().perform_destroy(instance)
 
