@@ -12,11 +12,17 @@ class Product(models.Model):
     en_description = models.TextField(null=False)
     images = models.CharField(max_length=128)
     price = models.DecimalField(null=False, max_digits=8, decimal_places=2)
-    quantity = models.IntegerField(null=False)
-    discounted = models.BooleanField(default=False)
-    discount_ammount = models.IntegerField(null=True)
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateField(auto_now=True)
     
     def __str__(self) -> str:
         return f"{self.id} -> {self.category}"
+    
+class ProductStock(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="stock")
+    quantity = models.IntegerField()
+    created_at = models.DateField(auto_now_add=True, null=False)
+    updated_at = models.DateField(auto_now=True, null=False)
+
+    def __str__(self) -> str:
+        return f"{self.product} => qty: {self.quantity}, last_update: {self.updated_at}"

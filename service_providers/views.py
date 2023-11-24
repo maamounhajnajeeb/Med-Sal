@@ -6,7 +6,6 @@ from rest_framework.response import Response
 from .models import ServiceProvider, ServiceProviderLocations, UpdateProfileRequests
 import geopy.distance
 from service_providers import permissions, serializers
-from users.models import Admins
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 
@@ -122,7 +121,6 @@ class ServiceProviderUpdateRequestViewSet(viewsets.ModelViewSet):
 class Location(APIView):
      serializer_class = serializers.ServiceProviderLocationSerializer
 
-    
      def get(self,request):
         queryset = ServiceProviderLocations.objects.all()
         serializer = serializers.ServiceProviderLocationSerializer(queryset, many = True)
