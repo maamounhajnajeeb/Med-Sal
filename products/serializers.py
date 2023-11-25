@@ -15,7 +15,7 @@ class StockSerializer(serializers.ModelSerializer):
 
 
 class ProudctSerializer(serializers.ModelSerializer):
-    quantity = StockSerializer()
+    quantity = StockSerializer(many=False)
     service_provider_location = ServiceProviderLocations()
     
     class Meta:
