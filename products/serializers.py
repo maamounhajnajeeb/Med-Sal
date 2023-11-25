@@ -23,13 +23,13 @@ class ProudctSerializer(serializers.ModelSerializer):
         fields = "__all__"
         
     def validate(self, attrs):
-        attr = super().validate(attrs)
-        quantity = attr.get("quantity")
+        attrs = super().validate(attrs)
+        quantity = attrs.get("quantity")
         if quantity:
             quantity_obj = models.ProductStock.objects.create(**quantity)
-            attr["quantity"] = quantity_obj
+            attrs["quantity"] = quantity_obj
         
-        return attr
+        return attrs
     
     def get_category(self, obj: models.Product):
         category = obj.service_provider_location.service_provider.category

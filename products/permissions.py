@@ -20,6 +20,9 @@ class HasPermissionOrReadOnly(permissions.BasePermission):
     
     def check_permission(self, request, model_name: str=None):
         
+        if not request.user.is_authenticated:
+            return False
+        
         method_name = request_method_table(request.method)
         codename = f"{method_name}_product"
         if model_name is not None:

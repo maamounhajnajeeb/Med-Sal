@@ -30,7 +30,7 @@ class HandleFiles:
         extension = image_name.split(".")[1]
         microsecond = datetime.now().microsecond
         image_name = f"{microsecond}.{extension}"
-        protocol = "https" if self.request.is_secure() else "https"
+        protocol = "https" if self.request.is_secure() else "http"
         image_path = f"{protocol}://{self.request.get_host()}/media/products/{image_name}"
         return image_path, image_name
     
