@@ -72,7 +72,6 @@ class ServiceProviderUpdateRequestViewSet(viewsets.ModelViewSet):
 class Location(APIView):
      serializer_class = serializers.ServiceProviderLocationSerializer
 
-    
      def get(self,request):
         queryset = ServiceProviderLocations.objects.all()
         serializer = serializers.ServiceProviderLocationSerializer(queryset, many = True)
@@ -112,3 +111,5 @@ class ServiceProviderDistanceListView(APIView):
                     return Response({'There is no service provider in the area you are searching in'})
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+

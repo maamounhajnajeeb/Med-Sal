@@ -114,6 +114,7 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
         keys = keys + ", users_ptr_id, user_id, category_id, created_at, updated_at"
         values = values + f", '{user.id}', '{user.id}', '{category.id}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP"
         
+        
         query = f"insert into service_providers_serviceprovider ({keys}) values ({values})"
         with connection.cursor() as cur:
             cur.execute(query)
