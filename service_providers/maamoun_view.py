@@ -20,6 +20,19 @@ class CreateLocation(generics.CreateAPIView):
     queryset = models.ServiceProviderLocations.objects
     serializer_class = serializers.LocationSerializer
     permission_classes = (local_permissions.LocationsPermissions, )
+    
+    def create(self, request, *args, **kwargs):
+        request_data = self.handle_request_data()
+        serializer = self.get_serializer(data=request_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        
+    def handle_request_data(self):
+        copied_data = self.request.data.copy()
+        copied_data["service_provider"] = self.request.user
+        return copied_data
 
 
 @decorators.api_view(["GET", ])
