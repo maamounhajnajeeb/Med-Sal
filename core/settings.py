@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "rest_framework_gis",
     "rest_framework",
     "corsheaders",
+    "drf_yasg",
     
     # local apps
     "service_providers.apps.ServiceProvidersConfig",
