@@ -24,7 +24,6 @@ class CreateProduct(generics.CreateAPIView):
     
     def create(self, request, *args, **kwargs):
         request.data["images"] = self.upload_images(request)
-        print(request.data)
         return super().create(request, *args, **kwargs)
     
     def upload_images(self, request):

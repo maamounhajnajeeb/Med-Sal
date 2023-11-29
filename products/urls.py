@@ -7,6 +7,7 @@ app_name = "products"
 urlpatterns = [
     # create product
     path("", maamoun_views.CreateProduct.as_view(), name="create_product"),
+    # path("", maamoun_views.create_product, name="create_product"),
     
     # read, update, destroy specific product
     path("<int:pk>/", maamoun_views.RUDProduct.as_view(), name="specifc_product"),
