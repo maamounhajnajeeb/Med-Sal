@@ -81,6 +81,7 @@ class OrdersSerializer(serializers.ModelSerializer):
             'products': items_serializer.data
         }
 
+
 """ **{ the below serializer used in ReadUpdateDeleteItem view class }** """
 class ItemsSerializer(serializers.ModelSerializer):
     
@@ -168,42 +169,22 @@ class LocationOrdersSer(serializers.ModelSerializer):
 class CartSerializer(serializers.ModelSerializer):
     
     class Meta:
-        model = models.Cart
+        model = models.CartItems
         fields = ("id", "product", "quantity", "patient", )
     
     def __init__(self, instance=None, data=..., **kwargs):
-        fields = kwargs.get("fields")
-        if fields:
-            fields = kwargs.pop("fields")
-            self.language = fields["language"]
+        additional_fields = kwargs.get("fields")
+        if additional_fields:
+            additional_fields = kwargs.pop("fields")
+            self.language = additional_fields.get("language")
         
         super().__init__(instance, data, **kwargs)
-    
-    def create(self, validated_data):
-        product, quantity = validated_data["product"], validated_data["quantity"]
-        patient = validated_data["patient"]
-        price = round(product.price * quantity, 2)
-        
-        cart_obj = self.Meta.model.objects.create(
-            product=product, quantity=quantity, patient=patient, price=price)
-        
-        return cart_obj
-    
-    def update(self, instance: models.Cart, validated_data: dict[str, Any]):
-        if validated_data.get("quantity"):
-            quantity = validated_data.get("quantity")
-            price = round(quantity * instance.product.price, 2)
-            instance.price = price
-        
-        return super().update(instance, validated_data)
     
     def to_representation(self, instance):
         return {
             "cart_id": instance.id
             , "patient_id": instance.patient.id
-            , "patient_email": instance.patient.email
-            , "quantity": instance.quantity
             , "product_id": instance.product.id
-            , "product": instance.product.ar_title if self.language == "ar" else instance.product.en_title
-            , "price": instance.price
+            , "product_name": instance.product.ar_title if self.language == "ar" else instance.product.en_title
+            , "quantity": instance.quantity
             }

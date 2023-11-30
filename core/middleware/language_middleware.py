@@ -16,7 +16,11 @@ def choose_lang(request):
     """
     
     IP_Address = request.META.get("REMOTE_ADDR")
-    language_code = request.headers.get("Accept-Language") or "en"
+    
+    language_code = request.headers.get("Accept-Language")
+    if language_code:
+        language_code = language_code[:2]
+        
     obj = UserIP.objects.filter(ip_address=IP_Address)
     
     if obj.exists():

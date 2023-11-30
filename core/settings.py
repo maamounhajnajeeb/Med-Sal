@@ -148,7 +148,7 @@ def get_env_details():
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "med_sal_project", # my database name, you can change
+        "NAME": "med_sal", # my database name, you can change
         "USER": "postgres", # your chosen or default database system name
         "PASSWORD": get_env_details(), #
         "HOST": "", # localhost

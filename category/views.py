@@ -71,7 +71,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdmin, )
     
     def list(self, request, *args, **kwargs):
-        third_field = request.META.get("HTTP_ACCEPT-LANGUAGE")
+        third_field = request.META.get("Accept-Language")
         
         queryset = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(queryset, fields={"id", "parent", f"{third_field}_name"}, many=True)
