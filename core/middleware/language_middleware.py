@@ -22,11 +22,9 @@ def choose_lang(request):
         language_code = language_code[:2]
         
     obj = UserIP.objects.filter(ip_address=IP_Address)
-    
     if obj.exists():
         obj = obj.first()
-        if language_code and language_code[:2] != obj.language_code:
-            language_code = language_code[:2]
+        if language_code and language_code != obj.language_code:
             obj.language_code = language_code
             obj.save()
     

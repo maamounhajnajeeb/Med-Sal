@@ -97,7 +97,9 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
         user.groups.add(group)
         
         category = validated_data.pop("category")
-        validated_data["provider_file"] = self.upload(validated_data.pop("provider_file"))
+        validated_data["provider_file"] = self.upload(
+            validated_data.pop("provider_file"), "service_providers")
+        print(validated_data["provider_file"])
         
         self.create_query(validated_data, user, category)
         

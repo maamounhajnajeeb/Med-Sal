@@ -209,6 +209,10 @@ GDAL_LIBRARY_PATH = 'C:\OSGeo4W\\bin\gdal307.dll'
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
+DATETIME_INPUT_FORMATS = [
+    '%Y-%m-%d %H:%M:%S',
+]
+
 USE_TZ = True
 
 TIME_ZONE = 'UTC'

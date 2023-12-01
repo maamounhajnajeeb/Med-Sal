@@ -33,7 +33,7 @@ class HasPermission(permissions.BasePermission):
         return result
 
 
-def authorization(model_name: Optional[str]):
+def authorization(model_name: str):
     
     def middle_func(original_func):
         
@@ -44,6 +44,30 @@ def authorization(model_name: Optional[str]):
                 return False
             
             method_name = request_method_table(request.method)
+            codename = f"{method_name}_{model_name}"
+            
+            group = helpers.Groups()
+            result = group.has_permission(codename, request.user.groups.first())
+            if result is True:
+                return original_func(*args, **kwargs)
+            
+            raise exceptions.PermissionDenied("you don't have permission to access this")
+        
+        return wrapper_func
+    
+    return middle_func
+
+
+def authorization_with_method(method_name: str, model_name: str):
+    
+    def middle_func(original_func):
+        
+        def wrapper_func(*args, **kwargs):
+            request: HttpRequest = args[0]
+            
+            if not request.user.is_authenticated:
+                return False
+            
             codename = f"{method_name}_{model_name}"
             
             group = helpers.Groups()
