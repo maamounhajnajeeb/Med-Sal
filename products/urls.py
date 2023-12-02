@@ -1,8 +1,14 @@
-from django.urls import path
+from rest_framework import routers
 
-from .views import maamoun_views
+from django.urls import path, re_path
+
+from .views import maamoun_views, rates_view
 
 app_name = "products"
+
+router = routers.SimpleRouter()
+router.register("rates", rates_view.RatesViewSet, basename="rates_view")
+
 
 urlpatterns = [
     # create product
@@ -23,4 +29,12 @@ urlpatterns = [
     
     # view all products
     path("all/", maamoun_views.AllProducts.as_view(), name="all_products"),
+    
+    # user rates
+    re_path(r"user/rates/(\d{1,})?", rates_view.user_rates, name="user_rates"),
+    
+    # provider rates
+    re_path(r"provider/rates/(\d{1,})?", rates_view.provider_rates, name="provider_rates"),
 ]
+
+urlpatterns += router.urls

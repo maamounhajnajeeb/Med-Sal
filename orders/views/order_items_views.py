@@ -64,11 +64,16 @@ def user_items(request: HttpRequest, user_id: Optional[int]):
 
 
 @decorators.api_view(["GET", ])
-def provier_items(request: HttpRequest):
+def provider_items(request: HttpRequest):
     language = request.META.get("Accept-Language")
     
     query_params = request.query_params.copy()
-    provider_id = int(query_params.pop("provider_id")[0]) or request.user.id
+    
+    try:
+        provider_id = (query_params.pop("provider_id")[0])
+    except:
+        provider_id = request.user.id
+    
     query_params = {f"updated_at__{param}": value for param, value in query_params.items()}
     
     queryset = models.OrderItem.objects.filter(

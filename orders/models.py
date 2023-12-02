@@ -37,6 +37,11 @@ class CartItems(models.Model):
 
 
 class RejectedOrders(models.Model):
-    order = models.OneToOneField(OrderItem, null=False, on_delete=models.CASCADE, related_name="reject_table")
+    order = models.OneToOneField(
+        OrderItem, null=False, on_delete=models.CASCADE, related_name="reject_table", primary_key=True)
     reason = models.TextField(null=False)
     read = models.BooleanField(default=False, null=False)
+    
+    def __str__(self) -> str:
+        return f"{self.order.id}, read: {self.read}"
+    
