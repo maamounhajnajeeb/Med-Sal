@@ -57,6 +57,12 @@ urlpatterns = [
     # services app
     path("api/v1/services/", include("services.urls", namespace="services")),
     
+    # notification app
+    path("api/v1/notifications/", include("notification.urls", namespace="notification")),
+    
+    # appointments app
+    path("api/v1/appointments/", include("appointments.urls", namespace="appointments")),
+    
     # api document
     # path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

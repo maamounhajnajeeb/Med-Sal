@@ -5,6 +5,7 @@ from rest_framework import status
 from django.http import HttpRequest
 
 from services import models, serializers, helpers
+from notification.models import Notification
 
 from utils.permission import HasPermission, authorization
 
@@ -28,6 +29,13 @@ class CreateService(generics.CreateAPIView, helpers.FileMixin):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+        
+        Notification.objects.create(
+            sender="system", sender_type="System"
+            , receiver=request.user.email, receiver_type="Service_Provider"
+            , ar_content="تم إضافة خدمة جديدة إلى خدماتك"
+            , en_content="A new service added to your sevices")
+        
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
