@@ -54,6 +54,9 @@ urlpatterns = [
     # permissions app
     path("api/v1/", include("permissions.urls", namespace="permissions")),
     
+    # services app
+    path("api/v1/services/", include("services.urls", namespace="services")),
+    
     # api document
     # path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
