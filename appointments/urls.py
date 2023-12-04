@@ -1,19 +1,20 @@
 from django.urls import re_path, path
 
-from appointments.views import draft_views, appointments_views, rejected_views
+from appointments.views import appointments_views, rejected_views
 
 app_name = "appointments"
 
 
 urlpatterns = [
-    path("draft/add/", draft_views.CreateDraft.as_view(), name="create_draft"),
+    # appointments
+    path("create/", appointments_views.CreateAppointment.as_view(), name="create_appointment"),
     
-    path("draft/<int:pk>/", draft_views.RUDDraft.as_view(), name="read_update_delete_draft"),
+    path("<int:pk>/", appointments_views.AppointmentRUD.as_view(), name="rud-appointment"),
     
-    path("drafts/", draft_views.all_drafts, name="all_drafts"),
+    re_path(r"provider/(\d{1,})?", appointments_views.provider_appointments, name="provider_appointments"),
     
-    path("drafts/provider/", draft_views.provider_drafts, name="provider_drafts"),
+    path("location/<int:location_id>/", appointments_views.location_appointments, name="location_appointments"),
     
-    path("drafts/user/", draft_views.user_drafts, name="user_drafts"),
+    re_path(r"user/(\d{1,})?", appointments_views.user_appointments, name="user_appointments"),
     
 ]
