@@ -30,11 +30,11 @@ class Appointments(models.Model):
 
 
 class RejectedAppointments(models.Model):
-    draft_appointment = models.ForeignKey(
+    appointment = models.OneToOneField(
         Appointments, on_delete=models.CASCADE, null=False, related_name="rejected_appointments")
     reason = models.TextField(null=False)
     read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self) -> str:
-        return f"{self.draft_appointment.service.en_title}, read from admin: {self.read}"
+        return f"{self.appointment.service.en_title}, read from admin: {self.read}"

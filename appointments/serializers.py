@@ -1,41 +1,11 @@
 from rest_framework import serializers
+from rest_framework.fields import empty
 
 from .models import Appointments, RejectedAppointments
 
 
-# class DraftSerializers(serializers.ModelSerializer):
-    
-#     class Meta:
-#         model = AppointmentsDraft
-#         fields = "__all__"
-    
-#     def __init__(self, instance=None, data=..., **kwargs):
-#         language = kwargs.get("language")
-#         if not language:
-#             self.language = None
-#         else:
-#             self.language = kwargs.pop("language")
-        
-#         super().__init__(instance, data, **kwargs)
-    
-#     def to_representation(self, instance: AppointmentsDraft):
-#         return {
-#             "id": instance.id
-#             , "provider": instance.service.provider_location.service_provider.email
-#             , "provider_location_id": instance.service.provider_location.id
-#             , "service": instance.service.ar_title if self.language == "ar" else instance.service.en_title
-#             , "service_id": instance.service.id
-#             , "user": instance.user.email
-#             , "user_id": instance.user.id
-#             , "from_time": instance.from_time
-#             , "to_time": instance.to_time
-#             , "date": instance.date
-#             , "created_at": instance.created_at
-#             , "updated_at": instance.updated_at
-#         }
 
-
-class AppointmentsSerializer(serializers.ModelSerializer):
+class AppointmentSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Appointments
@@ -55,6 +25,8 @@ class AppointmentsSerializer(serializers.ModelSerializer):
         original_repr["user_email"] = instance.user.email
         original_repr["service_title"] = instance.service.ar_title if self.language == "ar" else instance.service.en_title
         original_repr["location_id"] = instance.service.provider_location.id
+        original_repr["provider_id"] = instance.service.provider_location.service_provider.id
+        original_repr["provider_email"] = instance.service.provider_location.service_provider.email
         
         return original_repr
 
@@ -87,4 +59,35 @@ class ShowAppointmentsSerializer(serializers.ModelSerializer):
                 , "location_id": instance.service.provider_location.id
                 , "created_at": instance.created_at
             }
+        }
+
+
+class RejectedSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = RejectedAppointments
+        fields = "__all__"
+    
+    def __init__(self, instance=None, data=..., **kwargs):
+        langauge = kwargs.get("language")
+        if not langauge:
+            self.language = None
+        else:
+            self.language = kwargs.pop("language")
+        
+        super().__init__(instance, data, **kwargs)
+    
+    def to_representation(self, instance: RejectedAppointments):
+        appointment = instance.appointment
+        return {
+            "id": instance.id
+            , "service_id": appointment.service.id
+            , "service_title": appointment.service.en_title if self.language == "en" else appointment.service.ar_title
+            , "appointment_id": appointment.id
+            , "provider_id": appointment.service.provider_location.service_provider.id
+            , "provider_email": appointment.service.provider_location.service_provider.email
+            , "locaiton_id": appointment.service.provider_location.id
+            , "reason": instance.reason
+            , "read": instance.read
+            , "created_at": instance.created_at
         }

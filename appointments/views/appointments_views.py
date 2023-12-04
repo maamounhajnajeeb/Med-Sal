@@ -11,43 +11,57 @@ from appointments import models, serializers
 
 
 class CreateAppointment(generics.CreateAPIView):
-	queryset = models.Appointments.objects
-	serializer_class = serializers.AppointmentsSerializer
-	
-	def create(self, request: HttpRequest, *args, **kwargs):
-		language = request.META.get("Accept-Language")
-		
-		serializer = self.get_serializer(data=request.data, language=language)
-		serializer.is_valid(raise_exception=True)
-		self.perform_create(serializer)
-		headers = self.get_success_headers(serializer.data)
-		return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    queryset = models.Appointments.objects
+    serializer_class = serializers.AppointmentSerializer
+    
+    def create(self, request: HttpRequest, *args, **kwargs):
+        language = request.META.get("Accept-Language")
+        
+        data = request.data.copy()
+        data["user"] = request.user.id
+        
+        serializer = self.get_serializer(data=data, language=language)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class AppointmentRUD(generics.RetrieveUpdateDestroyAPIView):
-	queryset = models.Appointments.objects
-	serializer_class = serializers.AppointmentsSerializer
-	
-	def get_serializer(self, *args, **kwargs):
-		language = self.request.META.get("Accept-Language")
-		kwargs.setdefault("language", language)
-		
-		serializer_class = self.get_serializer_class()
-		kwargs.setdefault('context', self.get_serializer_context())
-		return serializer_class(*args, **kwargs)
-	
-	def retrieve(self, request, *args, **kwargs):
-		instance = self.get_object()
-		serializer = self.get_serializer([instance, ], many=True)
-		return Response(serializer.data, status=status.HTTP_200_OK)
+    queryset = models.Appointments.objects
+    serializer_class = serializers.AppointmentSerializer
+    
+    def get_serializer(self, *args, **kwargs):
+        language = self.request.META.get("Accept-Language")
+        kwargs.setdefault("language", language)
+        
+        serializer_class = self.get_serializer_class()
+        kwargs.setdefault('context', self.get_serializer_context())
+        return serializer_class(*args, **kwargs)
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer([instance, ], many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @decorators.api_view(["GET", ])
 def location_appointments(request: HttpRequest, location_id: int):
     language = request.META.get("Accept-Language")
-    queryset = models.Appointments.objects.filter(service__provider_location=location_id)
+    queryset = models.Appointments.objects.filter(
+        service__provider_location=location_id, status="accepted")
     serializer = serializers.ShowAppointmentsSerializer(queryset, many=True, language=language)
     
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+def all_location_appointments(request: HttpRequest, user_id: int):
+    language = request.META.get("Accept-Language")
+    user_id = user_id or request.user.id
+    
+    queryset = models.Appointments.objects.filter(user__id=user_id, status="accepted")
+    serializer = serializers.ShowAppointmentsSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -55,9 +69,21 @@ def location_appointments(request: HttpRequest, location_id: int):
 def provider_appointments(request: HttpRequest, provider_id: Optional[int]):
     language = request.META.get("Accept-Language")
     provider_id = provider_id or request.user.id
-    queryset = models.Appointments.objects.filter(service__provider_location__service_provider=provider_id)
+    queryset = models.Appointments.objects.filter(
+        service__provider_location__service_provider=provider_id
+        , status="accepted")
     serializer = serializers.ShowAppointmentsSerializer(queryset, many=True, language=language)
     
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+def all_provider_appointments(request: HttpRequest, user_id: Optional[int]):
+    language = request.META.get("Accept-Language")
+    user_id = user_id or request.user.id
+    
+    queryset = models.Appointments.objects.filter(user__id=user_id, status="accepted")
+    serializer = serializers.ShowAppointmentsSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -66,6 +92,16 @@ def user_appointments(request: HttpRequest, user_id: Optional[int]):
     language = request.META.get("Accept-Language")
     user_id = user_id or request.user.id
     
-    queryset = models.Appointments.objects.filter(user__id=user_id)
+    queryset = models.Appointments.objects.filter(user__id=user_id, status="accepted")
+    serializer = serializers.ShowAppointmentsSerializer(queryset, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+def all_user_appointments(request: HttpRequest, user_id: Optional[int]):
+    language = request.META.get("Accept-Language")
+    user_id = user_id or request.user.id
+    
+    queryset = models.Appointments.objects.filter(user__id=user_id, status="accepted")
     serializer = serializers.ShowAppointmentsSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
