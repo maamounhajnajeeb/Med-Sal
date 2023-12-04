@@ -7,8 +7,8 @@ from django.contrib.auth.password_validation import validate_password
 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from typing import Any, Dict
-import os
+from typing import Any
+import os, re
 
 from .models import Admins, SuperAdmins
 from . import helpers
@@ -42,6 +42,12 @@ class UserSerializer(serializers.ModelSerializer):
         password, password2 = attrs.get("password"), attrs.pop("password2")
         if password != password2:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
+        
+        phone = attrs.get("phone")
+        reg_exp = re.search("^[+]\d{12,15}$", phone)
+        if not reg_exp:
+            raise serializers.ValidationError(
+                {"phone": "phone number must be between 12, 15 digits with a +"})
         
         return attrs
     
@@ -124,7 +130,7 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
 
 
 class LogInSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs: Dict[str, Any]) -> Dict[str, str]:
+    def validate(self, attrs: dict[str, Any]) -> dict[str, str]:
         attrs = super().validate(attrs)
         
         attrs.update({"id": self.user.id})
@@ -136,4 +142,4 @@ class SpecificUserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Users
-        fields = ("id", "phone", "email", "image", "user_type", "date_joined", "groups")
+        fields = ("id", "phone", "email", "image", "user_type", "date_joined")

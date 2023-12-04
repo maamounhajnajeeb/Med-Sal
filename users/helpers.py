@@ -72,7 +72,6 @@ def activate_user(id: int):
     user_instance: Users = Users.objects.get(id=id)
     user_instance.is_active = True
     user_instance.save()
-    
 
 
 def change_user_email(id: int, new_email: str):
@@ -110,3 +109,11 @@ def upload_file(image_obj):
     fs.save(image_new_name, image_obj)
     
     return image_new_name
+
+
+def delete_image(path):
+    if os.path.exists(path):
+        os.remove(path)
+        print("Image Deleted Successfully")
+    else:
+        print("No Such File at This Path")
