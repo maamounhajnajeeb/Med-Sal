@@ -15,6 +15,13 @@ class AllProducts(generics.ListAPIView):
     permission_classes = (local_permissions.HasPermissionOrReadOnly, )
     serializer_class = serializers.ProudctSerializer
     queryset = models.Product.objects
+    
+    def list(self, request, *args, **kwargs):
+        language = request.META.get("Accept-Language")
+        
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True, fields={"language": language})
+        return Response(serializer.data)
 
 
 class CreateProduct(generics.CreateAPIView):
@@ -24,7 +31,6 @@ class CreateProduct(generics.CreateAPIView):
     
     def create(self, request, *args, **kwargs):
         request.data["images"] = self.upload_images(request)
-        print(request.data)
         return super().create(request, *args, **kwargs)
     
     def upload_images(self, request):
@@ -54,6 +60,11 @@ class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (local_permissions.HasPermissionOrReadOnly, )
     serializer_class = serializers.ProudctSerializer
     queryset = models.Product.objects
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer([instance], many=True, fields={"language": request.META.get("Accept-Language")})
+        return Response(serializer.data)
 
 
 @decorators.api_view(["GET", ])

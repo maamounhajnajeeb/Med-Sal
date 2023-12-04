@@ -16,12 +16,15 @@ def choose_lang(request):
     """
     
     IP_Address = request.META.get("REMOTE_ADDR")
-    language_code = request.headers.get("Accept-Language")
-    obj = UserIP.objects.filter(ip_address=IP_Address)
     
+    language_code = request.headers.get("Accept-Language")
+    if language_code:
+        language_code = language_code[:2]
+        
+    obj = UserIP.objects.filter(ip_address=IP_Address)
     if obj.exists():
         obj = obj.first()
-        if language_code:
+        if language_code and language_code != obj.language_code:
             obj.language_code = language_code
             obj.save()
     
@@ -35,7 +38,7 @@ def choose_lang(request):
 
 def language(get_response):
     def middleware(request: HttpRequest):
-        request.META["HTTP_ACCEPT-LANGUAGE"] = choose_lang(request)
+        request.META["Accept-Language"] = choose_lang(request)
         reponse = get_response(request)
         return reponse
     
