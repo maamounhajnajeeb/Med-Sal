@@ -10,11 +10,12 @@ from service_providers import views, maamoun_view
 app_name = "serivce_providers"
 
 router = DefaultRouter()
-# router.register("", views.CRUDServiceProviders, basename='providers_crud') # Tareq
 router.register("update_request", views.ServiceProviderUpdateRequestViewSet, basename='update_requests_crud')
 
 
 urlpatterns = [
+    # service provider checking update status
+    path("check/", views.check_provider_update_status, name="check_provider_update_status"),
     
     # list locations - for everybody
     path("locations/category/<int:pk>/", maamoun_view.show_category_locations, name="show_provider_locations"),

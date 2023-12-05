@@ -1,68 +1,67 @@
-from rest_framework.permissions import IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
-from rest_framework import filters, status, viewsets
-from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework import status, viewsets
 from rest_framework.views import APIView
+from rest_framework import decorators
 
 from django.http import HttpRequest
 
 import geopy.distance
 
-from .models import ServiceProvider, ServiceProviderLocations, UpdateProfileRequests
+from .models import ServiceProviderLocations, UpdateProfileRequests
 from . import permissions, serializers
 
+from notification.models import Notification
 
-class CRUDServiceProviders(viewsets.ModelViewSet):
-    """
-    return all service providers
-    """
-    queryset = ServiceProvider.objects
-    serializer_class = serializers.ServiceProviderSerializer
-    permission_classes = (IsAdminUser, )
-    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
-    search_fields = ["first_name", ]
-    http_method_names = ['get', 'retrieve', 'head']
+
+
+@decorators.api_view(["GET", ])
+def check_provider_update_status(request: HttpRequest):
+    print("ih")
+    provider_id: int = request.user.id
+    queryset = UpdateProfileRequests.objects.filter(provider_requested=provider_id)
+    if not queryset.exists():
+        return Response({
+            "message": "there is no such record for this provider"
+        }, status=status.HTTP_404_NOT_FOUND)
     
-    @action(['GET'], detail = True, permission_classes = (IsAuthenticated,) ) #, 
-    def retrieve_profile(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+    serializer = serializers.ServiceProviderUpdateRequestSerializer(queryset, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ServiceProviderUpdateRequestViewSet(viewsets.ModelViewSet):
-    """
-    Path => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests
-    
-    GET Methods (Only Admins):
-        -List update requests via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests
-        -List a specific update request using request id via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests/<int:pk> 
-    
-    POST Method (Only Service Providers):
-        -Create a new update request via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests/    
-            -sent_data field is required (JSON field)
-            
-    PATCH Method (Only Admins):
-        -Approve or decline an update request via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests/<int:pk>/approve_or_decline
-            - request_status field is required (Approved or Declined)
-    """
-    
     queryset = UpdateProfileRequests.objects
     serializer_class = serializers.ServiceProviderUpdateRequestSerializer
-    permission_classes = (permissions.UpdateRequestsPermission,)
+    permission_classes = (permissions.UpdateRequestsPermission, )
     
     # Service_provider can send an update request
     def create(self, request: HttpRequest, *args, **kwargs):
-        service_provider = request.user.service_provider
-        request_data = request.data.copy()
-        request_data["provider_requested"] = service_provider
+        service_provider, data = request.user.service_provider.id, request.data.copy()
+        data["provider_requested"] = service_provider
         
-        serializer = self.get_serializer(data=request_data)
+        Notification.objects.create(
+            sender="System", sender_type="System",
+            receiver=request.user.email, receiver_type="Service_Provider",
+            ar_content="تعديل الملف الشخصي بانتظار المراجعة",
+            en_content="Profile information editing is under revision")
+        
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
         
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
-    def perform_update(self, serializer):
-        serializer.save(checked_by=self.request.user)
+    def update(self, request: HttpRequest, *args, **kwargs):
+        data = request.data.copy()
+        data["checked_by"] = request.user.id
+        
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        return Response(serializer.data)
 
 
 class Location(APIView):

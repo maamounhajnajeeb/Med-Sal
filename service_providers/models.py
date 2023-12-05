@@ -49,11 +49,18 @@ class ServiceProviderLocations(models.Model):
 
 
 class UpdateProfileRequests(models.Model):
+    class RecordStatus(models.TextChoices):
+        REJECTED = ('rejected', 'Rejected')
+        PENDING = ('pending', 'Pending')
+        ACCEPTED = ('accepted', 'Accepted')
+    
     provider_requested = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE)
     checked_by = models.ForeignKey(Admins, null=True, on_delete = models.CASCADE, related_name='admin_approved_profile_requests')
     sent_data = JSONField(null=True)
-    updated_at = models.DateTimeField(auto_now_add = True)
-    request_status = models.CharField(max_length = 25,null=True, default='Pending') # Approved or Declined
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    request_status = models.CharField(
+        max_length=15, null=False, choices=RecordStatus.choices, default=RecordStatus.PENDING)
     
     def __str__(self):
         return f"UpdateRequest for {self.user_requested.service_provider.business_name}"

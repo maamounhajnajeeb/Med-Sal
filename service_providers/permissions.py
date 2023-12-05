@@ -45,7 +45,7 @@ class UpdateRequestsPermission(permissions.BasePermission):
     
     def has_permission(self, request, view):
         
-        if request.user:
+        if request.user.is_authenticated:
             codename = f"{request_method_table(request.method)}_updateprofilerequests"
             group = Groups()
             result = group.has_permission(codename, request.user.groups.first())
