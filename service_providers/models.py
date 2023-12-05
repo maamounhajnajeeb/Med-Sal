@@ -1,5 +1,4 @@
 from django.contrib.gis.db import models
-from django.db.models import JSONField
 
 from users.models import Users, Admins
 from category.models import Category
@@ -37,7 +36,7 @@ class ServiceProvider(Users):
 
 class ServiceProviderLocations(models.Model):
     service_provider = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE, related_name="locations")
-    location = models.PointField(srid=4326, null=True, blank=True) # null and blank must be False
+    location = models.PointField(srid=4326, null=True) # null must be False
     opening = models.TimeField(null=False)
     closing = models.TimeField(null=False)
     crew = models.TextField(null=False)
@@ -56,7 +55,7 @@ class UpdateProfileRequests(models.Model):
     
     provider_requested = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE)
     checked_by = models.ForeignKey(Admins, null=True, on_delete = models.CASCADE, related_name='admin_approved_profile_requests')
-    sent_data = JSONField(null=True)
+    sent_data = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     request_status = models.CharField(

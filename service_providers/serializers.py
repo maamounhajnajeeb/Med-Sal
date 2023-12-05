@@ -37,18 +37,6 @@ class ServiceProviderApproveRequestSerializer(serializers.ModelSerializer):
         fields = ['request_status', 'approved_by']
 
 
-# class ServiceProviderLocationSerializer(GeoFeatureModelSerializer):
-
-#     class Meta:
-#         model = ServiceProviderLocations
-#         geo_field = 'location'
-#         fields = ('service_provider_id',
-#                   'opening',
-#                   'closing',
-#                   'crew',
-#                   'created_at',
-#                   )
-
 class LocationSerializerSafe(serializers.ModelSerializer):
     service_provider = serializers.StringRelatedField()
     

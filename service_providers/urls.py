@@ -15,7 +15,7 @@ router.register("update_request", views.ServiceProviderUpdateRequestViewSet, bas
 
 urlpatterns = [
     # service provider checking update status
-    path("check/", views.check_provider_update_status, name="check_provider_update_status"),
+    path("check/", views.check_provider_update_status, name="check_provider_update_status"), #
     
     # list locations - for everybody
     path("locations/category/<int:pk>/", maamoun_view.show_category_locations, name="show_provider_locations"),

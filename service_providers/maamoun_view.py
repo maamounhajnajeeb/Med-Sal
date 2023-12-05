@@ -8,6 +8,8 @@ from . import permissions as local_permissions
 from . import models, serializers
 
 from users.serializers import ServiceProviderSerializer
+from notification.models import Notification
+
 
 
 class LocationRUD(generics.RetrieveUpdateDestroyAPIView):
@@ -21,18 +23,23 @@ class CreateLocation(generics.CreateAPIView):
     serializer_class = serializers.LocationSerializer
     permission_classes = (local_permissions.LocationsPermissions, )
     
-    def create(self, request, *args, **kwargs):
-        request_data = self.handle_request_data()
-        serializer = self.get_serializer(data=request_data)
+    def create(self, request: HttpRequest, *args, **kwargs):
+        data = request.data.copy()
+        data["service_provider"] = request.user.id
+        
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+        
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=request.user.email
+            , receiver_type="Service_Provider"
+            , ar_content="تم إضافة فرع جديد لمزود الخدمة"
+            , en_content="a new branch added to your service provider")
+        
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        
-    def handle_request_data(self):
-        copied_data = self.request.data.copy()
-        copied_data["service_provider"] = self.request.user
-        return copied_data
 
 
 @decorators.api_view(["GET", ])
@@ -50,7 +57,7 @@ def show_providers_locations(request: HttpRequest):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])
-def show_provider_locations(request: HttpRequest, pk):
+def show_provider_locations(request: HttpRequest, pk: int):
     """
     get specific service provider locations
     pk here is service_provider id

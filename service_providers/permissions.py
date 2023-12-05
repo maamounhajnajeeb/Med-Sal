@@ -39,7 +39,12 @@ class LocationsPermissions(permissions.BasePermission):
         result = group.has_permission(codename, request.user.groups.first())
         
         return result
-
+    
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        return obj.service_provider.email == request.user.email or request.user.is_staff
 
 class UpdateRequestsPermission(permissions.BasePermission):
     

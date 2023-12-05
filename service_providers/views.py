@@ -1,13 +1,10 @@
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from rest_framework.views import APIView
 from rest_framework import decorators
 
 from django.http import HttpRequest
 
-import geopy.distance
-
-from .models import ServiceProviderLocations, UpdateProfileRequests
+from .models import UpdateProfileRequests
 from . import permissions, serializers
 
 from notification.models import Notification
@@ -16,7 +13,6 @@ from notification.models import Notification
 
 @decorators.api_view(["GET", ])
 def check_provider_update_status(request: HttpRequest):
-    print("ih")
     provider_id: int = request.user.id
     queryset = UpdateProfileRequests.objects.filter(provider_requested=provider_id)
     if not queryset.exists():
@@ -64,45 +60,45 @@ class ServiceProviderUpdateRequestViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class Location(APIView):
-    serializer_class = serializers.ServiceProviderLocationSerializer
+# class Location(APIView):
+#     serializer_class = serializers.ServiceProviderLocationSerializer
     
-    def get(self,request):
-        queryset = ServiceProviderLocations.objects.all()
-        serializer = serializers.ServiceProviderLocationSerializer(queryset, many = True)
-        return Response(serializer.data)
+#     def get(self,request):
+#         queryset = ServiceProviderLocations.objects.all()
+#         serializer = serializers.ServiceProviderLocationSerializer(queryset, many = True)
+#         return Response(serializer.data)
     
-    def post(self,request):
-        serializer = serializers.ServiceProviderLocationSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status = status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+#     def post(self,request):
+#         serializer = serializers.ServiceProviderLocationSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status = status.HTTP_201_CREATED)
+#         else:
+            # return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
 
-class ServiceProviderDistanceListView(APIView):
-    def post(self, request):
-        serializer = serializers.CalculateDistanceSerializer(data=request.data)
-        if serializer.is_valid():
-            origin = geopy.Point(serializer.validated_data['origin_lat'], serializer.validated_data['origin_lng'])
-            domain = serializer.validated_data.get('domain', 100)  # Default domain of 100 km
+# class ServiceProviderDistanceListView(APIView):
+#     def post(self, request):
+#         serializer = serializers.CalculateDistanceSerializer(data=request.data)
+#         if serializer.is_valid():
+#             origin = geopy.Point(serializer.validated_data['origin_lat'], serializer.validated_data['origin_lng'])
+#             domain = serializer.validated_data.get('domain', 100)  # Default domain of 100 km
             
-            service_provider_locations = ServiceProviderLocations.objects.all()
-            results = []
+#             service_provider_locations = ServiceProviderLocations.objects.all()
+#             results = []
             
-            for location in service_provider_locations:
-                destination = geopy.Point(location.location.y, location.location.x)
-                distance = geopy.distance.distance(origin, destination).km
+#             for location in service_provider_locations:
+#                 destination = geopy.Point(location.location.y, location.location.x)
+#                 distance = geopy.distance.distance(origin, destination).km
                 
-                if distance <= domain:
-                    result = {
-                        'service_provider':location.service_provider_id.business_name,
-                        'distance':distance
-                    }   
-                    results.append(result) 
-                    return Response(results, status=status.HTTP_200_OK)
-                else:
-                    return Response({'There is no service provider in the area you are searching in'})
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#                 if distance <= domain:
+#                     result = {
+#                         'service_provider':location.service_provider_id.business_name,
+#                         'distance':distance
+#                     }   
+#                     results.append(result) 
+#                     return Response(results, status=status.HTTP_200_OK)
+#                 else:
+#                     return Response({'There is no service provider in the area you are searching in'})
+#         else:
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

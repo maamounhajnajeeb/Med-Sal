@@ -8,7 +8,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from typing import Any
-import os, re
+import re
 
 from .models import Admins, SuperAdmins
 from . import helpers
