@@ -17,6 +17,9 @@ MEDIA_FOLDER = settings.MEDIA_ROOT
 class FileMixin():
     
     def upload(self, file_obj, folder_name: str):
+        if file_obj.size / 1024 / 1024 > 5:
+            return "Sorry, but file you've uploaded is more than 5 mega byte"
+        
         fs = FileSystemStorage(location=self.foldering_cliche(folder_name))
         extension = file_obj.name.split(".")[1]
         

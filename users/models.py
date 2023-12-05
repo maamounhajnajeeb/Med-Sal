@@ -6,8 +6,6 @@ from django.db.models.query import QuerySet
 from django.conf import settings
 from django.db import models
 
-import re
-
 from typing import Any
 
 from .models_helpers import get_image_path

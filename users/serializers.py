@@ -92,20 +92,26 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
     
     def update(self, instance, validated_data):
         if validated_data.get("provider_file"):
+            # delete
             path = instance.provider_file.path
-            os.remove(path)
+            helpers.delete_image(path)
+            # update
+            provider_file = validated_data.pop("provider_file")
+            provider_file_path = self.upload(provider_file, "service_providers")
+            validated_data["provider_file"] = provider_file_path
         return super().update(instance, validated_data)
     
     def create(self, validated_data):
         user_data = validated_data.pop('user')
+        # you can't use: user = Users(**user_data)
         user = Users.objects.create_user(**user_data)
         group = Group.objects.get(name=user_data.get("user_type"))
         user.groups.add(group)
+        user.save()
         
         category = validated_data.pop("category")
         validated_data["provider_file"] = self.upload(
             validated_data.pop("provider_file"), "service_providers")
-        print(validated_data["provider_file"])
         
         self.create_query(validated_data, user, category)
         
@@ -127,6 +133,12 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
             cur.execute(query)
         
         return "Done"
+    
+    def to_representation(self, instance):
+        original_repr = super().to_representation(instance)
+        original_repr["user"].pop("id")
+        
+        return original_repr
 
 
 class LogInSerializer(TokenObtainPairSerializer):

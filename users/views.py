@@ -55,19 +55,19 @@ class UsersView(generics.RetrieveUpdateDestroyAPIView):
         helpers.delete_image(image_path)
         instance.delete()
 
-
+#
 class ServiceProviderList(generics.ListAPIView):
     """
-    showing service providers list for admins only
+    showing service providers list for everybody
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
     permission_classes = ( )
 
-
+#
 class ServiceProviderCreate(generics.CreateAPIView):
     """
-    signing up service providers for everybody
+    signing up as service providers for UnAuthenticated users
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
@@ -115,8 +115,8 @@ class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
             pk = self.kwargs.get("pk")
             user_instance = Users.objects.filter(pk=pk)
             if user_data.get("image"):
-                imag_path = user_instance.image.path
-                os.remove(imag_path)
+                img_path = user_instance.image.path
+                helpers.delete_image(img_path)
             user_instance.update(**user_data)
     
     def perform_destroy(self, instance):
@@ -184,7 +184,7 @@ def email_confirmation(request: HttpRequest):
         {"message": "Valid email you can log in now"}
         , status=status.HTTP_202_ACCEPTED)
 
-
+# 
 @decorators.api_view(["POST", ])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
 @decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
@@ -210,13 +210,12 @@ def resend_email_validation(request: HttpRequest):
         {"message": "Confirmation email resent"}
         , status=status.HTTP_202_ACCEPTED)
 
-
+#
 @decorators.api_view(["POST", ])
-@decorators.permission_classes((permissions.IsAuthenticated, ))
 def change_email(request: HttpRequest):
     """
-    give authenticated user ability to change its email
-    send a confirmation message to the new email.
+    give authenticated user ability to change his/her email
+    and send a confirmation message to the new email.
     """
     user_id = request.user.id
     new_email = request.data.get("new_email")
@@ -226,16 +225,21 @@ def change_email(request: HttpRequest):
         , view="/api/v1/users/accept_new_email/")
     confirm.send_mail()
     
-    models.EmailChange.objects.create(
-        user_id=user_id, new_email=new_email, token=confirm.token)
+    try:
+        user_record = models.EmailChange.objects.get(user_id=user_id)
+        user_record.new_email, user_record.token = new_email, confirm.token
+        user_record.save()
+        
+    except models.EmailChange.DoesNotExist:
+        models.EmailChange.objects.create(
+            user_id=user_id, new_email=new_email, token=confirm.token)
     
     return Response({
-        "message": "confirmation message sent to your new email"
+        "message": f"confirmation message sent to {new_email}"
     }, status=status.HTTP_200_OK)
 
-
+#
 @decorators.api_view(["GET", ])
-@decorators.permission_classes((permissions.IsAuthenticated, ))
 def accept_email_change(request: HttpRequest, token: str):
     """
     check if the link sent to email is real
