@@ -9,6 +9,8 @@ from products import permissions as local_permissions
 from products import models, serializers
 from products import file_handler
 
+from notification.models import Notification
+
 
 
 class AllProducts(generics.ListAPIView):
@@ -30,18 +32,26 @@ class CreateProduct(generics.CreateAPIView):
     queryset = models.Product.objects
     
     def create(self, request, *args, **kwargs):
-        request.data["images"] = self.upload_images(request)
-        return super().create(request, *args, **kwargs)
+        request.data["images"] = self._upload_images(request)
+        resp = super().create(request, *args, **kwargs)
+        
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=request.user.email, receiver_type="Service_Provider"
+            , en_content="a new product added to your specified location"
+            , ar_content="تم إضافة خدمة جديدة للفرع المحدد")
+        
+        return Response(resp.data, status=resp.status_code)
     
-    def upload_images(self, request):
+    def _upload_images(self, request):
         images_objs = request.FILES.getlist("images")
-        self.handling_image_exception(images_objs)
+        self._handling_image_exception(images_objs)
         handler = file_handler.HandleFiles(request)
         images_names = handler.upload_images(images_objs)
         
         return images_names
     
-    def handling_image_exception(self, images_objs):
+    def _handling_image_exception(self, images_objs):
         """
         handling size and type of images
         """
@@ -62,9 +72,11 @@ class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects
     
     def retrieve(self, request, *args, **kwargs):
+        lanuage = request.META.get("Accept-Language")
+        
         instance = self.get_object()
-        serializer = self.get_serializer([instance], many=True, fields={"language": request.META.get("Accept-Language")})
-        return Response(serializer.data)
+        serializer = self.get_serializer([instance], many=True, fields={"language": lanuage})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @decorators.api_view(["GET", ])
