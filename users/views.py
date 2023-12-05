@@ -9,7 +9,7 @@ from rest_framework import status, generics
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-import os
+from typing import Any
 
 from . import serializers, helpers
 from . import models, permissions as local_permissions
@@ -20,14 +20,14 @@ from utils.permission import authorization_with_method, HasPermission
 
 Users = get_user_model()
 
-
+# 
 @decorators.api_view(["GET", ])
 @authorization_with_method("list", "users")
 def list_all_users(request: HttpRequest):
     """
     get all users and show them to admins
     """
-    queryset = Users.objects.all()
+    queryset = Users.objects.filter()
     serializer = serializers.UserSerializer(queryset, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -63,6 +63,9 @@ class ServiceProviderList(generics.ListAPIView):
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
     permission_classes = ( )
+    
+    def get_queryset(self):
+        return self.queryset.filter(user__is_active=True)
 
 #
 class ServiceProviderCreate(generics.CreateAPIView):
@@ -75,7 +78,7 @@ class ServiceProviderCreate(generics.CreateAPIView):
     
     def create(self, request: HttpRequest, *args, **kwargs):
         resp = super().create(request, *args, **kwargs)
-        pk, email = resp.data["user"]["id"], resp.data["user"]["email"]
+        pk, email = resp.data["id"], resp.data["user"]["email"]
         
         confirm = helpers.SendMail(
             to=email, request=request, out=True
@@ -96,42 +99,41 @@ class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
-    permission_classes = (
-        permissions.IsAuthenticated, local_permissions.HavePermission, )
+    permission_classes = (permissions.IsAuthenticated, local_permissions.HavePermission, )
     
     def update(self, request, *args, **kwargs):
-        if request.data.get("user"):
-            self.update_user_instance()
+        data = request.data.copy()
+        user_data = data.pop("user", None)
+        if user_data:
+            self.update_user_instance(user_data)
+            
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
         
-        return super().update(request, *args, **kwargs)
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     
-    def update_user_instance(self):
+    def update_user_instance(self, user_data: dict[str, Any]):
         """
         updating the user_instance in the service_provider record
         """
-        request_data = self.request.data.copy()
-        user_data = request_data.pop("user", None)
-        if user_data:
-            pk = self.kwargs.get("pk")
-            user_instance = Users.objects.filter(pk=pk)
-            if user_data.get("image"):
-                img_path = user_instance.image.path
-                helpers.delete_image(img_path)
-            user_instance.update(**user_data)
-    
+        pk = self.kwargs.get("pk")
+        user_instance = Users.objects.filter(pk=pk)
+        
+        if user_data.get("image"):
+            img_path = user_instance.first().image.path
+            helpers.delete_image(img_path)
+            
+        user_instance.update(**user_data)
+        
     def perform_destroy(self, instance):
         """
         remove files from the media folder before destroying record
         """
-        def delete_file(file):
-            try:
-                os.remove(file.path)
-                print("Image Deleted")
-            except:
-                print("No Image")
-        
-        delete_file(instance.user.image)
-        delete_file(instance.provider_file)
+        helpers.delete_image(instance.user.image.path)
+        helpers.delete_image(instance.provider_file.path)
         
         return super().perform_destroy(instance)
 
@@ -177,9 +179,14 @@ def email_confirmation(request: HttpRequest):
             , status=status.HTTP_404_NOT_FOUND)
     
     confirm_record = query.first()
-    helpers.activate_user(confirm_record.user_id)
-    
     query.first().delete()
+    
+    if Users.objects.get(id=confirm_record.user_id).user_type == "SERVICE_PROVIDER":
+        return Response(
+            {"message": "Valid email, but you are Service Provider so your account is under revision"}
+            , status=status.HTTP_202_ACCEPTED)
+        
+    helpers.activate_user(confirm_record.user_id)
     return Response(
         {"message": "Valid email you can log in now"}
         , status=status.HTTP_202_ACCEPTED)
