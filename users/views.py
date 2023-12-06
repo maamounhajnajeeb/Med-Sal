@@ -6,63 +6,71 @@ from django.http import HttpRequest
 from rest_framework import permissions, decorators
 from rest_framework.response import Response
 from rest_framework import status, generics
-from rest_framework import parsers, viewsets
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-import os
+from typing import Any
 
 from . import serializers, helpers
 from . import models, permissions as local_permissions
 from . import throttles as local_throttles
 
 from service_providers.models import ServiceProvider
+from utils.permission import authorization_with_method, HasPermission
 
 Users = get_user_model()
 
-
-class ListAllUsers(generics.ListAPIView):
+# 
+@decorators.api_view(["GET", ])
+@authorization_with_method("list", "users")
+def list_all_users(request: HttpRequest):
     """
     get all users and show them to admins
-    then each user can be edited via admin or user
     """
-    serializer_class = serializers.UserSerializer
-    permission_classes = (
-        permissions.IsAuthenticated, local_permissions.HasListUsers, )
-    queryset = Users.objects
+    queryset = Users.objects.filter()
+    serializer = serializers.UserSerializer(queryset, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+#
 class UsersView(generics.RetrieveUpdateDestroyAPIView):
     """
     general retrieve, update, destroy api for profile owners and admins
     not for updating email or password
     """
     serializer_class = serializers.SpecificUserSerializer
-    permission_classes = (
-        permissions.IsAuthenticated, local_permissions.IsAdminOrOwner, )
+    permission_classes = (HasPermission, )
     queryset = Users.objects
+    
+    def get_permissions(self):
+        return [permission("users") for permission in self.permission_classes]
     
     def update(self, request, *args, **kwargs):
         if request.data.get("image"):
             image_path = request.user.image.path
-            if os.path.exists(image_path):
-                os.remove(image_path)
-                
+            helpers.delete_image(image_path)
         return super().update(request, *args, **kwargs)
+    
+    def perform_destroy(self, instance: Users):
+        image_path = instance.image.path
+        helpers.delete_image(image_path)
+        instance.delete()
 
-
+#
 class ServiceProviderList(generics.ListAPIView):
     """
-    showing service providers list for admins only
+    showing service providers list for everybody
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
     permission_classes = ( )
+    
+    def get_queryset(self):
+        return self.queryset.filter(user__is_active=True)
 
-
+#
 class ServiceProviderCreate(generics.CreateAPIView):
     """
-    signing up service providers for everybody
+    signing up as service providers for UnAuthenticated users
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
@@ -70,7 +78,7 @@ class ServiceProviderCreate(generics.CreateAPIView):
     
     def create(self, request: HttpRequest, *args, **kwargs):
         resp = super().create(request, *args, **kwargs)
-        pk, email = resp.data["user"]["id"], resp.data["user"]["email"]
+        pk, email = resp.data["id"], resp.data["user"]["email"]
         
         confirm = helpers.SendMail(
             to=email, request=request, out=True
@@ -91,46 +99,45 @@ class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
     """
     serializer_class = serializers.ServiceProviderSerializer
     queryset = ServiceProvider.objects
-    permission_classes = (
-        permissions.IsAuthenticated, local_permissions.HavePermission, )
+    permission_classes = (permissions.IsAuthenticated, local_permissions.HavePermission, )
     
     def update(self, request, *args, **kwargs):
-        if request.data.get("user"):
-            self.update_user_instance()
+        data = request.data.copy()
+        user_data = data.pop("user", None)
+        if user_data:
+            self.update_user_instance(user_data)
+            
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
         
-        return super().update(request, *args, **kwargs)
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     
-    def update_user_instance(self):
+    def update_user_instance(self, user_data: dict[str, Any]):
         """
         updating the user_instance in the service_provider record
         """
-        request_data = self.request.data.copy()
-        user_data = request_data.pop("user", None)
-        if user_data:
-            pk = self.kwargs.get("pk")
-            user_instance = Users.objects.filter(pk=pk)
-            if user_data.get("image"):
-                imag_path = user_instance.image.path
-                os.remove(imag_path)
-            user_instance.update(**user_data)
-    
+        pk = self.kwargs.get("pk")
+        user_instance = Users.objects.filter(pk=pk)
+        
+        if user_data.get("image"):
+            img_path = user_instance.first().image.path
+            helpers.delete_image(img_path)
+            
+        user_instance.update(**user_data)
+        
     def perform_destroy(self, instance):
         """
         remove files from the media folder before destroying record
         """
-        def delete_file(file):
-            try:
-                os.remove(file.path)
-                print("Image Deleted")
-            except:
-                print("No Image")
-        
-        delete_file(instance.user.image)
-        delete_file(instance.provider_file)
+        helpers.delete_image(instance.user.image.path)
+        helpers.delete_image(instance.provider_file.path)
         
         return super().perform_destroy(instance)
 
-
+# 
 class SignUp(generics.CreateAPIView):
     """
     sign up as user, admin, and super_admin
@@ -156,7 +163,7 @@ class SignUp(generics.CreateAPIView):
         , }, status=resp.status_code
         , headers=self.get_success_headers(resp.data))
 
-
+# 
 @decorators.api_view(["GET"])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
 def email_confirmation(request: HttpRequest):
@@ -172,14 +179,19 @@ def email_confirmation(request: HttpRequest):
             , status=status.HTTP_404_NOT_FOUND)
     
     confirm_record = query.first()
-    helpers.activate_user(confirm_record.user_id)
-    
     query.first().delete()
+    
+    if Users.objects.get(id=confirm_record.user_id).user_type == "SERVICE_PROVIDER":
+        return Response(
+            {"message": "Valid email, but you are Service Provider so your account is under revision"}
+            , status=status.HTTP_202_ACCEPTED)
+        
+    helpers.activate_user(confirm_record.user_id)
     return Response(
         {"message": "Valid email you can log in now"}
         , status=status.HTTP_202_ACCEPTED)
 
-
+# 
 @decorators.api_view(["POST", ])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
 @decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
@@ -205,13 +217,12 @@ def resend_email_validation(request: HttpRequest):
         {"message": "Confirmation email resent"}
         , status=status.HTTP_202_ACCEPTED)
 
-
+#
 @decorators.api_view(["POST", ])
-@decorators.permission_classes((permissions.IsAuthenticated, ))
 def change_email(request: HttpRequest):
     """
-    give authenticated user ability to change its email
-    send a confirmation message to the new email.
+    give authenticated user ability to change his/her email
+    and send a confirmation message to the new email.
     """
     user_id = request.user.id
     new_email = request.data.get("new_email")
@@ -221,16 +232,21 @@ def change_email(request: HttpRequest):
         , view="/api/v1/users/accept_new_email/")
     confirm.send_mail()
     
-    models.EmailChange.objects.create(
-        user_id=user_id, new_email=new_email, token=confirm.token)
+    try:
+        user_record = models.EmailChange.objects.get(user_id=user_id)
+        user_record.new_email, user_record.token = new_email, confirm.token
+        user_record.save()
+        
+    except models.EmailChange.DoesNotExist:
+        models.EmailChange.objects.create(
+            user_id=user_id, new_email=new_email, token=confirm.token)
     
     return Response({
-        "message": "confirmation message sent to your new email"
+        "message": f"confirmation message sent to {new_email}"
     }, status=status.HTTP_200_OK)
 
-
+#
 @decorators.api_view(["GET", ])
-@decorators.permission_classes((permissions.IsAuthenticated, ))
 def accept_email_change(request: HttpRequest, token: str):
     """
     check if the link sent to email is real
@@ -253,9 +269,8 @@ def accept_email_change(request: HttpRequest, token: str):
         "message": "user email changed successfully"
     }, status=status.HTTP_202_ACCEPTED)
 
-
+#
 @decorators.api_view(["POST", ])
-@decorators.permission_classes((permissions.IsAuthenticated, ))
 def check_password(request: HttpRequest):
     """
     first step to change password to authenticated users
@@ -277,12 +292,11 @@ def check_password(request: HttpRequest):
         "message": "Valid passwords you can go to change password"
     }, status=status.HTTP_202_ACCEPTED)
 
-
+#
 @decorators.api_view(["POST", ])
-@decorators.permission_classes((permissions.IsAuthenticated, ))
 def change_password(request: HttpRequest):
     """
-    change authenticated user password
+    second step to change password to authenticated users
     """
     new_pwd = request.data.get("new_password")
     helpers.set_password(request.user, new_pwd)
@@ -291,7 +305,7 @@ def change_password(request: HttpRequest):
         "message": "Password changed successfully"
     }, status=status.HTTP_202_ACCEPTED)
 
-
+#
 @decorators.api_view(["POST", ])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
 def reset_password(request: HttpRequest):
@@ -343,7 +357,7 @@ def resend_code(request: HttpRequest):
         "message": "A 6 numbers code sent to your mail, check it"
     }, status=status.HTTP_200_OK)
 
-
+#
 @decorators.api_view(["POST", ])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
 def enter_code(request):
@@ -360,12 +374,11 @@ def enter_code(request):
             "message": "sorry, but there is no code like this in the database, try to reset password again"
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # record.first().delete()
     return Response({
         "message":"Right code, you can put new password now"
     }, status=status.HTTP_202_ACCEPTED)
 
-
+#
 @decorators.api_view(["POST", ])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
 def new_password(request: HttpRequest):
@@ -391,7 +404,7 @@ def new_password(request: HttpRequest):
         "message": "Password changed successfully, now you can log in with the new password"
     }, status=status.HTTP_202_ACCEPTED)
 
-
+#
 class LogIn(TokenObtainPairView):
     """
     login view

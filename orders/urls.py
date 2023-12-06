@@ -9,6 +9,7 @@ app_name = "orders"
 router = routers.SimpleRouter()
 
 router.register("cart", cart_views.CartView, basename="cart")
+router.register("rejected", rejected_orders_views.RejectedOrdersViewSet, basename="rejected_orders")
 
 
 
@@ -27,7 +28,13 @@ urlpatterns = [
     path("items/", order_items_views.list_all_items, name="all_items"),
     re_path(r"items/user/(\d{1,})?", order_items_views.user_items, name="user_items"),
     
-    re_path(r"provider/((?P<provider_id>\d{1,})?(?P<year>\w+&)?(?P<month>\w+&)?(?P<day>\w+)?)?", order_items_views.provier_items, name="provider_items"),
+    # re_path(
+    #     r"provider/((?P<provider_id>\d{1,})?(?P<year>\w+&)?(?P<month>\w+&)?(?P<day>\w+)?)/?"
+    #     , order_items_views.provider_items
+    #     , name="provider_items"),
+    
+    # rejected orders
+    
 ]
 
 urlpatterns += router.urls

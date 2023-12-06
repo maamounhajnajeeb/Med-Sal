@@ -19,12 +19,7 @@ schema_view = get_schema_view(
         license=openapi.License(name="BSD License"),
     ),
     public=True,
-permission_classes=(permissions.AllowAny,),
-)
-
-urlpatterns = [
-
-]
+    permission_classes=(permissions.AllowAny,),)
 
 
 urlpatterns = [
@@ -58,6 +53,15 @@ urlpatterns = [
     
     # permissions app
     path("api/v1/", include("permissions.urls", namespace="permissions")),
+    
+    # services app
+    path("api/v1/services/", include("services.urls", namespace="services")),
+    
+    # notification app
+    path("api/v1/notifications/", include("notification.urls", namespace="notification")),
+    
+    # appointments app
+    path("api/v1/appointments/", include("appointments.urls", namespace="appointments")),
     
     # api document
     # path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),

@@ -3,7 +3,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q
 from django.http import HttpRequest
-from category import models as camodels
 from products import models as pmodels, serializers as pserializer
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db.models.functions import Distance

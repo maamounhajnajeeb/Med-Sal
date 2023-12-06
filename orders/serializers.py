@@ -225,3 +225,10 @@ class SpecificItemSerialzier(serializers.ModelSerializer):
             , "status": instance.status
             , "updated_at": instance.updated_at
         }
+
+
+class RejectedOrderSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = models.RejectedOrders
+        fields = "__all__"
