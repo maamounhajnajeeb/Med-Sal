@@ -50,7 +50,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
         USER = ("USER", "User")
     
     email = models.EmailField(max_length=128, unique=True, null=False)
-    phone = models.CharField(max_length=16, unique=True, null=True) # null to be False
+    phone = models.CharField(max_length=16, unique=True, null=False)
     image = models.ImageField(
         upload_to=get_image_path, default="defaults/default_profile.jpg", null=True)
     

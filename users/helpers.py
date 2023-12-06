@@ -1,3 +1,4 @@
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
@@ -17,6 +18,12 @@ MEDIA_FOLDER = settings.MEDIA_ROOT
 class FileMixin():
     
     def upload(self, file_obj, folder_name: str):
+        if file_obj.size / 1024 / 1024 > 5:
+            return "Sorry, but file you've uploaded is more than 5 mega byte"
+        
+        if type(file_obj) != InMemoryUploadedFile:
+            return f"Sorry, but you should updload a file not a {type(file_obj)}"
+        
         fs = FileSystemStorage(location=self.foldering_cliche(folder_name))
         extension = file_obj.name.split(".")[1]
         
@@ -72,7 +79,6 @@ def activate_user(id: int):
     user_instance: Users = Users.objects.get(id=id)
     user_instance.is_active = True
     user_instance.save()
-    
 
 
 def change_user_email(id: int, new_email: str):
@@ -110,3 +116,11 @@ def upload_file(image_obj):
     fs.save(image_new_name, image_obj)
     
     return image_new_name
+
+
+def delete_image(path):
+    if os.path.exists(path):
+        os.remove(path)
+        print("Image Deleted Successfully")
+    else:
+        print("No Such File at This Path")

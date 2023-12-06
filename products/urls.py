@@ -6,6 +6,7 @@ from .views import maamoun_views, rates_view
 
 app_name = "products"
 
+
 router = routers.SimpleRouter()
 router.register("rates", rates_view.RatesViewSet, basename="rates_view")
 
@@ -13,7 +14,6 @@ router.register("rates", rates_view.RatesViewSet, basename="rates_view")
 urlpatterns = [
     # create product
     path("", maamoun_views.CreateProduct.as_view(), name="create_product"),
-    # path("", maamoun_views.create_product, name="create_product"),
     
     # read, update, destroy specific product
     path("<int:pk>/", maamoun_views.RUDProduct.as_view(), name="specifc_product"),
