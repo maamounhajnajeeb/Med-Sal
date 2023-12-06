@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "rest_framework_gis",
     "rest_framework",
     "corsheaders",
+    "drf_yasg",
     
     # local apps
     "service_providers.apps.ServiceProvidersConfig",
@@ -54,8 +55,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    "django.middleware.locale.LocaleMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
+    'django.middleware.locale.LocaleMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -207,6 +208,10 @@ AUTH_USER_MODEL = "users.Users" #
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
+
+DATETIME_INPUT_FORMATS = [
+    '%Y-%m-%d %H:%M:%S',
+]
 
 USE_TZ = True
 

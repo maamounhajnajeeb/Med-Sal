@@ -11,7 +11,7 @@ import geopy.distance
 from .models import ServiceProvider, ServiceProviderLocations, UpdateProfileRequests
 import geopy.distance
 from service_providers import permissions, serializers
-from users.models import Admins
+
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 
@@ -34,19 +34,15 @@ class CRUDServiceProviders(viewsets.ModelViewSet):
 
 class ServiceProviderUpdateRequestViewSet(viewsets.ModelViewSet):
     """
-    Path => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests
+    Path => http://127.0.0.1:8000/api/v1/service_providers/update_requests
     
     GET Methods (Only Admins):
-        -List update requests via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests
-        -List a specific update request using request id via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests/<int:pk> 
+        -List update requests via url => http://127.0.0.1:8000/api/v1/service_providers/update_request
+        -List a specific update request using request id via url => http://127.0.0.1:8000/api/v1/service_providers/update_request/<int:pk> 
     
     POST Method (Only Service Providers):
-        -Create a new update request via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests/    
+        -Create a new update request via url => http://127.0.0.1:8000/api/v1/service_providers/update_request/    
             -sent_data field is required (JSON field)
-            
-    PATCH Method (Only Admins):
-        -Approve or decline an update request via url => http://127.0.0.1:8000/api/v1/service_providers/profile/update_requests/<int:pk>/approve_or_decline
-            - request_status field is required (Approved or Declined)
     """
     
     queryset = UpdateProfileRequests.objects

@@ -1,6 +1,7 @@
 from rest_framework import viewsets, decorators
 from rest_framework import permissions, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from django.http import HttpRequest
 from django.db.models import Q
@@ -71,7 +72,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdmin, )
     
     def list(self, request, *args, **kwargs):
-        third_field = request.META.get("HTTP_ACCEPT-LANGUAGE")
+        third_field = request.META.get("Accept-Language")
         
         queryset = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(queryset, fields={"id", "parent", f"{third_field}_name"}, many=True)
@@ -88,6 +89,10 @@ class CategoryViewSet(viewsets.ModelViewSet):
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])
 def category_locations_filter(request: HttpRequest, category_id: int):
+    """
+        An api to list service_provider categories locations 
+        category ID is required 
+    """
     locations = ServiceProviderLocations.objects.filter(Q(service_provider__category=category_id))
     
     serializer = LocationSerializerSafe(locations, many=True)

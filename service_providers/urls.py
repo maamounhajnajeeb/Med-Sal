@@ -20,6 +20,7 @@ urlpatterns = [
     path("locations/category/<int:pk>/", maamoun_view.show_category_locations, name="show_provider_locations"),
     path("locations/<int:pk>/", maamoun_view.show_provider_locations, name="show_provider_locations"),
     path("category/<int:pk>/", maamoun_view.show_category_providers, name="show_category_providers"),
+    
     path("locations/", maamoun_view.show_providers_locations, name="show_providers_locations"),
     
     # create location - authorized only

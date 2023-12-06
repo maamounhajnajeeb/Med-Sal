@@ -46,7 +46,9 @@ class ServiceProviderLocations(models.Model):
     class Meta:
         verbose_name = "ServiceProviderLocations"
         verbose_name_plural = "ServiceProviderLocations"
-
+    
+    def __str__(self):
+        return self.service_provider.business_name
 
 class UpdateProfileRequests(models.Model):
     provider_requested = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE)

@@ -11,6 +11,7 @@ class Category(models.Model):
         HOME_CARE = ("HOME_CARE", "Home_Care")
         PLASTIC_SURGERY = ("PLASTIC_SURGERY", "Plastic_Surgery")
         RADIOLOGIST = ("RADIOLOGIST", "Radiologist")
+        AESTHETICS = ("AESTHETICS", 'Aesthetics')
         PHARMACY = ("PHARMACY", "Pharmacy")
         HOSTPITAL = ("HOSTPITAL", "Hostpital")
         LAB = ("LAB", "Lab")

@@ -1,10 +1,9 @@
 from django.db import models
 
-from orders.models import Orders
+from orders.models import OrderItem
+
+
 
 class Delivery(models.Model):
-    order = models.OneToOneField(Orders, on_delete=models.CASCADE, null=False)
-    paid = models.BooleanField(default=False, null=False)
-    discount_ammount = models.IntegerField(null=False, default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    order = models.OneToOneField(OrderItem, on_delete=models.CASCADE, null=False, related_name="delivery")
+    delivered = models.BooleanField(default=False)

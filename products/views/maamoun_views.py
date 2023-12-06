@@ -12,19 +12,24 @@ from products import file_handler
 
 
 class AllProducts(generics.ListAPIView):
+    """
+        An api that lists all products
+    """
     permission_classes = (local_permissions.HasPermissionOrReadOnly, )
     serializer_class = serializers.ProudctSerializer
     queryset = models.Product.objects
 
 
 class CreateProduct(generics.CreateAPIView):
+    """
+        An api that allows to add products 
+    """
     permission_classes = (local_permissions.HasPermissionOrReadOnly, )
     serializer_class = serializers.ProudctSerializer
     queryset = models.Product.objects
     
     def create(self, request, *args, **kwargs):
         request.data["images"] = self.upload_images(request)
-        print(request.data)
         return super().create(request, *args, **kwargs)
     
     def upload_images(self, request):
@@ -51,6 +56,10 @@ class CreateProduct(generics.CreateAPIView):
 
 
 class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
+    """
+        An api that allows to Read, Update and Delete a specific product 
+        product ID is required 
+    """
     permission_classes = (local_permissions.HasPermissionOrReadOnly, )
     serializer_class = serializers.ProudctSerializer
     queryset = models.Product.objects

@@ -7,6 +7,7 @@ app_name = "products"
 urlpatterns = [
     # create product
     path("", maamoun_views.CreateProduct.as_view(), name="create_product"),
+    # path("", maamoun_views.create_product, name="create_product"),
     
     # read, update, destroy specific product
     path("<int:pk>/", maamoun_views.RUDProduct.as_view(), name="specifc_product"),
@@ -23,6 +24,13 @@ urlpatterns = [
     # view all products
     path("all/", maamoun_views.AllProducts.as_view(), name="all_products"),
 
-    path("category/<int:pk>", tareq_views.show_products_category, name="show_product_category"),
+    # view products by distance from nearest to farthest
+    path("distance/", tareq_views.ProductsFilterByLocationAndDistanceView.as_view(), name="products_by_distance"),
+    
+    # view products by name
+    path("productname/", tareq_views.product_filter_by_name, name="products_by_name"),
+
+
+    
 
 ]
