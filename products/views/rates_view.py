@@ -20,7 +20,14 @@ class RatesViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(data=data, fields={"language": request.META.get("Accept-Language")})
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        
+        try:
+            self.perform_create(serializer)
+        except:
+            return Response({
+                "message": "this user already rates this product, he can't rate it again"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
@@ -64,6 +71,15 @@ def provider_rates(request: HttpRequest, provider_id: Optional[int]):
     
     queryset = models.ProductRates.objects.filter(
         product__service_provider_location__service_provider=provider_id)
+    serializer = serializers.RateSerializer(queryset, many=True, fields={"language": language})
+    
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+def product_rates(request: HttpRequest, product_id: int):
+    language = request.META.get("Accept-Language")
+    queryset = models.ProductRates.objects.filter(product=product_id)
     serializer = serializers.RateSerializer(queryset, many=True, fields={"language": language})
     
     return Response(serializer.data, status=status.HTTP_200_OK)

@@ -35,6 +35,9 @@ urlpatterns = [
     
     # provider rates
     re_path(r"provider/rates/(\d{1,})?", rates_view.provider_rates, name="provider_rates"),
+    
+    # product rates
+    path("<int:product_id>/rates/", rates_view.product_rates, name="product_rates"),
 ]
 
 urlpatterns += router.urls
