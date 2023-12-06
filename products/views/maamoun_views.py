@@ -2,14 +2,14 @@ from rest_framework import decorators, generics
 from rest_framework import permissions, status
 from rest_framework.response import Response
 
-from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.http import HttpRequest
 
 from products import permissions as local_permissions
 from products import models, serializers
-from products import file_handler
+from products.file_handler import UploadImages, DeleteFiles
 
 from notification.models import Notification
+from users.helpers import delete_image
 
 
 
@@ -32,7 +32,8 @@ class CreateProduct(generics.CreateAPIView):
     queryset = models.Product.objects
     
     def create(self, request, *args, **kwargs):
-        request.data["images"] = self._upload_images(request)
+        new_file_names = self._upload_images(request)
+        request.data["images"] = new_file_names
         resp = super().create(request, *args, **kwargs)
         
         Notification.objects.create(
@@ -44,26 +45,8 @@ class CreateProduct(generics.CreateAPIView):
         return Response(resp.data, status=resp.status_code)
     
     def _upload_images(self, request):
-        images_objs = request.FILES.getlist("images")
-        self._handling_image_exception(images_objs)
-        handler = file_handler.HandleFiles(request)
-        images_names = handler.upload_images(images_objs)
-        
-        return images_names
-    
-    def _handling_image_exception(self, images_objs):
-        """
-        handling size and type of images
-        """
-        for image_obj in images_objs:
-            if type(image_obj) != InMemoryUploadedFile:
-                raise ValueError(f"images should be an image obj, not {type(image_obj)}")
-            
-            image_size = image_obj.size // 1024 // 8 / 1024
-            if image_size > 3:
-                raise ValueError(f"images size should be less than 3 mb")
-            
-        return True
+        file_manager = UploadImages(request)
+        return file_manager.upload_files("products", request.FILES.getlist("images"))
 
 
 class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
@@ -77,6 +60,28 @@ class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
         instance = self.get_object()
         serializer = self.get_serializer([instance], many=True, fields={"language": lanuage})
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        data = request.data.copy()
+        if request.data.get("images"):
+            # first delete old ones
+            DeleteFiles().delete_files(instance.images)
+            # then upload new ones and change names
+            file_manager = UploadImages(request)
+            data["images"] = file_manager.upload_files("products", request.FILES.getlist("images"))
+            
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+    
+    def perform_destroy(self, instance):
+        DeleteFiles().delete_files(instance.images)
+        
+        instance.delete()
 
 
 @decorators.api_view(["GET", ])
