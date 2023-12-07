@@ -101,6 +101,7 @@ class ServiceRUD(generics.RetrieveUpdateDestroyAPIView, helpers.FileMixin):
 class ListAllServices(generics.ListAPIView):
     serializer_class = serializers.RUDServicesSerializer
     queryset = models.Service.objects
+    permission_classes = ( )
     
     def get_serializer(self, *args, **kwargs):
         language = self.request.META.get("Accept-Language")

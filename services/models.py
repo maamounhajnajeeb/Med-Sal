@@ -23,7 +23,7 @@ class Service(models.Model):
         return f"{self.en_title}, category: {self.category.en_name}, provider: {self.provider_location.service_provider.business_name}"
 
 
-class ProductRates(models.Model):
+class ServiceRates(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_services_rates")
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name="service_rates")
