@@ -1,5 +1,8 @@
 from rest_framework import serializers
 
+from django.db.models import QuerySet
+from django.db.models import Avg 
+
 from .helpers import FileMixin
 
 from . import models
@@ -50,6 +53,7 @@ class RUDServicesSerializer(serializers.ModelSerializer, FileMixin):
     
     def to_representation(self, instance: models.Service):
         category = instance.category
+        rates: QuerySet[models.ServiceRates] = instance.service_rates.all()
         
         return {
             "id": instance.id
@@ -62,6 +66,15 @@ class RUDServicesSerializer(serializers.ModelSerializer, FileMixin):
             , "price": instance.price
             , "created_at": instance.created_at
             , "updated_at": instance.updated_at
+            , "rates" : {
+                "avg_rate": rates.aggregate(Avg("rate"))
+                , "5 stars": rates.filter(rate=5).count()
+                , "4 stars": rates.filter(rate=4).count()
+                , "3 stars": rates.filter(rate=3).count()
+                , "2 stars": rates.filter(rate=2).count()
+                , "1 stars": rates.filter(rate=1).count()
+                , "0 stars": rates.filter(rate=0).count()
+            }
         }
 
 
