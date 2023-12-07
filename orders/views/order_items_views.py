@@ -9,6 +9,7 @@ from typing import Optional
 from orders import models, serializers
 
 from utils.permission import HasPermission, authorization_with_method
+from notification.models import Notification
 
 
 
@@ -20,11 +21,17 @@ class RetrieveDestroyUpdateItem(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         return [permission("orderitem") for permission in self.permission_classes]
     
-    def retrieve(self, request, *args, **kwargs):
-        language = request.META.get("Accept-Language")
+    def get_serializer(self, *args, **kwargs):
+        language = self.request.META.get("Accept-Language")
+        kwargs.setdefault("language", language)
         
+        serializer_class = self.get_serializer_class()
+        kwargs.setdefault('context', self.get_serializer_context())
+        return serializer_class(*args, **kwargs)
+    
+    def retrieve(self, request, *args, **kwargs):
         instance = self.queryset.filter(id=self.kwargs.get("pk"))
-        serializer = self.get_serializer(instance, many=True, language=language)
+        serializer = self.get_serializer(instance, many=True)
         return Response(serializer.data)
     
     def update(self, request, *args, **kwargs):
@@ -32,14 +39,17 @@ class RetrieveDestroyUpdateItem(generics.RetrieveUpdateDestroyAPIView):
         if the update have accepted, record automatically goes to Delivery table
         else if the update have rejected, you need to create rejected order by your hand
         """
-        language = request.META.get("Accept-Language")
+        resp = super().update(request, *args, **kwargs)
         
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial, language=language)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
+        Notification.objects.create(
+            sender=f"{request.user.email}"
+            , sender_type="Service_Provider"
+            , receiver=f"{resp.data.get('user_email')}"
+            , receiver_type="User"
+            , en_content=f"your order {resp.data.get('status')}"
+            , ar_content="تم رفض طلبك" if resp.data.get('status') == "REJECTED" else "تم قبول طلبك")
+        
+        return Response(resp.data, status=resp.status_code)
     
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
@@ -58,8 +68,8 @@ def list_all_items(request: HttpRequest):
 
 @decorators.api_view(["GET", ])
 def user_items(request: HttpRequest, user_id: Optional[int]):
-    user_id = user_id or request.user.id
     language = request.META.get("Accept-Language")
+    user_id = user_id or request.user.id
     
     queryset = models.OrderItem.objects.filter(order__patient=user_id)
     serializer = serializers.SpecificItemSerialzier(queryset, many=True, language=language)
@@ -72,17 +82,14 @@ def provider_items(request: HttpRequest):
     language = request.META.get("Accept-Language")
     
     query_params = request.query_params.copy()
-    
     try:
         provider_id = (query_params.pop("provider_id")[0])
     except:
         provider_id = request.user.id
     
-    query_params = {f"updated_at__{param}": value for param, value in query_params.items()}
-    
+    additional_fields = {f"last_update__{param}": value for param, value in query_params.items()}
     queryset = models.OrderItem.objects.filter(
-        product__service_provider_location__service_provider=provider_id
-        , **query_params)
+        product__service_provider_location__service_provider=provider_id, **additional_fields)
     
     serializer = serializers.SpecificItemSerialzier(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)

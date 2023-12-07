@@ -147,6 +147,8 @@ class SpecificItemSerialzier(serializers.ModelSerializer):
         return {
             "id": instance.id
             , "order_id": instance.order.id
+            , "user_id": instance.order.patient.id
+            , "user_email": instance.order.patient.email
             , "product_id": instance.product.id
             , "product_title": instance.product.en_title if self.language == "en" else instance.product.ar_title
             , "quantity": instance.quantity
