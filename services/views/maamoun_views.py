@@ -8,7 +8,7 @@ from services import models, serializers, helpers
 from products.file_handler import UploadImages, DeleteFiles
 from notification.models import Notification
 
-from utils.permission import HasPermission, authorization
+from utils.permission import HasPermission
 
 
 

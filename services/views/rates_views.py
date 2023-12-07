@@ -6,8 +6,9 @@ from django.http import HttpRequest
 
 from typing import Optional
 
-from services import models, serializers
 from utils.permission import HasPermissionAndOwner
+from notification.models import Notification
+from services import models, serializers
 
 
 
@@ -36,6 +37,13 @@ class ServiceRatesViewSet(viewsets.ModelViewSet):
         except:
             return Response({"error": "this user already rate this service, user can't rate same service twice"})
         
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=request.user.email
+            , receiver_type="User"
+            , ar_content="تم إضافة التقييم"
+            , en_content="rate added")
+        
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
@@ -43,6 +51,28 @@ class ServiceRatesViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer([instance, ], many=True)
         return Response(serializer.data)
+    
+    def update(self, request, *args, **kwargs):
+        resp = super().update(request, *args, **kwargs)
+        
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=request.user.email
+            , receiver_type="User"
+            , ar_content="تم تعديل التقييم"
+            , en_content="rate updated")
+        
+        return Response(resp.data, status=resp.status_code)
+    
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=instance.user.email
+            , receiver_type="User"
+            , ar_content="تم حذف التقييم"
+            , en_content="rate deleted")
 
 
 @decorators.api_view(["GET", ])
