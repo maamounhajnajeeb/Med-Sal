@@ -162,3 +162,13 @@ class RejectedOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.RejectedOrders
         fields = "__all__"
+        
+    def to_representation(self, instance: models.RejectedOrders):
+        original_resp = super().to_representation(instance)
+        
+        return {
+            "order_id": original_resp.get("order")
+            , "user_email": instance.order.order.patient.email
+            , "reason": original_resp["reason"]
+            , "read": instance.read
+            }

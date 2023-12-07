@@ -31,7 +31,9 @@ urlpatterns = [
     path("provider/items/", order_items_views.provider_items, name="provider_items"),
     
     # rejected orders
-    
+    path("rejected/location/", rejected_orders_views.location_rejected_orders, name="location_rejected_orders"),
+    re_path(r"^rejected/user/(\d{1,})?$", rejected_orders_views.user_rejected_orders, name="user_rejected_orders"),
+    re_path(r"^rejected/provider/(\d{1,})?$", rejected_orders_views.provider_rejected_orders, name="provider_rejected_orders"),
 ]
 
 urlpatterns += router.urls
