@@ -14,5 +14,3 @@ class RejectedOrdersViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         return [permission("rejectedorders") for permission in self.permission_classes]
-    
-    

@@ -15,7 +15,7 @@ router.register("rejected", rejected_orders_views.RejectedOrdersViewSet, basenam
 
 urlpatterns = [
     # cart
-    path("cart/user/", cart_views.user_cart, name="user_cart"),
+    re_path(r"cart/user/(\d{1,})?", cart_views.user_cart, name="user_cart"),
     
     # order
     path("<int:pk>/", orders_views.RetrieveDestroyOrders.as_view(), name="specific_order"),
