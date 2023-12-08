@@ -16,6 +16,7 @@ class Notification(models.Model):
     read = models.BooleanField(default=False)
     ar_content = models.CharField(max_length=1023, null=False)
     en_content = models.CharField(max_length=1023, null=False)
+    created_at = models.DateTimeField(auto_now_add=True) # null to be False
     
     def __str__(self) -> str:
         return f"{self.sender} -> {self.receiver}, read: {self.read}"

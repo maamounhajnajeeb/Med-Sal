@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from service_providers.models import ServiceProviderLocations
@@ -20,3 +21,21 @@ class Service(models.Model):
     
     def __str__(self) -> str:
         return f"{self.en_title}, category: {self.category.en_name}, provider: {self.provider_location.service_provider.business_name}"
+
+
+class ServiceRates(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_services_rates")
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name="service_rates")
+    rate = models.SmallIntegerField(default=0)
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields = ["user", "service", ],
+                name="user_service_constraint",
+            ),
+        ]
+    
+    def __str__(self) -> str:
+        return f"{self.user.email} -> {self.service.en_title}"

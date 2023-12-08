@@ -4,11 +4,7 @@ from django.db import models
 
 from typing import Any
 
-from rest_framework.fields import empty
-
 from . import models
-
-from products.serializers import ProudctSerializer
 
 from deliveries.models import Delivery
 
@@ -17,39 +13,27 @@ from deliveries.models import Delivery
 class ItemsSerializer(serializers.ModelSerializer):
     
     class Meta:
-        fields = ("price", "quantity", "product", "updated_at")
+        fields = ("id", "price", "quantity", "product", "last_update")
         model = models.OrderItem
     
     def __init__(self, instance=None, data=..., **kwargs):
-        fields = kwargs.get("fields")
-        if fields:
-            fields = kwargs.pop("fields")
-            self.language = fields["language"]
+        language = kwargs.get("language")
+        if language:
+            self.language = kwargs.pop("language")
         
         super().__init__(instance, data, **kwargs)
-    
-    # def update(self, instance: models.OrderItem, validated_data: dict[str, Any]):
-    #     if validated_data.get("status"):
-    #         if validated_data.get("status") == "ACCEPTED":
-    #             product = instance.product
-    #             product.quantity -= instance.quantity
-    #             product.save()
-                
-    #         if validated_data.get("status") == "REJECTED":
-    #             # here we will work with rejected orders
-    #             print("refuse")
-    #     return super().update(instance, validated_data)
     
     def to_representation(self, instance):
         
         return {
             "order_id": instance.order.id
+            , "item_id": instance.id
             , "product_id": instance.product.id
             , "product_name": instance.product.en_title if self.language == "en" else instance.product.ar_title
             , "quantity": instance.quantity
             , "price": instance.price
             , "status": instance.status
-            , "updated_at": instance.updated_at
+            , "last_update": instance.last_update
         }
 
 
@@ -61,10 +45,9 @@ class OrdersSerializer(serializers.ModelSerializer): #
         fields = ("patient", "items",)
     
     def __init__(self, instance=None, data=..., **kwargs):
-        fields = kwargs.get("fields")
-        if fields:
-            fields = kwargs.pop("fields")
-            self.language = fields["language"]
+        language = kwargs.get("language")
+        if language:
+            self.language = kwargs.pop("language")
         
         super().__init__(instance, data, **kwargs)
     
@@ -96,7 +79,7 @@ class OrdersSerializer(serializers.ModelSerializer): #
     
     def to_representation(self, instance: models.Orders):
         items_queryset = instance.items.all()
-        items_serializer = ItemsSerializer(items_queryset, many=True, fields={"language": self.language})
+        items_serializer = ItemsSerializer(items_queryset, many=True, language=self.language)
         
         return {
             'order_id': instance.id,
@@ -104,69 +87,6 @@ class OrdersSerializer(serializers.ModelSerializer): #
             'created_at': instance.created_at,
             'order_items': items_serializer.data
         }
-
-
-# """ **{ the below two serializers used in ListAllOrders view }** """
-# class ListOrderItemSer(serializers.ModelSerializer):
-#     product = ProudctSerializer(read_only=True)
-    
-#     class Meta:
-#         fields = ("quantity", "product", )
-#         model = models.OrderItem
-
-# class ListOrderSer(serializers.ModelSerializer):
-#     items = ListOrderItemSer(many=True, read_only=True)
-    
-#     class Meta:
-#         fields = ("patient", "status", "created_at", "updated_at", "items", )
-#         model = models.Orders
-    
-#     def __init__(self, instance=None, data=..., **kwargs):
-#         self.language = kwargs.pop("fields")["language"]
-#         super().__init__(instance, data, **kwargs)
-    
-#     def to_representation(self, instance):
-#         return {
-#             "patient_id": instance.patient.id
-#             , "patient_email": instance.patient.email
-#             , "status": instance.status
-#             , "created_at": instance.created_at
-#             , "upated_at": instance.updated_at
-#             , "products": [
-#                 {
-#                     "quantity": item.quantity,
-#                 "product_name": item.product.ar_title if self.language == "ar" else item.product.en_title
-#                 }
-#                 for item in instance.items.all()
-#                 ]
-#         }
-
-
-# """ **{ the below serializer used in LocationOrders view }** """
-# class LocationOrdersSer(serializers.ModelSerializer):
-#     product = ProudctSerializer(read_only=True)
-    
-#     class Meta:
-#         fields = ("quantity", "product", "price", )
-#         model = models.OrderItem
-    
-#     def __init__(self, instance=None, data=..., **kwargs):
-#         self.language = kwargs.pop("fields")["language"]
-#         super().__init__(instance, data, **kwargs)
-    
-#     def to_representation(self, instance):
-        
-#         show_date_time = lambda x: f"{x.month}/{x.day}/{x.year} at {x.hour}:{x.minute}:{x.second}"
-        
-#         product = instance.product
-#         return {
-#             "quantity": instance.quantity
-#             , "product_name": product.ar_title if self.language == "ar" else product.en_title
-#             , "price": instance.price
-#             , "status": instance.order.status
-#             , "created_at": show_date_time(instance.order.created_at)
-#             , "updated_at": show_date_time(instance.order.updated_at)
-#         }
 
 
 """ **{ serializer below user in cart views classes and functions}** """ #
@@ -177,12 +97,18 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ("id", "product", "quantity", "patient", )
     
     def __init__(self, instance=None, data=..., **kwargs):
-        additional_fields = kwargs.get("fields")
-        if additional_fields:
-            additional_fields = kwargs.pop("fields")
-            self.language = additional_fields.get("language")
+        language = kwargs.get("language")
+        if language:
+            self.language = kwargs.pop("language")
         
         super().__init__(instance, data, **kwargs)
+    
+    def validate(self, attrs):
+        quantity = attrs.get("quantity")
+        if quantity <= 0:
+            raise serializers.ValidationError({"error": "quantity must be more than 1 or more"})
+        
+        return super().validate(attrs)
     
     def to_representation(self, instance):
         return {
@@ -201,17 +127,19 @@ class SpecificItemSerialzier(serializers.ModelSerializer):
         fields = "__all__"
     
     def __init__(self, instance=None, data=..., **kwargs):
-        additional_fields = kwargs.get("fields")
-        if additional_fields:
-            additional_fields = kwargs.pop("fields")
-            self.language = additional_fields.get("language")
+        language = kwargs.get("language")
+        if language:
+            self.language = kwargs.pop("language")
         
         super().__init__(instance, data, **kwargs)
     
     def update(self, instance, validated_data: dict[str, Any]):
         status = validated_data.get("status")
         if status == "ACCEPTED":
-            Delivery.objects.create(order=instance)
+            try:
+                Delivery.objects.create(order=instance)
+            except:
+                raise serializers.ValidationError({"error": "this item already set to be delivered"})
         
         return super().update(instance, validated_data)
     
@@ -219,11 +147,13 @@ class SpecificItemSerialzier(serializers.ModelSerializer):
         return {
             "id": instance.id
             , "order_id": instance.order.id
+            , "user_id": instance.order.patient.id
+            , "user_email": instance.order.patient.email
             , "product_id": instance.product.id
             , "product_title": instance.product.en_title if self.language == "en" else instance.product.ar_title
             , "quantity": instance.quantity
             , "status": instance.status
-            , "updated_at": instance.updated_at
+            , "last_update": instance.last_update
         }
 
 
@@ -232,3 +162,13 @@ class RejectedOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.RejectedOrders
         fields = "__all__"
+        
+    def to_representation(self, instance: models.RejectedOrders):
+        original_resp = super().to_representation(instance)
+        
+        return {
+            "order_id": original_resp.get("order")
+            , "user_email": instance.order.order.patient.email
+            , "reason": original_resp["reason"]
+            , "read": instance.read
+            }

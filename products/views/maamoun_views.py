@@ -9,7 +9,6 @@ from products import models, serializers
 from products.file_handler import UploadImages, DeleteFiles
 
 from notification.models import Notification
-from users.helpers import delete_image
 
 
 
@@ -76,10 +75,23 @@ class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=request.user.email, receiver_type="Service_Provider"
+            , en_content="product edited"
+            , ar_content="تم تعديل المنتج")
+        
         return Response(serializer.data)
     
     def perform_destroy(self, instance):
         DeleteFiles().delete_files(instance.images)
+        
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=self.request.user.email, receiver_type="Service_Provider"
+            , en_content="the product deleted"
+            , ar_content="تم حذف المنتج")
         
         instance.delete()
 
@@ -124,3 +136,4 @@ def products_by_provider(request: HttpRequest, pk: int):
     serializer = serializers.ProudctSerializer(queryset, many=True)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
+

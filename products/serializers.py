@@ -32,9 +32,10 @@ class RateSerializer(serializers.ModelSerializer):
         
         return super().validate(attrs)
     
-    def to_representation(self, instance):
+    def to_representation(self, instance: models.ProductRates):
         response = super().to_representation(instance)
         response["product_title"] = instance.product.ar_title if self.language == "ar" else instance.product.en_title
+        response["user_email"] = instance.user.email
         
         return response
 
@@ -58,10 +59,9 @@ class ProudctSerializer(serializers.ModelSerializer):
         super().__init__(instance, data, **kwargs)
     
     def to_representation(self, instance: models.Product):
-        avg_rate = instance.product_rates.aggregate(Avg("rate"))
-        
         return {
             "id": instance.id
+            , "service_provider": instance.service_provider_location.service_provider.business_name
             , "service_provider_location": instance.service_provider_location.id
             , "quantity": instance.quantity
             , "title": instance.ar_title if self.language == "ar" else instance.en_title
@@ -69,7 +69,7 @@ class ProudctSerializer(serializers.ModelSerializer):
             , "images": instance.images.split(",")
             , "price": instance.price
             , "rates": {
-                "avg_rate": avg_rate
+                "avg_rate": instance.product_rates.aggregate(Avg("rate"))
                 , "5": instance.product_rates.filter(rate=5).count()
                 , "4": instance.product_rates.filter(rate=4).count()
                 , "3": instance.product_rates.filter(rate=3).count()

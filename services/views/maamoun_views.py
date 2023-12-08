@@ -4,10 +4,13 @@ from rest_framework import status
 
 from django.http import HttpRequest
 
+from collections import defaultdict
+
 from services import models, serializers, helpers
+from products.file_handler import UploadImages, DeleteFiles
 from notification.models import Notification
 
-from utils.permission import HasPermission, authorization
+from utils.permission import HasPermission
 
 
 
@@ -21,14 +24,11 @@ class CreateService(generics.CreateAPIView, helpers.FileMixin):
     
     def create(self, request: HttpRequest, *args, **kwargs):
         image_objs = request.FILES.getlist("image")
-        images_names = self.upload(image_objs, "service", request)
+        upload_images = UploadImages(request)
+        images_names = upload_images.upload_files("services", image_objs)
         
-        data = request.data
-        data["image"] = images_names
-        
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        request.data["image"] = images_names
+        resp = super().create(request, *args, **kwargs)
         
         Notification.objects.create(
             sender="system", sender_type="System"
@@ -36,8 +36,7 @@ class CreateService(generics.CreateAPIView, helpers.FileMixin):
             , ar_content="تم إضافة خدمة جديدة إلى خدماتك"
             , en_content="A new service added to your sevices")
         
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(resp.data, status=resp.status_code)
 
 
 class ServiceRUD(generics.RetrieveUpdateDestroyAPIView, helpers.FileMixin):
@@ -61,31 +60,121 @@ class ServiceRUD(generics.RetrieveUpdateDestroyAPIView, helpers.FileMixin):
         serializer = self.get_serializer([instance, ], many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
+    def perform_destroy(self, instance):
+        delete_files = DeleteFiles()
+        delete_files.delete_files(instance.image)
         
-        self.delete_images(instance.image)
+        Notification.objects.create(
+            sender="system", sender_type="System"
+            , receiver=self.request.user.email, receiver_type="Service_Provider"
+            , ar_content="تم حذف الخدمة"
+            , en_content="service has been deleted")
         
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return super().perform_destroy(instance)
     
     def update(self, request: HttpRequest, *args, **kwargs):
         data = request.data
-        
-        if request.data.get("image"):
-            images_objs = request.FILES.getlist("image")
-            images_names = self.upload(images_objs, "service", request)
-            data["image"] = images_names
-            
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
+        
+        if request.data.get("image"):
+            image_objs = request.FILES.getlist("image")
+            upload_images = UploadImages(request)
+            images_names = upload_images.upload_files("services", image_objs)
+            
+            request.data["image"] = images_names
+            
+            delete_files = DeleteFiles()
+            delete_files.delete_files(instance.image)
+            
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        
+        Notification.objects.create(
+            sender="system", sender_type="System"
+            , receiver=request.user.email, receiver_type="Service_Provider"
+            , ar_content="تم تعديل الخدمة"
+            , en_content="service has been updated")
+        
         return Response(serializer.data)
 
 
 class ListAllServices(generics.ListAPIView):
     serializer_class = serializers.RUDServicesSerializer
     queryset = models.Service.objects
+    permission_classes = ( )
     
+    def get_serializer(self, *args, **kwargs):
+        language = self.request.META.get("Accept-Language")
+        kwargs["language"] = language
+        
+        serializer_class = self.get_serializer_class()
+        kwargs.setdefault('context', self.get_serializer_context())
+        return serializer_class(*args, **kwargs)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def category_services(request: HttpRequest, category_id: int):
+    language = request.META.get("Accept-Language")
+    queryset = models.Service.objects.filter(category=category_id)
+    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def provider_services(request: HttpRequest, provider_id: int):
+    provider_id = provider_id or request.user.id
+    language = request.META.get("Accept-Language")
+    queryset = models.Service.objects.filter(provider_location__service_provider=provider_id)
+    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def provider_location_services(request: HttpRequest, location_id: int):
+    language = request.META.get("Accept-Language")
+    queryset = models.Service.objects.filter(provider_location=location_id)
+    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def provider_services_by_category(request: HttpRequest, provider_id: int):
+    language = request.META.get("Accept-Language")
+    queryset = models.Service.objects.filter(provider_location__service_provider=provider_id)
+    
+    def aggregate_queryset(queryset):
+        frequencies = defaultdict(int)
+        for query in queryset:
+            category_id = query.category.id
+            category_name = query.category.en_name if language == "en" else query.category.ar_name 
+            
+            frequencies[(category_id, category_name)] += 1
+        return frequencies
+    
+    def serialize_data(frequencies: defaultdict[tuple[int, str], int]):
+        data = []
+        for k, v in frequencies.items():
+            data.append({"category_id": k[0], "category_name": k[1], "services_count": v})
+        
+        return data
+    
+    frequencies = aggregate_queryset(queryset)
+    data = serialize_data(frequencies)
+    
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def provider_category_services(request: HttpRequest, provider_id: int, category_id: int):
+    language = request.META.get("Accept-Language")
+    queryset = models.Service.objects.filter(
+        provider_location__service_provider=provider_id, category=category_id)
+    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)

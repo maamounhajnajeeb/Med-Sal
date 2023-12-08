@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django.db import models
 
 from products.models import Product
@@ -24,7 +25,7 @@ class OrderItem(models.Model):
     quantity = models.IntegerField(default=1)
     price = models.DecimalField(null=False, max_digits=8, decimal_places=2, default=0)
     status = models.CharField(max_length=16, null=False, choices=StatusChoices.choices, default=StatusChoices.PENDING)
-    updated_at = models.DateTimeField(auto_now_add=True, null=True)
+    last_update = models.DateTimeField(auto_now=True)
 
 
 class CartItems(models.Model):
