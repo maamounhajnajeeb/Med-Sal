@@ -37,7 +37,7 @@ urlpatterns = [
     re_path(r"provider/rates/(\d{1,})?", rates_view.provider_rates, name="provider_rates"),
     
     # view products by distance 
-    path("distance/", tareq_views.ProductsFilterByLocationAndDistanceView.as_view(), name="products_by_distance"),
+    path("distance/", tareq_views.products_by_distance, name="products_by_distance"),
     
     # view products by name
     path("productname/", tareq_views.product_filter_by_name, name="products_by_name"),

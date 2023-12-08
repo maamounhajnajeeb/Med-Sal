@@ -63,3 +63,30 @@ class RUDServicesSerializer(serializers.ModelSerializer, FileMixin):
             , "created_at": instance.created_at
             , "updated_at": instance.updated_at
         }
+    
+
+class ServicesFilterSerializer(serializers.ModelSerializer):
+    model = models.Service
+    fields = '__all__'
+
+    def __init__(self, instance=None, **kwargs):
+        fields = kwargs.get("fields")
+        if not fields:
+            self.language = None
+        else:
+            fields = kwargs.pop("fields")
+            self.language = fields.get("language")
+        
+        super().__init__(instance, **kwargs)
+
+    def to_representation(self, instance: models.Service):
+        return {
+            "id": instance.id
+            , "image": instance.image
+            , "provider_location_id": instance.provider_location.id
+            , "provider_name": instance.provider_location.service_provider.business_name
+            , "service_category": instance.category.ar_name if self.language == 'ar' else instance.category.en_name 
+            , "title": instance.ar_title if self.language == 'ar' else instance.en_title
+            , "description": instance.ar_description if self.language == 'ar' else instance.en_description
+            , "price": instance.price
+        }
