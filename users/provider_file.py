@@ -15,6 +15,7 @@ class FileMixin():
         extension = file_obj.name.split(".")[1]
         file_name = self.change_filename(extension)
         fs.save(file_name, file_obj)
+        print(file_name)
         return file_name
         
     def change_filename(self, extension) -> str:

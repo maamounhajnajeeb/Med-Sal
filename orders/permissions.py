@@ -18,7 +18,7 @@ class HasPermission(permissions.BasePermission):
     def has_object_permission(self, request, view, obj) -> bool:
         return self.check_permission(request, "cart")
     
-    def check_permission(self, request, model_name: str|None=None) -> bool:
+    def check_permission(self, request, model_name: None=None) -> bool:
         
         if not request.user.is_authenticated:
             return False

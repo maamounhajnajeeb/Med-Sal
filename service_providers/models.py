@@ -20,7 +20,7 @@ class ServiceProvider(Users):
     bank_name = models.CharField(max_length=128, null=False)
     iban = models.CharField(max_length=40, null=False, unique=True)
     swift_code = models.CharField(max_length=16, null=False, unique=True)
-    provider_file = models.FileField(null=False)
+    provider_file = models.FileField(null=True)
     account_status = models.CharField(max_length=16,
             choices=AccountStatus.choices, default=AccountStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -45,7 +45,9 @@ class ServiceProviderLocations(models.Model):
     class Meta:
         verbose_name = "ServiceProviderLocations"
         verbose_name_plural = "ServiceProviderLocations"
-
+    
+    def __str__(self):
+        return self.service_provider.business_name
 
 class UpdateProfileRequests(models.Model):
     class RecordStatus(models.TextChoices):

@@ -33,7 +33,8 @@ urlpatterns = [
     path("reset_password/", views.reset_password, name="reset_password"),#
     path("enter_code/", views.enter_code, name="enter_code"),#
     path("new_password/", views.new_password, name="new_password"),#
-    
+    path("resend_code/", views.resend_code, name="resend_code"),
+
     path("", views.list_all_users, name="all_users"), #
     path("<int:pk>/", views.UsersView.as_view(), name="specific_user"), #
     
