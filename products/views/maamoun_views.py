@@ -13,6 +13,9 @@ from notification.models import Notification
 
 
 class AllProducts(generics.ListAPIView):
+    """
+        An api that lists all products
+    """
     permission_classes = (local_permissions.HasPermissionOrReadOnly, )
     serializer_class = serializers.ProudctSerializer
     queryset = models.Product.objects
@@ -26,6 +29,9 @@ class AllProducts(generics.ListAPIView):
 
 
 class CreateProduct(generics.CreateAPIView):
+    """
+        An api that allows to add products 
+    """
     permission_classes = (local_permissions.HasPermissionOrReadOnly, )
     serializer_class = serializers.ProudctSerializer
     queryset = models.Product.objects
@@ -49,6 +55,10 @@ class CreateProduct(generics.CreateAPIView):
 
 
 class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
+    """
+        An api that allows to Read, Update and Delete a specific product 
+        product ID is required 
+    """
     permission_classes = (local_permissions.HasPermissionOrReadOnly, )
     serializer_class = serializers.ProudctSerializer
     queryset = models.Product.objects

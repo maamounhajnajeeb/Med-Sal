@@ -2,7 +2,7 @@ from rest_framework import routers
 
 from django.urls import path, re_path
 
-from .views import maamoun_views, rates_view
+from .views import maamoun_views, rates_view, tareq_views
 
 app_name = "products"
 
@@ -38,6 +38,11 @@ urlpatterns = [
     
     # product rates
     path("<int:product_id>/rates/", rates_view.product_rates, name="product_rates"),
+    # view products by distance 
+    path("distance/", tareq_views.products_by_distance, name="products_by_distance"),
+    
+    # view products by name
+    path("productname/", tareq_views.product_filter_by_name, name="products_by_name"),
 ]
 
 urlpatterns += router.urls
