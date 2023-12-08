@@ -112,3 +112,5 @@ def category_locations_filter(request: HttpRequest, category_id: int):
     
     serializer = LocationSerializerSafe(locations, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+

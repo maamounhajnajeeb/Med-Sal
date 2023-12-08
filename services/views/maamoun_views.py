@@ -4,6 +4,8 @@ from rest_framework import status
 
 from django.http import HttpRequest
 
+from collections import defaultdict
+
 from services import models, serializers, helpers
 from products.file_handler import UploadImages, DeleteFiles
 from notification.models import Notification
@@ -136,5 +138,43 @@ def provider_services(request: HttpRequest, provider_id: int):
 def provider_location_services(request: HttpRequest, location_id: int):
     language = request.META.get("Accept-Language")
     queryset = models.Service.objects.filter(provider_location=location_id)
+    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def provider_services_by_category(request: HttpRequest, provider_id: int):
+    language = request.META.get("Accept-Language")
+    queryset = models.Service.objects.filter(provider_location__service_provider=provider_id)
+    
+    def aggregate_queryset(queryset):
+        frequencies = defaultdict(int)
+        for query in queryset:
+            category_id = query.category.id
+            category_name = query.category.en_name if language == "en" else query.category.ar_name 
+            
+            frequencies[(category_id, category_name)] += 1
+        return frequencies
+    
+    def serialize_data(frequencies: defaultdict[tuple[int, str], int]):
+        data = []
+        for k, v in frequencies.items():
+            data.append({"category_id": k[0], "category_name": k[1], "services_count": v})
+        
+        return data
+    
+    frequencies = aggregate_queryset(queryset)
+    data = serialize_data(frequencies)
+    
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def provider_category_services(request: HttpRequest, provider_id: int, category_id: int):
+    language = request.META.get("Accept-Language")
+    queryset = models.Service.objects.filter(
+        provider_location__service_provider=provider_id, category=category_id)
     serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)

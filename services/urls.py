@@ -36,6 +36,12 @@ urlpatterns = [
     
     # location rates
     path("rates/location/<int:location_id>/", rates_views.location_rates, name="location_rates"),
+    
+    # services categories
+    path("categories/<int:provider_id>/", maamoun_views.provider_services_by_category, name="provider_services_by_category"),
+    
+    # services categories
+    path("<int:provider_id>/<int:category_id>/", maamoun_views.provider_category_services, name="provider_category_services"),
 ]
 
 urlpatterns += router.urls
