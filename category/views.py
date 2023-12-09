@@ -29,7 +29,7 @@ def parent_sub_category(request, pk: int):
 @decorators.permission_classes([permissions.AllowAny, ])
 def prime_categories(request):
     third_field = request.META.get("Accept-Language")
-
+    
     queryset = Category.objects.filter(parent=None)
     serializer = CategorySerializer(queryset, fields={"id", "parent", f"{third_field}_name"}, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)

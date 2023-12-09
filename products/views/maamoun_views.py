@@ -146,4 +146,3 @@ def products_by_provider(request: HttpRequest, pk: int):
     serializer = serializers.ProudctSerializer(queryset, many=True)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
-
