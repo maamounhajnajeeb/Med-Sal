@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.http import HttpRequest
 
 from products import permissions as local_permissions
-from products import models, serializers
+from products import models, serializers, helpers
 from products.file_handler import UploadImages, DeleteFiles
 
 from notification.models import Notification
@@ -145,4 +145,18 @@ def products_by_provider(request: HttpRequest, pk: int):
     queryset = models.Product.objects.filter(service_provider_location__service_provider=pk)
     serializer = serializers.ProudctSerializer(queryset, many=True)
     
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def category_products_by_name(request: HttpRequest, category_name: str):
+    language = request.META.get("Accept-Language")
+    queryset = helpers.searching_func(category_name, language)
+    
+    if not queryset.exists():
+        return Response({"message": "No products found relates to this category name"}
+                    , status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = serializers.ProudctSerializer(queryset, many=True, fields={"language": language})
     return Response(serializer.data, status=status.HTTP_200_OK)

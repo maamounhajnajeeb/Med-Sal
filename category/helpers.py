@@ -2,6 +2,7 @@ from django.http import HttpRequest
 from django.db.models import Q
 
 from functools import reduce
+from typing import Optional
 
 from users.models import UserIP
 from . import models
@@ -37,14 +38,13 @@ def choose_lang(request):
 
 
 def searching_func(request: HttpRequest, third_field: str):
-    search_key: str = request.query_params.get("query") # str | None
+    search_key: Optional[str] = request.query_params.get("query")
     text_seq = search_key.split(" ")
-    if third_field == "ar_name":
-        text_qs = reduce(lambda x, y: x & y
-                    , (Q(ar_name__icontains=x) for x in text_seq) )
-    else:
-        text_qs = reduce(lambda x, y: x & y
-                    , (Q(en_name__icontains=x) for x in text_seq) )
     
-    queryset = models.Category.objects.filter(text_qs)
+    q_expression = (Q(en_name__icontains=x) for x in text_seq)
+    if third_field == "ar_name":
+        q_expression = (Q(ar_name__icontains=x) for x in text_seq)
+    
+    query_func = reduce(lambda x, y: x & y, q_expression)
+    queryset = models.Category.objects.filter(query_func)
     return queryset

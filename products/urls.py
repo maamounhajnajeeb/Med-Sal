@@ -44,6 +44,9 @@ urlpatterns = [
     
     # view products by name
     path("product_name/", tareq_views.product_filter_by_name, name="products_by_name"),
+    
+    # view products by category name
+    path("<str:category_name>/", maamoun_views.category_products_by_name, name="category_products_by_name"),
 ]
 
 urlpatterns += router.urls

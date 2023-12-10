@@ -178,3 +178,17 @@ def provider_category_services(request: HttpRequest, provider_id: int, category_
         provider_location__service_provider=provider_id, category=category_id)
     serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def category_services_by_name(request: HttpRequest, category_name: str):
+    language = request.META.get("Accept-Language")
+    queryset = helpers.searching_func(category_name, language)
+    
+    if not queryset.exists():
+        return Response({"message": "No services found relates to this category"}
+                    , status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)

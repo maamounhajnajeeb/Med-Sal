@@ -33,15 +33,14 @@ def services_by_category(request: HttpRequest, pk: int):
     pk is category id
     """
     language = request.META.get("Accept-Language")
-    
     services = smodels.Service.objects.filter(category=pk)
+    
+    if not services:
+        return Response({"message": "No services found in this category"}, status=status.HTTP_404_NOT_FOUND)
+    
     serializer = sserializer.ServicesFilterSerializer(services, many=True, fields = {"language":language})
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
-    if services:
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    else:
-        return Response({f"No services found in this category"}, status = status.HTTP_404_NOT_FOUND)
-        
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])

@@ -20,7 +20,12 @@ urlpatterns = [
     path("", maamoun_views.ListAllServices.as_view(), name="all_services"),
     
     # category services
-    path("category/<int:category_id>/", maamoun_views.category_services, name="category_services"),
+    # path("category/<int:category_id>/", maamoun_views.category_services, name="category_services"),
+    
+    # category services by name
+    path("<str:category_name>/"
+        , maamoun_views.category_services_by_name
+        , name="category_services_by_name"),
     
     # provider services
     re_path(r"^provider/(\d{1,})?$", maamoun_views.provider_services, name="provider_services"),
@@ -40,20 +45,20 @@ urlpatterns = [
     # services categories
     path("categories/<int:provider_id>/", maamoun_views.provider_services_by_category, name="provider_services_by_category"),
     
-    # services categories
+    # provider categories services
     path("<int:provider_id>/<int:category_id>/", maamoun_views.provider_category_services, name="provider_category_services"),
     
     # list services by name
     path("servicename/", tareq_views.service_filter_by_name, name="service_by_name"),
     
-    # list service by provider location pk is provider id
-    path("location/<int:pk>", tareq_views.services_by_location, name="service_by_location"),
+    # list services by provider location (pk is provider_id)
+    path("location/<int:pk>/", tareq_views.services_by_location, name="service_by_location"),
     
     # list services by distance
     path("distance/", tareq_views.services_by_distance, name="service_by_distance"),
     
-    # list services in a category pk is category id
-    path("category/<int:pk>", tareq_views.services_by_category, name="service_for_category"),
+    # list services in a category pk is (pk is category_id)
+    path("category/<int:pk>/", tareq_views.services_by_category, name="service_for_category"),
 ]
 
 urlpatterns += router.urls

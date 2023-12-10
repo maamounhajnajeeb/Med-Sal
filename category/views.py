@@ -47,7 +47,6 @@ def search_category(request: HttpRequest):
         }, status=status.HTTP_404_NOT_FOUND)
     
     serializer = CategorySerializer(queryset, fields={"id", "parent", f"{third_field}_name"}, many=True)
-    
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
