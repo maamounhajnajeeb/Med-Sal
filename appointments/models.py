@@ -35,6 +35,7 @@ class RejectedAppointments(models.Model):
     reason = models.TextField(null=False)
     read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    # updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self) -> str:
         return f"{self.appointment.service.en_title}, read from admin: {self.read}"
