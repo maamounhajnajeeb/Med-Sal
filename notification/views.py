@@ -30,3 +30,14 @@ def user_notifications(request: HttpRequest):
     serializer = serializers.NotificationSerializer(queryset, many=True, language=language)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+def admin_notifications(request: HttpRequest):
+    language = request.META.get("Accept-Language")
+    
+    queryset = models.Notification.objects.filter(
+        receiver_type="Admin", receiver=request.user.email)
+    serializer = serializers.NotificationSerializer(queryset, many=True, language=language)
+    
+    return Response(serializer.data, status=status.HTTP_200_OK)

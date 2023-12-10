@@ -8,6 +8,7 @@ from typing import Optional
 
 from appointments import models, serializers
 from notification.models import Notification
+from utils.permission import authorization_with_method
 
 
 
@@ -68,16 +69,18 @@ class AppointmentRUD(generics.RetrieveUpdateDestroyAPIView):
         
         if request.data.get("status"):
             ar_word = "مقبول" if request.data.get("status") == "accepted" else "مرفوض"
+            business_name = instance.service.provider_location.service_provider.business_name
             Notification.objects.create(
-                sender_type="Service_Provider", sender=request.user.email, receiver_type="User"
-                , receiver=instance.user
-                , ar_content=f"موعدك {ar_word} مع {instance.service.provider_location.service_provider.business_name}"
+                receiver_type="User", receiver=instance.user
+                , sender_type="Service_Provider", sender=business_name
+                , ar_content=f"موعدك {ar_word} مع {business_name}"
                 , en_content=f"Your Appointment has been {request.data.get('status')}")
         
         return Response(serializer.data)
 
 
 @decorators.api_view(["GET", ])
+@authorization_with_method("list", "appointments")
 def all_location_appointments(request: HttpRequest, location_id: int):
     """
     get all appointments for specific provider location
@@ -89,6 +92,7 @@ def all_location_appointments(request: HttpRequest, location_id: int):
 
 
 @decorators.api_view(["GET", ])
+@authorization_with_method("list", "appointments")
 def all_provider_appointments(request: HttpRequest, provider_id: Optional[int]):
     """
     get all appointments for specific provider

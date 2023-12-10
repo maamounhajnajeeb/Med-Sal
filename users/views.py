@@ -15,6 +15,7 @@ from . import serializers, helpers
 from . import models, permissions as local_permissions
 from . import throttles as local_throttles
 
+from notification.models import Notification
 from service_providers.models import ServiceProvider
 from utils.permission import authorization_with_method, HasPermission
 
@@ -187,6 +188,16 @@ def email_confirmation(request: HttpRequest):
             , status=status.HTTP_202_ACCEPTED)
         
     helpers.activate_user(confirm_record.user_id)
+    
+    user = Users.objects.get(id=confirm_record.user_id)
+    user_type = "_".join([u_type.capitalize() for u_type in user.user_type.split("_")])
+    
+    Notification.objects.create(
+        sender="System", sender_type="System"
+        , receiver=user.email, receiver_type=user_type
+        , ar_content="تم تفعيل حسابك"
+        , en_content="your account has been activated")
+    
     return Response(
         {"message": "Valid email you can log in now"}
         , status=status.HTTP_202_ACCEPTED)
@@ -334,7 +345,7 @@ def reset_password(request: HttpRequest):
         "message": "A 6 numbers code sent to your mail, check it"
     }, status=status.HTTP_200_OK)
 
-
+#
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
 @decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])

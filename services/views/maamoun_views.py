@@ -50,10 +50,7 @@ class ServiceRUD(generics.RetrieveUpdateDestroyAPIView, helpers.FileMixin):
     def get_serializer(self, *args, **kwargs):
         language = self.request.META.get("Accept-Language")
         kwargs["language"] = language
-        
-        serializer_class = self.get_serializer_class()
-        kwargs.setdefault('context', self.get_serializer_context())
-        return serializer_class(*args, **kwargs)
+        return super().get_serializer(*args, **kwargs)
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -108,10 +105,7 @@ class ListAllServices(generics.ListAPIView):
     def get_serializer(self, *args, **kwargs):
         language = self.request.META.get("Accept-Language")
         kwargs["language"] = language
-        
-        serializer_class = self.get_serializer_class()
-        kwargs.setdefault('context', self.get_serializer_context())
-        return serializer_class(*args, **kwargs)
+        return super().get_serializer(*args, **kwargs)
 
 
 @decorators.api_view(["GET", ])

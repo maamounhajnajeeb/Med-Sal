@@ -11,4 +11,6 @@ urlpatterns = [
     
     path("user/", views.user_notifications, name="user_notifications"),
     
+    path("admin/", views.admin_notifications, name="admin_notifications"),
+    
 ]
