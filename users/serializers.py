@@ -1,9 +1,9 @@
 from rest_framework import serializers, validators
 
-from django.db import connection
-from django.contrib.auth.models import Group
-from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
+from django.db import connection
 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
