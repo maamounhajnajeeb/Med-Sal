@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.http import HttpRequest
 
 from products import permissions as local_permissions
-from products import models, serializers
+from products import models, serializers, helpers
 from products.file_handler import UploadImages, DeleteFiles
 
 from notification.models import Notification
@@ -45,7 +45,7 @@ class CreateProduct(generics.CreateAPIView):
             sender="System", sender_type="System"
             , receiver=request.user.email, receiver_type="Service_Provider"
             , en_content="a new product added to your specified location"
-            , ar_content="تم إضافة خدمة جديدة للفرع المحدد")
+            , ar_content="تم إضافة منتج جديد للفرع المحدد")
         
         return Response(resp.data, status=resp.status_code)
     
@@ -89,8 +89,8 @@ class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
         Notification.objects.create(
             sender="System", sender_type="System"
             , receiver=request.user.email, receiver_type="Service_Provider"
-            , en_content="product edited"
-            , ar_content="تم تعديل المنتج")
+            , en_content="product information edited"
+            , ar_content="تم تعديل معلومات المنتج")
         
         return Response(serializer.data)
     
@@ -147,3 +147,16 @@ def products_by_provider(request: HttpRequest, pk: int):
     
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def category_products_by_name(request: HttpRequest, category_name: str):
+    language = request.META.get("Accept-Language")
+    queryset = helpers.searching_func(category_name, language)
+    
+    if not queryset.exists():
+        return Response({"message": "No products found relates to this category name"}
+                    , status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = serializers.ProudctSerializer(queryset, many=True, fields={"language": language})
+    return Response(serializer.data, status=status.HTTP_200_OK)

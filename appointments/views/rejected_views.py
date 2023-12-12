@@ -8,20 +8,9 @@ from typing import Optional
 
 from appointments import models, serializers
 
+from utils.permission import authorization_with_method
+from notification.models import Notification
 
-
-class AllRejectedAppointments(generics.ListAPIView):
-    queryset = models.RejectedAppointments.objects
-    serializer_class = serializers.RejectedSerializer
-    # permission_classes = ("for admins only")
-    
-    def get_serializer(self, *args, **kwargs):
-        language = self.request.META.get("Accept-Language")
-        kwargs.setdefault("language", language)
-        
-        serializer_class = self.get_serializer_class()
-        kwargs.setdefault('context', self.get_serializer_context())
-        return serializer_class(*args, **kwargs)
 
 
 class CreateRejectedAppointment(generics.CreateAPIView):
@@ -31,10 +20,10 @@ class CreateRejectedAppointment(generics.CreateAPIView):
     def get_serializer(self, *args, **kwargs):
         language = self.request.META.get("Accept-Language")
         kwargs.setdefault("language", language)
-        
-        serializer_class = self.get_serializer_class()
-        kwargs.setdefault('context', self.get_serializer_context())
-        return serializer_class(*args, **kwargs)
+        return super().get_serializer(*args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
 
 
 class RUDRejectedAppointments(generics.RetrieveUpdateDestroyAPIView):
@@ -44,15 +33,27 @@ class RUDRejectedAppointments(generics.RetrieveUpdateDestroyAPIView):
     def get_serializer(self, *args, **kwargs):
         language = self.request.META.get("Accept-Language")
         kwargs.setdefault("language", language)
-        
-        serializer_class = self.get_serializer_class()
-        kwargs.setdefault('context', self.get_serializer_context())
-        return serializer_class(*args, **kwargs)
+        return super().get_serializer(*args, **kwargs)
     
     def retrieve(self, request: HttpRequest, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer([instance,], many=True)
         return Response(serializer.data)
+    
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+
+@decorators.api_view(["GET", ])
+@authorization_with_method("list", "rejectedappointments")
+def all_rejected_appointments(request: HttpRequest):
+    language = request.META.get("Accept-Language")
+    queryset = models.RejectedAppointments.objects.all()
+    serializer = serializers.RejectedSerializer(queryset, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @decorators.api_view(["GET",])

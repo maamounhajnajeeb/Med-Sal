@@ -50,10 +50,7 @@ class ServiceRUD(generics.RetrieveUpdateDestroyAPIView, helpers.FileMixin):
     def get_serializer(self, *args, **kwargs):
         language = self.request.META.get("Accept-Language")
         kwargs["language"] = language
-        
-        serializer_class = self.get_serializer_class()
-        kwargs.setdefault('context', self.get_serializer_context())
-        return serializer_class(*args, **kwargs)
+        return super().get_serializer(*args, **kwargs)
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -99,7 +96,7 @@ class ServiceRUD(generics.RetrieveUpdateDestroyAPIView, helpers.FileMixin):
         
         return Response(serializer.data)
 
-
+#
 class ListAllServices(generics.ListAPIView):
     serializer_class = serializers.RUDServicesSerializer
     queryset = models.Service.objects
@@ -108,21 +105,9 @@ class ListAllServices(generics.ListAPIView):
     def get_serializer(self, *args, **kwargs):
         language = self.request.META.get("Accept-Language")
         kwargs["language"] = language
-        
-        serializer_class = self.get_serializer_class()
-        kwargs.setdefault('context', self.get_serializer_context())
-        return serializer_class(*args, **kwargs)
+        return super().get_serializer(*args, **kwargs)
 
-
-@decorators.api_view(["GET", ])
-@decorators.permission_classes([])
-def category_services(request: HttpRequest, category_id: int):
-    language = request.META.get("Accept-Language")
-    queryset = models.Service.objects.filter(category=category_id)
-    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-
+#
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
 def provider_services(request: HttpRequest, provider_id: int):
@@ -132,16 +117,7 @@ def provider_services(request: HttpRequest, provider_id: int):
     serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-@decorators.api_view(["GET", ])
-@decorators.permission_classes([])
-def provider_location_services(request: HttpRequest, location_id: int):
-    language = request.META.get("Accept-Language")
-    queryset = models.Service.objects.filter(provider_location=location_id)
-    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-
+# 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
 def provider_services_by_category(request: HttpRequest, provider_id: int):
@@ -169,12 +145,26 @@ def provider_services_by_category(request: HttpRequest, provider_id: int):
     
     return Response(data, status=status.HTTP_200_OK)
 
-
+#
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
 def provider_category_services(request: HttpRequest, provider_id: int, category_id: int):
     language = request.META.get("Accept-Language")
     queryset = models.Service.objects.filter(
         provider_location__service_provider=provider_id, category=category_id)
+    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+#
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def category_services_by_name(request: HttpRequest, category_name: str):
+    language = request.META.get("Accept-Language")
+    queryset = helpers.searching_func(category_name)
+    
+    if not queryset.exists():
+        return Response({"message": "No services found relates to this category"}
+                    , status=status.HTTP_404_NOT_FOUND)
+    
     serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)

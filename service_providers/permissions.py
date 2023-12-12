@@ -46,6 +46,8 @@ class LocationsPermissions(permissions.BasePermission):
         
         return obj.service_provider.email == request.user.email or request.user.is_staff
 
+
+
 class UpdateRequestsPermission(permissions.BasePermission):
     
     def has_permission(self, request, view):

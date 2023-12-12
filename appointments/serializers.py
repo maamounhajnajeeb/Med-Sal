@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from rest_framework.fields import empty
 
 from .models import Appointments, RejectedAppointments
 
@@ -27,6 +26,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         original_repr["location_id"] = instance.service.provider_location.id
         original_repr["provider_id"] = instance.service.provider_location.service_provider.id
         original_repr["provider_email"] = instance.service.provider_location.service_provider.email
+        original_repr["provider_business_name"] = instance.service.provider_location.service_provider.business_name
         
         return original_repr
 
@@ -50,12 +50,14 @@ class ShowAppointmentsSerializer(serializers.ModelSerializer):
         return {
             "date": instance.date
             , "details": {
-                "user_id": instance.user.id
-                , "user_email": instance.user.email
+                "from_time": instance.from_time
+                , "to_time": instance.to_time
+                , "patient_id": instance.user.id
+                , "patient_email": instance.user.email
                 , "service_id": instance.service.id
                 , "service_title": instance.service.en_title if self.language == "en" else instance.service.ar_title
                 , "provider_id": instance.service.provider_location.service_provider.id
-                , "provider_name": instance.service.provider_location.service_provider.business_name
+                , "provider_business_name": instance.service.provider_location.service_provider.business_name
                 , "location_id": instance.service.provider_location.id
                 , "created_at": instance.created_at
             }

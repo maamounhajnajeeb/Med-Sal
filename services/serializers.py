@@ -102,7 +102,7 @@ class ServiceRatesSerializer(serializers.ModelSerializer):
     def to_representation(self, instance: models.ServiceRates):
         return {
             "rate_id": instance.id
-            , "user_id": str(instance.user)
+            , "user_id": instance.user.id
             , "user_email": instance.user.email
             , "service_id": instance.service.id
             , "service_tile": instance.service.en_title if self.language == "en" else instance.service.ar_title
