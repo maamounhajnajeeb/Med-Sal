@@ -17,17 +17,20 @@ def products_by_distance(request: HttpRequest):
         An api to list products filtered by distance ordered for nearest to farthest.
         lat and lon are required
         ?latitude=<integer> & longitude=<integer> 
-    """    
+    """
     language = request.META.get("Accept-Language")
     latitude, longitude = request.query_params.get('latitude'), request.query_params.get('longitude')
+    product_name = request.query_params.get("name")
     
-    if not (latitude and longitude):
+    if not (latitude and longitude and product_name):
         return Response(
             {'error': 'Latitude and longitude parameters are required'}
             , status=status.HTTP_400_BAD_REQUEST)
     
     location = Point(float(longitude), float(latitude), srid=4326)
-    products = pmodels.Product.objects.filter(
+    Q_expression = Q(en_title__icontains=product_name) if language=="en" else Q(ar_title__icontains=product_name)
+    
+    products = pmodels.Product.objects.filter(en_title__icontains=Q_expression,
         service_provider_location__location__distance_lt=(location, 1000000)
         ).annotate(distance=Distance('service_provider_location__location', location)).order_by('distance')
     

@@ -45,7 +45,7 @@ class CreateProduct(generics.CreateAPIView):
             sender="System", sender_type="System"
             , receiver=request.user.email, receiver_type="Service_Provider"
             , en_content="a new product added to your specified location"
-            , ar_content="تم إضافة خدمة جديدة للفرع المحدد")
+            , ar_content="تم إضافة منتج جديد للفرع المحدد")
         
         return Response(resp.data, status=resp.status_code)
     
@@ -89,8 +89,8 @@ class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
         Notification.objects.create(
             sender="System", sender_type="System"
             , receiver=request.user.email, receiver_type="Service_Provider"
-            , en_content="product edited"
-            , ar_content="تم تعديل المنتج")
+            , en_content="product information edited"
+            , ar_content="تم تعديل معلومات المنتج")
         
         return Response(serializer.data)
     

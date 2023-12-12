@@ -1,16 +1,18 @@
 from rest_framework import viewsets, decorators
+from rest_framework import status, permissions
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import generics
 
 from django.http import HttpRequest
 
 from typing import Optional
 
+from notification.models import Notification
 from products import models, serializers
 
 
 
-class RatesViewSet(viewsets.ModelViewSet):
+class CreateRate(generics.CreateAPIView):
     queryset = models.ProductRates.objects
     serializer_class = serializers.RateSerializer
     
@@ -28,8 +30,22 @@ class RatesViewSet(viewsets.ModelViewSet):
                 "message": "this user already rates this product, he can't rate it again"
             }, status=status.HTTP_403_FORBIDDEN)
         
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=request.user.email, receiver_type="User"
+            , ar_content="تمت إضافة التقييم"
+            , en_content="Rate added")
+        
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class RatesViewSet(viewsets.ModelViewSet):
+    queryset = models.ProductRates.objects
+    serializer_class = serializers.RateSerializer
+    
+    def create(self, request, *args, **kwargs):
+        return Response({"message": "Not allowed method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)

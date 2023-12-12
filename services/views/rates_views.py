@@ -83,7 +83,7 @@ def location_rates(request: HttpRequest, location_id: int):
     
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+# 
 @decorators.api_view(["GET", ])
 def provider_rates(request: HttpRequest, provider_id: Optional[int]):
     provider_id = provider_id or request.user.id
@@ -94,7 +94,7 @@ def provider_rates(request: HttpRequest, provider_id: Optional[int]):
     
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+#
 @decorators.api_view(["GET", ])
 def user_rates(request: HttpRequest, user_id: Optional[int]):
     user_id = user_id or request.user.id

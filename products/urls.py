@@ -8,10 +8,13 @@ app_name = "products"
 
 
 router = routers.SimpleRouter()
-router.register("rates", rates_view.RatesViewSet, basename="rates_view")
+router.register(r"^rates$", rates_view.RatesViewSet, basename="rates_view")
 
 
 urlpatterns = [
+    # create reate
+    path("rates/create/", rates_view.CreateRate.as_view(), name="create_rate"),
+    
     # create product
     path("", maamoun_views.CreateProduct.as_view(), name="create_product"),
     

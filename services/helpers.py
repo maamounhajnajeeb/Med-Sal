@@ -52,13 +52,12 @@ class FileMixin():
 
 
 
-def searching_func(category_name, language: str):
-    text_seq = category_name.split(" ")
+def searching_func(category_name):
+    text_seq = category_name.split("_")
     
-    q_expression = (Q(category__en_name__icontains=x) for x in text_seq)
-    if language == "ar":
-        q_expression = (Q(category__ar_name__icontains=x) for x in text_seq)
+    q_exp = (Q(category__en_name__icontains=x) | Q(category__ar_name__icontains=x) for x in text_seq)
     
-    query_func = reduce(lambda x, y: x & y, q_expression)
+    query_func = reduce(lambda x, y: x & y, q_exp)
     queryset = models.Service.objects.filter(query_func)
+    
     return queryset
