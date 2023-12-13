@@ -44,6 +44,10 @@ class RatesViewSet(viewsets.ModelViewSet):
     queryset = models.ProductRates.objects
     serializer_class = serializers.RateSerializer
     
+    def get_serializer(self, *args, **kwargs):
+        kwargs.setdefault("fields", {"language": self.request.META.get("Accept-Language")})
+        return super().get_serializer(*args, **kwargs)
+    
     def create(self, request, *args, **kwargs):
         return Response({"message": "Not allowed method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
@@ -52,21 +56,31 @@ class RatesViewSet(viewsets.ModelViewSet):
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer([instance], many=True, fields={"language": request.META.get("Accept-Language")})
+        serializer = self.get_serializer([instance], many=True)
         return Response(serializer.data)
     
     def update(self, request, *args, **kwargs):
-        language = request.META.get("Accept-Language")
+        resp = super().update(request, *args, **kwargs)
         
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial, fields={"language": language})
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data)
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=request.user.email, receiver_type="User"
+            , ar_content="تم تعديل التقييم"
+            , en_content="Rate updated")
+        
+        return Response(resp.data, status=resp.status_code)
     
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+    
+    def perform_destroy(self, instance):
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=self.request.user.email, receiver_type="User"
+            , ar_content="تم حذف التقييم"
+            , en_content="Rate deleted")
+        
+        return super().perform_destroy(instance)
 
 
 @decorators.api_view(["GET", ])
