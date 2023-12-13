@@ -51,6 +51,15 @@ class UsersView(generics.RetrieveUpdateDestroyAPIView):
             helpers.delete_image(image_path)
         return super().update(request, *args, **kwargs)
     
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=instance.email, receiver_type="User"
+            , en_content="Your profile information updated successfully"
+            , ar_content="تم تحديث معلومات خسابك")
+    
     def perform_destroy(self, instance: Users):
         image_path = instance.image.path
         helpers.delete_image(image_path)
@@ -119,6 +128,12 @@ class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=instance.user.email, receiver_type="Service_Provider"
+            , ar_content="تم تحديث معلومات حسابك بنجاح"
+            , en_content="Your profile information updated successfully")
+        
         return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     
     def update_user_instance(self, user_data: dict[str, Any]):
@@ -127,6 +142,13 @@ class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
         """
         pk = self.kwargs.get("pk")
         user_instance = Users.objects.filter(pk=pk)
+        
+        if user_data.get("is_active"):
+            send_mail(
+                subject="Activate Service Provider Account"
+                , message="Your account has been revised, you can log in now"
+                , from_email="med-sal-adminstration@gmail.com"
+                , recipient_list=[user_instance.first().email, ])
         
         if user_data.get("image"):
             img_path = user_instance.first().image.path
