@@ -78,20 +78,25 @@ class ServiceProviderCreate(generics.CreateAPIView):
     permission_classes = (local_permissions.UnAuthenticated, )
     
     def create(self, request: HttpRequest, *args, **kwargs):
-        resp = super().create(request, *args, **kwargs)
-        pk, email = resp.data["id"], resp.data["user"]["email"]
+        try:
+            models.EmailConfirmation.objects.get(ip_address=self.request.META.get("REMOTE_ADDR"))
+            return Response(
+                {"message": "You registered in this site, but you didn't confirm your email, "
+                        "you can send a new email confirmation if you didn't receive one at the first time"}
+                , status=status.HTTP_403_FORBIDDEN)
+        except:
+            resp = super().create(request, *args, **kwargs)
+            pk, email = resp.data["id"], resp.data["user"]["email"]
+            
+            models.EmailConfirmation.objects.get_or_create(
+            user_id=pk, email=email, ip_address=self.request.META.get("REMOTE_ADDR"))
         
         confirm = helpers.SendMail(
             to=email, request=request, out=True
             , view="/api/v1/users/email_confirmation/")
         confirm.send_mail()
         
-        models.EmailConfirmation.objects.create(
-            user_id=pk, email=email, ip_address=self.request.META.get("REMOTE_ADDR"))
-        
-        return Response({
-            "message": f"Confirmation email sent to: {email}"
-        , }, status=status.HTTP_201_CREATED)
+        return Response({"message": f"Confirmation email sent to: {email}"}, status=status.HTTP_201_CREATED)
 
 
 class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
@@ -148,20 +153,25 @@ class SignUp(generics.CreateAPIView):
     queryset = Users.objects
     
     def create(self, request: HttpRequest, *args, **kwargs):
-        resp = super().create(request, *args, **kwargs)
+        try:
+            models.EmailConfirmation.objects.get(ip_address=self.request.META.get("REMOTE_ADDR"))
+            return Response(
+                {"message": "You registered in this site, but you didn't confirm your email, "
+                        "you can send a new email confirmation if you didn't receive one at the first time"}
+                , status=status.HTTP_403_FORBIDDEN)
+        except:
+            resp = super().create(request, *args, **kwargs)
+            pk, email = resp.data["id"], resp.data["email"]
+            
+            models.EmailConfirmation.objects.get_or_create(
+            user_id=pk, email=email, ip_address=self.request.META.get("REMOTE_ADDR"))
         
         confirm = helpers.SendMail(
             to=resp.data.get("email"), request=request, out=True
             , view="/api/v1/users/email_confirmation/")
         confirm.send_mail()
         
-        models.EmailConfirmation.objects.create(
-            user_id=resp.data.get("id"), email=resp.data.get("email")
-            , ip_address=self.request.META.get("REMOTE_ADDR"))
-        
-        return Response({
-            "message": "Confirmation email sent"
-        , }, status=resp.status_code
+        return Response({"message": "Confirmation email sent"}, status=resp.status_code
         , headers=self.get_success_headers(resp.data))
 
 # 
@@ -182,25 +192,27 @@ def email_confirmation(request: HttpRequest):
     confirm_record = query.first()
     query.first().delete()
     
+    def create_notification(user_id: int):
+        user = Users.objects.get(id=user_id)
+        user_type = "_".join(u_type.capitalize() for u_type in user.user_type.split("_"))
+        
+        ar_content, en_content = "تم تفعيل حسابك", "your account has been activated"
+        if user_type == "Service_Provider":
+            ar_content, en_content = "حسابك بانتظار المراجعة من قبل المشرفين", "Your account is under revision"
+        
+        Notification.objects.create(
+            sender="System", sender_type="System", receiver=user.email
+            , receiver_type=user_type, ar_content=ar_content, en_content=en_content)
+    
     if Users.objects.get(id=confirm_record.user_id).user_type == "SERVICE_PROVIDER":
+        create_notification(confirm_record.user_id)
         return Response(
-            {"message": "Valid email, but you are Service Provider so your account is under revision"}
-            , status=status.HTTP_202_ACCEPTED)
+            {"message":"Valid email, but you are Service Provider so your account is under revision"}
+            , status=status.HTTP_200_OK)
         
     helpers.activate_user(confirm_record.user_id)
-    
-    user = Users.objects.get(id=confirm_record.user_id)
-    user_type = "_".join([u_type.capitalize() for u_type in user.user_type.split("_")])
-    
-    Notification.objects.create(
-        sender="System", sender_type="System"
-        , receiver=user.email, receiver_type=user_type
-        , ar_content="تم تفعيل حسابك"
-        , en_content="your account has been activated")
-    
-    return Response(
-        {"message": "Valid email you can log in now"}
-        , status=status.HTTP_202_ACCEPTED)
+    create_notification(confirm_record.user_id)
+    return Response({"message": "Valid email you can log in now"}, status=status.HTTP_202_ACCEPTED)
 
 # 
 @decorators.api_view(["POST", ])
@@ -224,9 +236,7 @@ def resend_email_validation(request: HttpRequest):
         , view="/api/v1/users/email_confirmation/")
     confirm.send_mail()
     
-    return Response(
-        {"message": "Confirmation email resent"}
-        , status=status.HTTP_202_ACCEPTED)
+    return Response({"message": "Confirmation email resent"}, status=status.HTTP_202_ACCEPTED)
 
 #
 @decorators.api_view(["POST", ])
