@@ -1,12 +1,10 @@
 from rest_framework import generics, decorators
+from rest_framework import status, permissions
 from rest_framework.response import Response
-from rest_framework import status
 
 from django.http import HttpRequest
 
 from . import models, serializers
-
-from utils.permission import HasPermission, authorization, authorization_with_method
 
 
 
@@ -33,33 +31,29 @@ class RUDNotification(generics.RetrieveUpdateDestroyAPIView):
 
 
 @decorators.api_view(["GET", ])
-def provider_notifications(request: HttpRequest):
+@decorators.permission_classes([permissions.IsAdminUser, ])
+def all_notification(request: HttpRequest):
     language = request.META.get("Accept-Language")
-    
-    queryset = models.Notification.objects.filter(
-        receiver_type="Service_Provider", receiver=request.user.email)
+    queryset = models.Notification.objects.all()
     serializer = serializers.NotificationSerializer(queryset, many=True, language=language)
-    
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @decorators.api_view(["GET", ])
-def user_notifications(request: HttpRequest):
+def provider_notifications(request: HttpRequest, user_type: str):
     language = request.META.get("Accept-Language")
+    hash_table = {
+        "System": ("System", "System")
+        , "User": ("User", request.user.email)
+        , "Service_Provider": ("Service_Provider", request.user.email)
+    }
+    
+    if user_type not in hash_table:
+        return Response(
+            {"error": "User Type must be one of this: User, Service_Provider or System"}
+            , status=status.HTTP_404_NOT_FOUND)
     
     queryset = models.Notification.objects.filter(
-        receiver_type="User", receiver=request.user.email)
+        receiver_type=hash_table[user_type][0], receiver=hash_table[user_type][1])
     serializer = serializers.NotificationSerializer(queryset, many=True, language=language)
-    
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-@decorators.api_view(["GET", ])
-def admin_notifications(request: HttpRequest):
-    language = request.META.get("Accept-Language")
-    
-    queryset = models.Notification.objects.filter(
-        receiver_type="Admin", receiver=request.user.email)
-    serializer = serializers.NotificationSerializer(queryset, many=True, language=language)
-    
     return Response(serializer.data, status=status.HTTP_200_OK)
