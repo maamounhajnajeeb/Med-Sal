@@ -58,7 +58,7 @@ class UsersView(generics.RetrieveUpdateDestroyAPIView):
             sender="System", sender_type="System"
             , receiver=instance.email, receiver_type="User"
             , en_content="Your profile information updated successfully"
-            , ar_content="تم تحديث معلومات خسابك")
+            , ar_content="تم تحديث معلومات حسابك")
     
     def perform_destroy(self, instance: Users):
         image_path = instance.image.path

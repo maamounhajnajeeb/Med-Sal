@@ -16,6 +16,28 @@ class LocationRUD(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.ServiceProviderLocations.objects
     serializer_class = serializers.LocationSerializerSafe
     permission_classes = (local_permissions.LocationsPermissions, )
+    
+    def update(self, request, *args, **kwargs):
+        resp = super().update(request, *args, **kwargs)
+        
+        Notification(
+            sender="System", sender_type="System"
+            , receiver=request.user.email, receiver_type="Service_Provider"
+            , ar_content="تم التعديل على معلومات الفرع"
+            , en_content="Branch information updated")
+        
+        return Response(resp.data, status=resp.status_code)
+    
+    def delete(self, request, *args, **kwargs):
+        resp = super().delete(request, *args, **kwargs)
+        
+        Notification(
+            sender="System", sender_type="System"
+            , receiver=request.user.email, receiver_type="Service_Provider"
+            , ar_content="تم حذف الفرع"
+            , en_content="Branch deleted")
+        
+        return Response(resp.data, status=resp.status_code)
 
 
 class CreateLocation(generics.CreateAPIView):

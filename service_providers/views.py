@@ -29,16 +29,23 @@ class ServiceProviderUpdateRequestViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ServiceProviderUpdateRequestSerializer
     permission_classes = (permissions.UpdateRequestsPermission, )
     
-    # Service_provider can send an update request
     def create(self, request: HttpRequest, *args, **kwargs):
         service_provider, data = request.user.service_provider.id, request.data.copy()
         data["provider_requested"] = service_provider
         
-        Notification.objects.create(
-            sender="System", sender_type="System",
-            receiver=request.user.email, receiver_type="Service_Provider",
-            ar_content="تعديل الملف الشخصي بانتظار المراجعة",
-            en_content="Profile information editing is under revision")
+        first_notf = {
+            "sender": "System", "sender_type": "System"
+            , "receiver": request.user.email, "receiver_type":"Service_Provider"
+            , "ar_content": "تعديل الملف الشخصي بانتظار المراجعة"
+            , "en_content": "Profile information editing is under revision"}
+        
+        second_notf = {
+            "sender": "System", "sender_type": "System"
+            , "receiver": "System", "receiver_type":"System"
+            , "ar_content": "تعديل لملف شخصي بانتظار المراجعة"
+            , "en_content": "Profile information editing is need revision"}
+        
+        Notification.objects.bulk_create([Notification(**first_notf), Notification(**second_notf)])
         
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -47,58 +54,6 @@ class ServiceProviderUpdateRequestViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     
-    def update(self, request: HttpRequest, *args, **kwargs):
-        data = request.data.copy()
-        data["checked_by"] = request.user.id
-        
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        
-        return Response(serializer.data)
-
-
-# class Location(APIView):
-#     serializer_class = serializers.ServiceProviderLocationSerializer
-    
-#     def get(self,request):
-#         queryset = ServiceProviderLocations.objects.all()
-#         serializer = serializers.ServiceProviderLocationSerializer(queryset, many = True)
-#         return Response(serializer.data)
-    
-#     def post(self,request):
-#         serializer = serializers.ServiceProviderLocationSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status = status.HTTP_201_CREATED)
-#         else:
-            # return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
-
-
-# class ServiceProviderDistanceListView(APIView):
-#     def post(self, request):
-#         serializer = serializers.CalculateDistanceSerializer(data=request.data)
-#         if serializer.is_valid():
-#             origin = geopy.Point(serializer.validated_data['origin_lat'], serializer.validated_data['origin_lng'])
-#             domain = serializer.validated_data.get('domain', 100)  # Default domain of 100 km
-            
-#             service_provider_locations = ServiceProviderLocations.objects.all()
-#             results = []
-            
-#             for location in service_provider_locations:
-#                 destination = geopy.Point(location.location.y, location.location.x)
-#                 distance = geopy.distance.distance(origin, destination).km
-                
-#                 if distance <= domain:
-#                     result = {
-#                         'service_provider':location.service_provider_id.business_name,
-#                         'distance':distance
-#                     }   
-#                     results.append(result) 
-#                     return Response(results, status=status.HTTP_200_OK)
-#                 else:
-#                     return Response({'There is no service provider in the area you are searching in'})
-#         else:
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def update(self, request, *args, **kwargs):
+        request.data["checked_by"] = request.user.id
+        return super().update(request, *args, **kwargs)

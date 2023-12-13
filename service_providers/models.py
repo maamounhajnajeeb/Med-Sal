@@ -64,4 +64,4 @@ class UpdateProfileRequests(models.Model):
         max_length=15, null=False, choices=RecordStatus.choices, default=RecordStatus.PENDING)
     
     def __str__(self):
-        return f"UpdateRequest for {self.user_requested.service_provider.business_name}"
+        return f"UpdateRequest for {self.provider_requested.business_name}"

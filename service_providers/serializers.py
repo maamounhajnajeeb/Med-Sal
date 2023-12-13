@@ -3,6 +3,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
 from .models import ServiceProvider, ServiceProviderLocations, UpdateProfileRequests
+from users.models import Admins
 
 Users = get_user_model()
 
@@ -28,13 +29,18 @@ class ServiceProviderUpdateRequestSerializer(serializers.ModelSerializer):
         model = UpdateProfileRequests
         fields = '__all__'
         read_only_fields = ['user_requested']
-
-
-class ServiceProviderApproveRequestSerializer(serializers.ModelSerializer):
     
-    class Meta:
-        model = UpdateProfileRequests
-        fields = ['request_status', 'approved_by']
+    def to_representation(self, instance):
+        origin_repr = super().to_representation(instance)
+        
+        admin_name = Admins.objects.filter(id=origin_repr["checked_by"])
+        if admin_name.exists():
+            admin_name = admin_name.first().email
+        else: 
+            admin_name = None
+        
+        origin_repr["checked_by_email"] = admin_name
+        return origin_repr
 
 
 class LocationSerializerSafe(serializers.ModelSerializer):
@@ -50,21 +56,3 @@ class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceProviderLocations
         fields = '__all__'
-
-
-class ServiceProviderLocationSerializer(serializers.ModelSerializer):
-    service_provider = serializers.StringRelatedField()
-    
-    class Meta:
-        model = ServiceProviderLocations
-        fields = '__all__'
-
-
-class CalculateDistanceSerializer(serializers.ModelSerializer):
-    origin_lat = serializers.FloatField()
-    origin_lng = serializers.FloatField()
-    domain = serializers.FloatField(required=False)
-    
-    class Meta:
-        model = ServiceProviderLocations
-        fields = ('location', 'origin_lat', 'origin_lng', 'domain')
