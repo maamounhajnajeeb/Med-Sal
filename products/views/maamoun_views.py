@@ -160,3 +160,19 @@ def category_products_by_name(request: HttpRequest, category_name: str):
     
     serializer = serializers.ProudctSerializer(queryset, many=True, fields={"language": language})
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def products_price_range(request: HttpRequest):
+    language = request.META.get("Accept-Language")
+    min_price, max_price = int(request.query_params["min_price"]), int(request.query_params["max_price"])
+    
+    queryset = models.Product.objects.filter(price__range=(min_price, max_price))
+    if not queryset.exists():
+        return Response({
+            "message": "No products found within this range"
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = serializers.ProudctSerializer(queryset, many=True, fields={"language":language})
+    return Response(serializer.data, status=status.HTTP_200_OK)

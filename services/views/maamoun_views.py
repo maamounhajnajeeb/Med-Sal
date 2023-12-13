@@ -7,9 +7,9 @@ from django.http import HttpRequest
 from collections import defaultdict
 
 from services import models, serializers, helpers
+
 from products.file_handler import UploadImages, DeleteFiles
 from notification.models import Notification
-
 from utils.permission import HasPermission
 
 
@@ -165,6 +165,22 @@ def category_services_by_name(request: HttpRequest, category_name: str):
     if not queryset.exists():
         return Response({"message": "No services found relates to this category"}
                     , status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def service_price_range(request: HttpRequest):
+    language = request.META.get("Accept-Language")
+    min_price, max_price = int(request.query_params["min_price"]), int(request.query_params["max_price"])
+    
+    queryset = models.Service.objects.filter(price__range=(min_price, max_price))
+    if not queryset.exists():
+        return Response({
+            "message": "No services found within this range"
+        }, status=status.HTTP_404_NOT_FOUND)
     
     serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
