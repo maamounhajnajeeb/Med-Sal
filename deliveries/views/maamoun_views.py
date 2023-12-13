@@ -2,7 +2,6 @@ from rest_framework import viewsets, decorators
 from rest_framework.response import Response
 from rest_framework import status
 
-from django.shortcuts import get_object_or_404
 from django.http import HttpRequest
 
 from typing import Optional
@@ -20,6 +19,12 @@ class DeliveryViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         return [permission("delivery") for permission in self.permission_classes]
+    
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
     
     def update(self, request, *args, **kwargs):
         fields = {"language": request.META.get("Accept-Language")}
