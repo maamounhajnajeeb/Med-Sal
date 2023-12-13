@@ -23,7 +23,15 @@ class CreateRejectedAppointment(generics.CreateAPIView):
         return super().get_serializer(*args, **kwargs)
     
     def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+        resp = super().create(request, *args, **kwargs)
+        
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver="System", receiver_type="System"
+            , en_content="A new rejected order added"
+            , ar_content="تم رفض موعد من قبل أحد مزودي الخدمات")
+        
+        return Response(resp.data, status=status.HTTP_201_CREATED)
 
 
 class RUDRejectedAppointments(generics.RetrieveUpdateDestroyAPIView):

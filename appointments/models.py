@@ -12,8 +12,7 @@ class Appointments(models.Model):
         PENDING = ('pending', 'Pending')
         ACCEPTED = ('accepted', 'Accepted')
     
-    service = models.ForeignKey(
-        Service, on_delete=models.CASCADE, null=False, related_name="appointments")
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, null=False, related_name="appointments")
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=False, on_delete=models.CASCADE, related_name="appointments")
     from_time = models.TimeField(null=False)
