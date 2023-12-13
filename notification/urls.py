@@ -13,4 +13,6 @@ urlpatterns = [
     
     path("admin/", views.admin_notifications, name="admin_notifications"),
     
+    # RUD Notification
+    path("<int:pk>/", views.RUDNotification.as_view(), name="notification_rud_funcitonality"),
 ]

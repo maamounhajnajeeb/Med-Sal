@@ -39,10 +39,8 @@ class ServiceRatesViewSet(viewsets.ModelViewSet):
         
         Notification.objects.create(
             sender="System", sender_type="System"
-            , receiver=request.user.email
-            , receiver_type="User"
-            , ar_content="تم إضافة التقييم"
-            , en_content="rate added")
+            , receiver=request.user.email, receiver_type="User"
+            , ar_content="تمت إضافة التقييم", en_content="rate added")
         
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -57,10 +55,8 @@ class ServiceRatesViewSet(viewsets.ModelViewSet):
         
         Notification.objects.create(
             sender="System", sender_type="System"
-            , receiver=request.user.email
-            , receiver_type="User"
-            , ar_content="تم تعديل التقييم"
-            , en_content="rate updated")
+            , receiver=request.user.email, receiver_type="User"
+            , ar_content="تم تعديل التقييم", en_content="rate updated")
         
         return Response(resp.data, status=resp.status_code)
     
@@ -69,10 +65,8 @@ class ServiceRatesViewSet(viewsets.ModelViewSet):
         
         Notification.objects.create(
             sender="System", sender_type="System"
-            , receiver=instance.user.email
-            , receiver_type="User"
-            , ar_content="تم حذف التقييم"
-            , en_content="rate deleted")
+            , receiver=instance.user.email, receiver_type="User"
+            , ar_content="تم حذف التقييم", en_content="rate deleted")
 
 
 @decorators.api_view(["GET", ])

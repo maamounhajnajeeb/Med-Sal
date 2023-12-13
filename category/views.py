@@ -94,6 +94,15 @@ class CategoryViewSet(viewsets.ModelViewSet):
         
         return Response(resp.data, status=resp.status_code)
     
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=self.request.user.email, receiver_type="System"
+            , en_content=f"{instance.en_name} category updated"
+            , ar_content=f" تم تعديل {instance.ar_name}")
+    
     def perform_destroy(self, instance: Category):
         Notification.objects.create(
             sender="System", sender_type="System"

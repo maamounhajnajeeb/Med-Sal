@@ -10,6 +10,28 @@ from utils.permission import HasPermission, authorization, authorization_with_me
 
 
 
+class RUDNotification(generics.RetrieveUpdateDestroyAPIView):
+    queryset = models.Notification.objects
+    serializer_class = serializers.NotificationSerializer
+    
+    def get_serializer(self, *args, **kwargs):
+        language = self.request.META.get("Accept-Language")
+        kwargs["language"] = language
+        
+        return super().get_serializer(*args, **kwargs)
+    
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer([instance, ], many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+
 @decorators.api_view(["GET", ])
 def provider_notifications(request: HttpRequest):
     language = request.META.get("Accept-Language")

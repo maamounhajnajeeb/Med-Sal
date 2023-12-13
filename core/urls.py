@@ -28,7 +28,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     # change language api
-    path("api/v1/change_lang/", views.change_language, name="change_lang"),
+    path("api/v1/switch_language/", views.language_switcher, name="change_language"),
     
     # users app
     path('api/v1/users/', include("users.urls", namespace="users")),

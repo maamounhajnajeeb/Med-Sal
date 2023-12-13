@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     "notification.apps.NotificationConfig",
     "permissions.apps.PermissionsConfig",
     "deliveries.apps.DeliveriesConfig",
-    "bookings.apps.BookingsConfig",
     "category.apps.CategoryConfig",
     "services.apps.ServicesConfig",
     "products.apps.ProductsConfig",

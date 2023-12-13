@@ -8,7 +8,7 @@ app_name = "products"
 
 
 router = routers.SimpleRouter()
-router.register(r"^rates$", rates_view.RatesViewSet, basename="rates_view")
+router.register("rates", rates_view.RatesViewSet, basename="rates_view")
 
 
 urlpatterns = [
