@@ -8,6 +8,7 @@ from typing import Optional
 
 from orders import serializers, models
 
+from notification.models import Notification
 from utils.permission import authorization, authorization_with_method, HasPermission
 
 
@@ -30,14 +31,20 @@ class CreateOrder(generics.CreateAPIView):
     def get_permissions(self):
         return [permission("orders") for permission in self.permission_classes]
     
+    def get_serializer(self, *args, **kwargs):
+        kwargs.setdefault("language", self.request.META.get("Accept-Language"))
+        return super().get_serializer(*args, **kwargs)
+    
     def create(self, request, *args, **kwargs):
-        language = request.META.get("Accept-Language")
+        resp = super().create(request, *args, **kwargs)
         
-        serializer = serializers.OrdersSerializer(data=request.data, language=language)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        Notification.objects.create(
+            sender="System", sender_type="System"
+            , receiver=request.user.id, receiver_type="User"
+            , ar_content="تم تأكيد العملية"
+            , en_content="Operation confirmed")
+        
+        return Response(resp.data, status=resp.status_code)
 
 
 class RetrieveDestroyOrders(generics.RetrieveDestroyAPIView):

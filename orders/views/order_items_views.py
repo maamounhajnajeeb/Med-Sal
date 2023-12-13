@@ -22,12 +22,8 @@ class RetrieveDestroyUpdateItem(generics.RetrieveUpdateDestroyAPIView):
         return [permission("orderitem") for permission in self.permission_classes]
     
     def get_serializer(self, *args, **kwargs):
-        language = self.request.META.get("Accept-Language")
-        kwargs.setdefault("language", language)
-        
-        serializer_class = self.get_serializer_class()
-        kwargs.setdefault('context', self.get_serializer_context())
-        return serializer_class(*args, **kwargs)
+        kwargs.setdefault("language", self.request.META.get("Accept-Language"))
+        return super().get_serializer(*args, **kwargs)
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.queryset.filter(id=self.kwargs.get("pk"))
