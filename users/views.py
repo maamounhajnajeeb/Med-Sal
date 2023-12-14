@@ -109,7 +109,8 @@ class ServiceProviderCreate(generics.CreateAPIView):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.IsAdminUser, ])
-def accept_provider_account(request: HttpRequest, provider_id: int):
+def accept_provider_account(request: HttpRequest, provider_id: int, respond: str):
+    respond = respond.capitalize()
     provider = ServiceProvider.objects.filter(id=provider_id)
     if not provider.exists():
         return Response({"error": "No account available with this id"}, status=status.HTTP_404_NOT_FOUND)
@@ -118,18 +119,19 @@ def accept_provider_account(request: HttpRequest, provider_id: int):
     provider.user.is_active = True
     provider.save()
     
-    send_mail(
-        subject="Activate Service Provider Account"
-        , message="Your account has been revised and activated, you can log in now"
-        , from_email="med-sal-adminstration@gmail.com"
-        , recipient_list=[provider.user.email, ])
+    if respond == "Accepted":
+        send_mail(
+            subject="Activate Service Provider Account"
+            , message="Your account has been revised and activated, you can log in now"
+            , from_email="med-sal-adminstration@gmail.com"
+            , recipient_list=[provider.user.email, ])
+        
+        Notification.objects.create(
+            sender="System", sender_type="System", receiver_type="Service_Provider", receiver=provider.user.email
+            , en_content="Your account has been revised and activated, wellcome"
+            , ar_content="تمت مراجعة حسابك و تفعيله, أهلاً وسهلاً")
     
-    Notification.objects.create(
-        sender="System", sender_type="System", receiver_type="Service_Provider", receiver=provider.user.email
-        , en_content="Your account has been revised and activated, wellcome"
-        , ar_content="تمت مراجعة حسابك و تفعيله, أهلاً وسهلاً")
-    
-    return Response({"message": "Successfully activated"}, status=status.HTTP_202_ACCEPTED)
+    return Response({"message": f"Successfully {respond}"}, status=status.HTTP_202_ACCEPTED)
 
 
 class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
