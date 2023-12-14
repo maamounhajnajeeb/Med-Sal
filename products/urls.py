@@ -21,6 +21,9 @@ urlpatterns = [
     # read, update, destroy specific product
     path("<int:pk>/", maamoun_views.RUDProduct.as_view(), name="specifc_product"),
     
+    # search product
+    path("search/", maamoun_views.multiple_filters, name="multiple_filters"),
+    
     # view specific category products
     path("category/<int:pk>/", maamoun_views.products_by_category, name="products_by_category"),
     
@@ -37,10 +40,10 @@ urlpatterns = [
     path("filter/price_range/", maamoun_views.products_price_range, name="products_price_range"),
     
     # user rates
-    re_path(r"user/rates/(\d{1,})?", rates_view.user_rates, name="user_rates"),
+    re_path(r"^user/rates/(\d{1,})?$", rates_view.user_rates, name="user_rates"),
     
     # provider rates
-    re_path(r"provider/rates/(\d{1,})?", rates_view.provider_rates, name="provider_rates"),
+    re_path(r"^provider/rates/(\d{1,})?$", rates_view.provider_rates, name="provider_rates"),
     
     # product rates
     path("<int:product_id>/rates/", rates_view.product_rates, name="product_rates"),

@@ -10,6 +10,7 @@ from rest_framework import status, generics
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from typing import Any
+from random import randint
 
 from . import serializers, helpers
 from . import models, permissions as local_permissions
@@ -58,7 +59,7 @@ class UsersView(generics.RetrieveUpdateDestroyAPIView):
             sender="System", sender_type="System"
             , receiver=instance.email, receiver_type="User"
             , en_content="Your profile information updated successfully"
-            , ar_content="تم تحديث معلومات خسابك")
+            , ar_content="تم تحديث معلومات حسابك")
     
     def perform_destroy(self, instance: Users):
         image_path = instance.image.path
@@ -87,25 +88,52 @@ class ServiceProviderCreate(generics.CreateAPIView):
     permission_classes = (local_permissions.UnAuthenticated, )
     
     def create(self, request: HttpRequest, *args, **kwargs):
-        try:
-            models.EmailConfirmation.objects.get(ip_address=self.request.META.get("REMOTE_ADDR"))
+        query = models.EmailConfirmation.objects.filter(ip_address=self.request.META.get("REMOTE_ADDR"))
+        if query.exists():
             return Response(
                 {"message": "You registered in this site, but you didn't confirm your email, "
                         "you can send a new email confirmation if you didn't receive one at the first time"}
                 , status=status.HTTP_403_FORBIDDEN)
-        except:
-            resp = super().create(request, *args, **kwargs)
-            pk, email = resp.data["id"], resp.data["user"]["email"]
             
-            models.EmailConfirmation.objects.get_or_create(
+        resp = super().create(request, *args, **kwargs)
+        pk, email = resp.data["id"], resp.data["user"]["email"]
+        
+        models.EmailConfirmation.objects.get_or_create(
             user_id=pk, email=email, ip_address=self.request.META.get("REMOTE_ADDR"))
         
         confirm = helpers.SendMail(
-            to=email, request=request, out=True
-            , view="/api/v1/users/email_confirmation/")
+            to=email, request=request, out=True, view="/api/v1/users/email_confirmation/")
         confirm.send_mail()
         
         return Response({"message": f"Confirmation email sent to: {email}"}, status=status.HTTP_201_CREATED)
+
+
+@decorators.api_view(["POST", ])
+@decorators.permission_classes([permissions.IsAdminUser, ])
+def accept_provider_account(request: HttpRequest, provider_id: int, respond: str):
+    respond = respond.capitalize()
+    provider = ServiceProvider.objects.filter(id=provider_id)
+    if not provider.exists():
+        return Response({"error": "No account available with this id"}, status=status.HTTP_404_NOT_FOUND)
+    
+    provider = provider.first()
+    provider.account_status = respond
+    provider.save()
+    
+    if respond == "Accepted":
+        helpers.activate_user(provider_id)
+        send_mail(
+            subject="Activate Service Provider Account"
+            , message="Your account has been revised and activated, you can log in now"
+            , from_email="med-sal-adminstration@gmail.com"
+            , recipient_list=[provider.user.email, ])
+        
+        Notification.objects.create(
+            sender="System", sender_type="System", receiver_type="Service_Provider", receiver=provider.user.email
+            , en_content="Your account has been revised and activated, wellcome"
+            , ar_content="تمت مراجعة حسابك و تفعيله, أهلاً وسهلاً")
+    
+    return Response({"message": f"Successfully {respond}"}, status=status.HTTP_202_ACCEPTED)
 
 
 class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
@@ -143,13 +171,6 @@ class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
         pk = self.kwargs.get("pk")
         user_instance = Users.objects.filter(pk=pk)
         
-        if user_data.get("is_active"):
-            send_mail(
-                subject="Activate Service Provider Account"
-                , message="Your account has been revised, you can log in now"
-                , from_email="med-sal-adminstration@gmail.com"
-                , recipient_list=[user_instance.first().email, ])
-        
         if user_data.get("image"):
             img_path = user_instance.first().image.path
             helpers.delete_image(img_path)
@@ -175,22 +196,21 @@ class SignUp(generics.CreateAPIView):
     queryset = Users.objects
     
     def create(self, request: HttpRequest, *args, **kwargs):
-        try:
-            models.EmailConfirmation.objects.get(ip_address=self.request.META.get("REMOTE_ADDR"))
+        query = models.EmailConfirmation.objects.filter(ip_address=self.request.META.get("REMOTE_ADDR"))
+        if query.exists():
             return Response(
                 {"message": "You registered in this site, but you didn't confirm your email, "
                         "you can send a new email confirmation if you didn't receive one at the first time"}
                 , status=status.HTTP_403_FORBIDDEN)
-        except:
-            resp = super().create(request, *args, **kwargs)
-            pk, email = resp.data["id"], resp.data["email"]
             
-            models.EmailConfirmation.objects.get_or_create(
-            user_id=pk, email=email, ip_address=self.request.META.get("REMOTE_ADDR"))
+        resp = super().create(request, *args, **kwargs)
+        pk, email = resp.data["id"], resp.data["email"]
+        
+        models.EmailConfirmation.objects.get_or_create(
+        user_id=pk, email=email, ip_address=self.request.META.get("REMOTE_ADDR"))
         
         confirm = helpers.SendMail(
-            to=resp.data.get("email"), request=request, out=True
-            , view="/api/v1/users/email_confirmation/")
+            to=resp.data.get("email"), request=request, out=True, view="/api/v1/users/email_confirmation/")
         confirm.send_mail()
         
         return Response({"message": "Confirmation email sent"}, status=resp.status_code
@@ -387,7 +407,7 @@ def resend_code(request: HttpRequest):
     
     if not record.exists():
         return Response({
-            "message": "We've not send an code for this specific email"
+            "message": "We've not send code for this email"
         }, status=status.HTTP_404_NOT_FOUND)
     
     record = record.select_related("user").first()
@@ -407,7 +427,7 @@ def enter_code(request):
     """
     second step
     check if the inputed code the same
-    and depending on that it giv user ability to write new password
+    and depending on that it give user ability to write new password
     """
     code = request.data.get("code")
     
@@ -446,6 +466,71 @@ def new_password(request: HttpRequest):
     return Response({
         "message": "Password changed successfully, now you can log in with the new password"
     }, status=status.HTTP_202_ACCEPTED)
+
+
+@decorators.api_view(["POST"])
+def send_2FA_code(request: HttpRequest):
+    """
+    send 2FA code
+    """
+    query = models.PasswordReset.objects.filter(user=request.user)
+    if query.exists():
+        return Response({"error": "You've already receive an 2FA code, check you inbox or resent it"}
+                , status=status.HTTP_403_FORBIDDEN)
+    
+    instance = models.PasswordReset.objects.create(ip_address=request.META.get("REMOTE_ADDR")
+        , code="".join(str(randint(0, 9)) for _ in range(6)), user=request.user)
+    
+    send_mail(subject="2 Factor Authentication"
+        , message=f"put this code: {instance.code} in the input field"
+        , from_email="med-sal-adminstration@gmail.com"
+        , recipient_list=[instance.user.email, ])
+    
+    return Response({"message": "A 6 number code sent to your email"}, status=status.HTTP_201_CREATED)
+
+
+@decorators.api_view(["POST", ])
+# @decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
+def resend_2fa_code(request: HttpRequest):
+    """
+    resend the 2FA code
+    """
+    query = models.PasswordReset.objects.filter(user=request.user)
+    if not query.exists():
+        return Response(
+            {"error": "You haven't send a code in the first place"}
+            , status=status.HTTP_404_NOT_FOUND)
+    
+    new_code = "".join(str(randint(0, 9)) for _ in range(6))
+    instance = query.first()
+    instance.code = new_code
+    instance.save()
+    
+    send_mail(subject="2 Factor Authentication"
+        , message=f"put this code: {instance.code} in the input field"
+        , from_email="med-sal-adminstration@gmail.com"
+        , recipient_list=[instance.user.email, ])
+    
+    return Response({"message": "A 6 number code resent to your email"}, status=status.HTTP_201_CREATED)
+
+
+@decorators.api_view(["POST", ])
+def validate_2FA(request: HttpRequest, code: str):
+    """
+    check if the 2FA code is valid
+    """
+    query = models.PasswordReset.objects.filter(user=request.user)
+    if not query.exists():
+        return Response(
+            {"error": "You haven't send a code in the first place"}
+            , status=status.HTTP_404_NOT_FOUND)
+    
+    instance = query.first()
+    if instance.code != code:
+        return Response({"error": "Not valid, try again"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+    
+    instance.delete()
+    return Response({"message": "Right code, wellcome"}, status=status.HTTP_202_ACCEPTED)
 
 #
 class LogIn(TokenObtainPairView):

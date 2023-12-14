@@ -12,6 +12,8 @@ urlpatterns = [
     path("service_providers/", views.ServiceProviderCreate.as_view(), name="service_provider"), #
     
     # admin
+    path("service_providers/check_account/<str:respond>/<int:provider_id>/"
+        , views.accept_provider_account, name="accept_provider_account"),
     path("service_providers/all/", views.ServiceProviderList.as_view(), name="service_provider_list"), #
     
     # mixed: safe method for everybody, else owners and admins only
@@ -40,4 +42,9 @@ urlpatterns = [
     
     path('login/', views.LogIn.as_view(), name='login'), #
     path('refresh_token/', TokenRefreshView.as_view(), name='token_refresh'), #
+    
+    # 2FA
+    path("send_2fa/", views.send_2FA_code, name="send_2FA_code"),
+    path("resend_2fa/", views.resend_2fa_code, name="resend_2fa_code"),
+    path("validate_2fa/<str:code>/", views.validate_2FA, name="validate_2FA"),
 ]

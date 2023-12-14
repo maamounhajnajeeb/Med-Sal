@@ -14,6 +14,9 @@ urlpatterns = [
     # all services #
     path("", maamoun_views.ListAllServices.as_view(), name="all_services"),
     
+    # multiple filters
+    path("search/", maamoun_views.multiple_filters, name="multiple_filters"),
+    
     # services by price range #
     path("filter/price_range/", maamoun_views.service_price_range, name="service_price_range"),
     

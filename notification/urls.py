@@ -1,4 +1,4 @@
-from django.urls import re_path, path
+from django.urls import path
 
 from . import views
 
@@ -6,13 +6,12 @@ app_name = "notification"
 
 
 urlpatterns = [
-    
-    path("provider/", views.provider_notifications, name="provider_notifications"),
-    
-    path("user/", views.user_notifications, name="user_notifications"),
-    
-    path("admin/", views.admin_notifications, name="admin_notifications"),
+    # filter notifications for multiple user types
+    path("<str:user_type>/", views.provider_notifications, name="provider_notifications"),
     
     # RUD Notification
     path("<int:pk>/", views.RUDNotification.as_view(), name="notification_rud_funcitonality"),
+    
+    # all notification (for admins only)
+    path("all/", views.all_notification, name="all_notification"),
 ]

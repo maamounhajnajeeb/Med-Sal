@@ -20,6 +20,10 @@ class DeliveryViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         return [permission("delivery") for permission in self.permission_classes]
     
+    def get_serializer(self, *args, **kwargs):
+        kwargs.setdefault("fields", {"language": self.request.META.get("Accept-Language")})
+        return super().get_serializer(*args, **kwargs)
+    
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
     
@@ -27,26 +31,14 @@ class DeliveryViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
     
     def update(self, request, *args, **kwargs):
-        fields = {"language": request.META.get("Accept-Language")}
-        
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial, fields=fields)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        
-        return Response(serializer.data)
-    
-    def retrieve(self, request, *args, **kwargs):
-        fields = {"language": request.META.get("Accept-Language")}
-        instance = self.get_object()
-        serializer = self.get_serializer([instance, ], many=True, fields=fields)
-        return Response(serializer.data)
+        return super().update(request, *args, **kwargs)
     
     def list(self, request, *args, **kwargs):
-        fields = {"language": request.META.get("Accept-Language")}
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, many=True, fields=fields)
+        return super().list(request, *args, **kwargs)
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer([instance, ], many=True)
         return Response(serializer.data)
 
 

@@ -8,3 +8,13 @@ class UnAuthenticatedRateThrottle(throttling.AnonRateThrottle):
         if request.method == "POST":
             return super().allow_request(request, view)
         return True
+
+
+class AuthenticatedRateThrottle(throttling.AnonRateThrottle):
+    
+    scope = "authenticated"
+    
+    def allow_request(self, request, view):
+        if request.method == "POST":
+            return super().allow_request(request, view)
+        return True

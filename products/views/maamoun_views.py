@@ -2,11 +2,15 @@ from rest_framework import decorators, generics
 from rest_framework import permissions, status
 from rest_framework.response import Response
 
+from django.contrib.gis.db.models.functions import Distance
+from django.contrib.gis.geos import Point
 from django.http import HttpRequest
 
 from products import permissions as local_permissions
 from products import models, serializers, helpers
 from products.file_handler import UploadImages, DeleteFiles
+
+from typing import Any
 
 from notification.models import Notification
 
@@ -176,3 +180,73 @@ def products_price_range(request: HttpRequest):
     
     serializer = serializers.ProudctSerializer(queryset, many=True, fields={"language":language})
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def multiple_filters(request: HttpRequest):
+    """
+    multiple filters helper function
+    """
+    language = request.META.get("Accept-Language")
+    params = {}
+    
+    callables = (check_rate, check_range, check_category)
+    for func in callables:
+        params = func(request, params, language=language)
+    
+    queryset = check_distance(request, params)
+    
+    serializer = serializers.ProudctSerializer(queryset, many=True, fields={"language": language})
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+def check_distance(request: HttpRequest, params: dict[str, Any], **kwargs):
+    longitude, latitude = request.query_params.get("logitude"), request.query_params.get("latitude")
+    if longitude and latitude:
+        longitude, latitude = float(longitude), float(latitude)
+        location = Point(longitude, latitude)
+        params["service_provider_location__location__distance_lt"] = (location, 1000000)
+    
+        queryset = models.Product.objects.filter(
+            **params).annotate(
+                distance=Distance("service_provider_location__location", location)).order_by("distance")
+    
+    queryset = models.Product.objects.filter(**params)
+    
+    return queryset
+
+def check_category(request: HttpRequest, params: dict[str, Any], **kwargs) -> dict[str, Any]:
+    """
+    multiple filters helper function
+    """
+    category_name = request.query_params.get("category_name")
+    if category_name:
+        category_name = str(category_name)
+        q_exp = f"service_provider_location__service_provider__category__{kwargs.get('language')}_name__icontains"
+        params[q_exp] = category_name
+    
+    return params
+
+def check_range(request: HttpRequest, params: dict[str, Any], **kwargs) -> dict[str, Any]:
+    """
+    multiple filters helper function
+    """
+    min_price, max_price = request.query_params.get("min_price"), request.query_params.get("max_price")
+    if min_price and max_price:
+        min_price, max_price = float(min_price), float(max_price)
+        params["price__range"] = (min_price, max_price)
+    
+    return params
+
+def check_rate(request, params: dict[str, Any], **kwargs) -> dict[str, Any]:
+    """
+    multiple filters helper function
+    """
+    # maybe we need a .distinct() function in the future because of reverse relationship
+    rate = int(request.query_params.get("rate"))
+    if rate:
+        params["product_rates__rate"] = rate
+    
+    return params
