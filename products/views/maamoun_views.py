@@ -224,10 +224,8 @@ def check_category(request: HttpRequest, params: dict[str, Any], **kwargs) -> di
     category_name = request.query_params.get("category_name")
     if category_name:
         category_name = str(category_name)
-        q = "service_provider_location__service_provider__category__en_name__icontains"
-        if kwargs.get("language") == "ar":
-            q = "service_provider_location__service_provider__category__ar_name__icontains"
-        params[q] = category_name
+        q_exp = f"service_provider_location__service_provider__category__{kwargs.get('language')}_name__icontains"
+        params[q_exp] = category_name
     
     return params
 
