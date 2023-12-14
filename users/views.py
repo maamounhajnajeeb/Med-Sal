@@ -87,25 +87,49 @@ class ServiceProviderCreate(generics.CreateAPIView):
     permission_classes = (local_permissions.UnAuthenticated, )
     
     def create(self, request: HttpRequest, *args, **kwargs):
-        try:
-            models.EmailConfirmation.objects.get(ip_address=self.request.META.get("REMOTE_ADDR"))
+        query = models.EmailConfirmation.objects.filter(ip_address=self.request.META.get("REMOTE_ADDR"))
+        if query.exists():
             return Response(
                 {"message": "You registered in this site, but you didn't confirm your email, "
                         "you can send a new email confirmation if you didn't receive one at the first time"}
                 , status=status.HTTP_403_FORBIDDEN)
-        except:
-            resp = super().create(request, *args, **kwargs)
-            pk, email = resp.data["id"], resp.data["user"]["email"]
             
-            models.EmailConfirmation.objects.get_or_create(
+        resp = super().create(request, *args, **kwargs)
+        pk, email = resp.data["id"], resp.data["user"]["email"]
+        
+        models.EmailConfirmation.objects.get_or_create(
             user_id=pk, email=email, ip_address=self.request.META.get("REMOTE_ADDR"))
         
         confirm = helpers.SendMail(
-            to=email, request=request, out=True
-            , view="/api/v1/users/email_confirmation/")
+            to=email, request=request, out=True, view="/api/v1/users/email_confirmation/")
         confirm.send_mail()
         
         return Response({"message": f"Confirmation email sent to: {email}"}, status=status.HTTP_201_CREATED)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([permissions.IsAdminUser, ])
+def accept_provider_account(request: HttpRequest, provider_id: int):
+    provider = ServiceProvider.objects.filter(id=provider_id)
+    if not provider.exists():
+        return Response({"error": "No account available with this id"}, status=status.HTTP_404_NOT_FOUND)
+    
+    provider = provider.first()
+    provider.user.is_active = True
+    provider.save()
+    
+    send_mail(
+        subject="Activate Service Provider Account"
+        , message="Your account has been revised and activated, you can log in now"
+        , from_email="med-sal-adminstration@gmail.com"
+        , recipient_list=[provider.user.email, ])
+    
+    Notification.objects.create(
+        sender="System", sender_type="System", receiver_type="Service_Provider", receiver=provider.user.email
+        , en_content="Your account has been revised and activated, wellcome"
+        , ar_content="تمت مراجعة حسابك و تفعيله, أهلاً وسهلاً")
+    
+    return Response({"message": "Successfully activated"}, status=status.HTTP_202_ACCEPTED)
 
 
 class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
@@ -143,13 +167,6 @@ class ServiceProviderRUD(generics.RetrieveUpdateDestroyAPIView):
         pk = self.kwargs.get("pk")
         user_instance = Users.objects.filter(pk=pk)
         
-        if user_data.get("is_active"):
-            send_mail(
-                subject="Activate Service Provider Account"
-                , message="Your account has been revised, you can log in now"
-                , from_email="med-sal-adminstration@gmail.com"
-                , recipient_list=[user_instance.first().email, ])
-        
         if user_data.get("image"):
             img_path = user_instance.first().image.path
             helpers.delete_image(img_path)
@@ -175,22 +192,21 @@ class SignUp(generics.CreateAPIView):
     queryset = Users.objects
     
     def create(self, request: HttpRequest, *args, **kwargs):
-        try:
-            models.EmailConfirmation.objects.get(ip_address=self.request.META.get("REMOTE_ADDR"))
+        query = models.EmailConfirmation.objects.filter(ip_address=self.request.META.get("REMOTE_ADDR"))
+        if query.exists():
             return Response(
                 {"message": "You registered in this site, but you didn't confirm your email, "
                         "you can send a new email confirmation if you didn't receive one at the first time"}
                 , status=status.HTTP_403_FORBIDDEN)
-        except:
-            resp = super().create(request, *args, **kwargs)
-            pk, email = resp.data["id"], resp.data["email"]
             
-            models.EmailConfirmation.objects.get_or_create(
-            user_id=pk, email=email, ip_address=self.request.META.get("REMOTE_ADDR"))
+        resp = super().create(request, *args, **kwargs)
+        pk, email = resp.data["id"], resp.data["email"]
+        
+        models.EmailConfirmation.objects.get_or_create(
+        user_id=pk, email=email, ip_address=self.request.META.get("REMOTE_ADDR"))
         
         confirm = helpers.SendMail(
-            to=resp.data.get("email"), request=request, out=True
-            , view="/api/v1/users/email_confirmation/")
+            to=resp.data.get("email"), request=request, out=True, view="/api/v1/users/email_confirmation/")
         confirm.send_mail()
         
         return Response({"message": "Confirmation email sent"}, status=resp.status_code

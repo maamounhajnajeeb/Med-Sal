@@ -12,6 +12,7 @@ urlpatterns = [
     path("service_providers/", views.ServiceProviderCreate.as_view(), name="service_provider"), #
     
     # admin
+    path("service_providers/check_account/", views.accept_provider_account, name="accept_provider_account"),
     path("service_providers/all/", views.ServiceProviderList.as_view(), name="service_provider_list"), #
     
     # mixed: safe method for everybody, else owners and admins only
