@@ -41,4 +41,9 @@ urlpatterns = [
     
     path('login/', views.LogIn.as_view(), name='login'), #
     path('refresh_token/', TokenRefreshView.as_view(), name='token_refresh'), #
+    
+    # 2FA
+    path("send_2fa/", views.send_2FA_code, name="send_2FA_code"),
+    path("resend_2fa/", views.resend_2fa_code, name="resend_2fa_code"),
+    path("validate_2fa/<str:code>/", views.validate_2FA, name="validate_2FA"),
 ]

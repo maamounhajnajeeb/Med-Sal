@@ -10,6 +10,7 @@ from rest_framework import status, generics
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from typing import Any
+from random import randint
 
 from . import serializers, helpers
 from . import models, permissions as local_permissions
@@ -405,7 +406,7 @@ def resend_code(request: HttpRequest):
     
     if not record.exists():
         return Response({
-            "message": "We've not send an code for this specific email"
+            "message": "We've not send code for this email"
         }, status=status.HTTP_404_NOT_FOUND)
     
     record = record.select_related("user").first()
@@ -425,7 +426,7 @@ def enter_code(request):
     """
     second step
     check if the inputed code the same
-    and depending on that it giv user ability to write new password
+    and depending on that it give user ability to write new password
     """
     code = request.data.get("code")
     
@@ -464,6 +465,57 @@ def new_password(request: HttpRequest):
     return Response({
         "message": "Password changed successfully, now you can log in with the new password"
     }, status=status.HTTP_202_ACCEPTED)
+
+
+@decorators.api_view(["POST"])
+def send_2FA_code(request: HttpRequest):
+    instance = models.PasswordReset.objects.create(ip_address=request.META.get("REMOTE_ADDR")
+        , code="".join(str(randint(0, 9)) for _ in range(6)), user=request.user)
+    
+    send_mail(subject="2 Factor Authentication"
+        , message=f"put this code: {instance.code} in the input field"
+        , from_email="med-sal-adminstration@gmail.com"
+        , recipient_list=[instance.user.email, ])
+    
+    return Response({"message": "A 6 number code sent to your email"}, status=status.HTTP_201_CREATED)
+
+
+@decorators.api_view(["POST"])
+@decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
+def resend_2fa_code(request: HttpRequest):
+    query = models.PasswordReset.objects.filter(user=request.user)
+    if not query.exists():
+        return Response(
+            {"error": "You haven't send a code in the first place"}
+            , status=status.HTTP_404_NOT_FOUND)
+    
+    new_code = "".join(str(randint(0, 9)) for _ in range(6))
+    instance = query.first()
+    instance.code = new_code
+    instance.save()
+    
+    send_mail(subject="2 Factor Authentication"
+        , message=f"put this code: {instance.code} in the input field"
+        , from_email="med-sal-adminstration@gmail.com"
+        , recipient_list=[instance.user.email, ])
+    
+    return Response({"message": "A 6 number code resent to your email"}, status=status.HTTP_201_CREATED)
+
+
+@decorators.api_view(["POST", ])
+def validate_2FA(request: HttpRequest, code: str):
+    query = models.PasswordReset.objects.filter(user=request.user)
+    if not query.exists():
+        return Response(
+            {"error": "You haven't send a code in the first place"}
+            , status=status.HTTP_404_NOT_FOUND)
+    
+    instance = query.first()
+    if instance.code != code:
+        return Response({"error": "Not valid, try again"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+    
+    instance.delete()
+    return Response({"message": "Right code, wellcome"}, status=status.HTTP_202_ACCEPTED)
 
 #
 class LogIn(TokenObtainPairView):
