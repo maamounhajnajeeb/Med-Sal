@@ -108,7 +108,7 @@ class ServiceProviderCreate(generics.CreateAPIView):
         return Response({"message": f"Confirmation email sent to: {email}"}, status=status.HTTP_201_CREATED)
 
 
-@decorators.api_view(["GET", ])
+@decorators.api_view(["POST", ])
 @decorators.permission_classes([permissions.IsAdminUser, ])
 def accept_provider_account(request: HttpRequest, provider_id: int, respond: str):
     respond = respond.capitalize()
@@ -117,10 +117,11 @@ def accept_provider_account(request: HttpRequest, provider_id: int, respond: str
         return Response({"error": "No account available with this id"}, status=status.HTTP_404_NOT_FOUND)
     
     provider = provider.first()
-    provider.user.is_active = True
+    provider.account_status = respond
     provider.save()
     
     if respond == "Accepted":
+        helpers.activate_user(provider_id)
         send_mail(
             subject="Activate Service Provider Account"
             , message="Your account has been revised and activated, you can log in now"
@@ -469,6 +470,14 @@ def new_password(request: HttpRequest):
 
 @decorators.api_view(["POST"])
 def send_2FA_code(request: HttpRequest):
+    """
+    send 2FA code
+    """
+    query = models.PasswordReset.objects.filter(user=request.user)
+    if query.exists():
+        return Response({"error": "You've already receive an 2FA code, check you inbox or resent it"}
+                , status=status.HTTP_403_FORBIDDEN)
+    
     instance = models.PasswordReset.objects.create(ip_address=request.META.get("REMOTE_ADDR")
         , code="".join(str(randint(0, 9)) for _ in range(6)), user=request.user)
     
@@ -480,9 +489,12 @@ def send_2FA_code(request: HttpRequest):
     return Response({"message": "A 6 number code sent to your email"}, status=status.HTTP_201_CREATED)
 
 
-@decorators.api_view(["POST"])
-@decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
+@decorators.api_view(["POST", ])
+# @decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
 def resend_2fa_code(request: HttpRequest):
+    """
+    resend the 2FA code
+    """
     query = models.PasswordReset.objects.filter(user=request.user)
     if not query.exists():
         return Response(
@@ -504,6 +516,9 @@ def resend_2fa_code(request: HttpRequest):
 
 @decorators.api_view(["POST", ])
 def validate_2FA(request: HttpRequest, code: str):
+    """
+    check if the 2FA code is valid
+    """
     query = models.PasswordReset.objects.filter(user=request.user)
     if not query.exists():
         return Response(
