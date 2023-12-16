@@ -1,13 +1,8 @@
-from rest_framework import routers
-
 from django.urls import re_path, path
 
 from services.views import maamoun_views, tareq_views, rates_views
 
 
-### Rates ###
-router = routers.SimpleRouter()
-router.register("rates", rates_views.ServiceRatesViewSet, basename="service_rates")
 
 app_name = "services"
 
@@ -50,6 +45,14 @@ urlpatterns = [
     
     
     ### Rates ###
+    # all rates for admins #
+    path("rates/all/", rates_views.all_rates, name="all_rates"),
+    # create rates for authenticated users #
+    path("rates/create/", rates_views.create_rate, name="create_rate"),
+    # create rates for authenticated users #
+    path("rates/<int:rate_id>/", rates_views.get_rate, name="get_rate"),
+    # delete and update rates for rate owner #
+    path("rates/delete_or_update/<int:rate_id>/", rates_views.update_delete_rate, name="update_delete_rate"),
     # user rates #
     path("rates/user/<int:user_id>/", rates_views.user_rates, name="user_rates"),
     # provider rates #
@@ -58,5 +61,3 @@ urlpatterns = [
     path("rates/location/<int:location_id>/", rates_views.location_rates, name="location_rates"),
     
 ]
-
-urlpatterns += router.urls
