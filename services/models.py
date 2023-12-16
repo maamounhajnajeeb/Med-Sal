@@ -16,8 +16,8 @@ class Service(models.Model):
     en_description = models.TextField(null=False)
     image = models.CharField(max_length=256, null=False)
     price = models.IntegerField()
-    created_at = models.DateTimeField(auto_now=True)
-    updated_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self) -> str:
         return f"{self.en_title}, category: {self.category.en_name}, provider: {self.provider_location.service_provider.business_name}"

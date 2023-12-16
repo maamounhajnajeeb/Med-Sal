@@ -206,29 +206,23 @@ AUTH_USER_MODEL = "users.Users" #
 
 GDAL_LIBRARY_PATH = 'C:\OSGeo4W\\bin\gdal307.dll'
 
-# Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 DATETIME_INPUT_FORMATS = [
     '%Y-%m-%d %H:%M:%S',
 ]
 
-USE_TZ = True
+# USE_TZ = True
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Riyadh'
 
 LANGUAGE_CODE = "en-us" # default language
 
-USE_I18N = True
-USE_L10N = True
+# USE_I18N = True
+# USE_L10N = True
 
 LANGUAGES = (
     ("ar", _("Arabic"))
     , ('en', _("English"))
 )
-
-LOCALE_PATHS = (
-    BASE_DIR / "locale",)
 
 AUTHENTICATION_BACKENDS = [
     'users.backend.CustomAuthBackend',
