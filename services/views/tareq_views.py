@@ -51,27 +51,23 @@ def services_by_category(request: HttpRequest, category_id: int):
 # 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])
-def services_by_distance(request: HttpRequest, service_name: str):
+def services_by_distance(request: HttpRequest, service_name: str, longitude: str, latitude: str):
     """
         An api to list services filtered by distance ordered for nearest to farthest.
         lat and lon are required
         ?latitude=<integer>, longitude=<integer> & service_name=<string>
         
-        # nearest_locations = Location.objects.annotate(
-            # distance=Distance('point', given_point)).order_by('distance')[:3] 
+        ### nearest_locations = Location.objects.annotate(
+            ### distance=Distance('point', given_point)).order_by('distance')[:3] 
     """
     language = request.META.get("Accept-Language")
-    longitude, latitude = request.query_params.get("longitude"), request.query_params.get("latitude")
     
-    if not (latitude and longitude):
-        return Response({
-            "message": "Both Longitude and Latitude required"
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
     location = Point(float(longitude), float(latitude), srid=4326)
-    Q_expression = Q(en_title__icontains=service_name) | Q(ar_title__icontains=service_name)
+    service_name = service_name.split("_")
+    Q_expr = (Q(en_title__icontains=x) | Q(ar_title__icontains=x) for x in service_name)
+    Q_func = reduce(lambda x,y: x & y, Q_expr)
     
-    services = smodels.Service.objects.filter(Q_expression,
+    services = smodels.Service.objects.filter(Q_func,
         provider_location__location__distance_lt=(location, 1000000)
         ).annotate(distance=Distance("provider_location__location", location)).order_by("distance")
     

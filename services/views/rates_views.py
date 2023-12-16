@@ -4,71 +4,100 @@ from rest_framework import status
 
 from django.http import HttpRequest
 
-from typing import Optional
-
-from utils.permission import HasPermissionAndOwner
+from utils.permission import authorization_with_method
 from notification.models import Notification
 from services import models, serializers
 
 
 
-class ServiceRatesViewSet(viewsets.ModelViewSet):
-    permission_classes = (HasPermissionAndOwner, )
-    serializer_class = serializers.ServiceRatesSerializer
-    queryset = models.ServiceRates.objects
+@decorators.api_view(["DELETE", "PATCH", "PUT"])
+def update_delete_rate(request: HttpRequest, rate_id: int):
+    language = request.META.get("Accept-Language")
+    instance = models.ServiceRates.objects.filter(id=rate_id)
+    if not instance.exists():
+        return Response({"error": "No rate exists with this id"}, status=status.HTTP_404_NOT_FOUND)
     
-    def get_permissions(self):
-        return [permission("servicerates") for permission in self.permission_classes]
+    # if he isn't the rate owner, return permission denied
+    instance = instance.first()
+    if not request.user == instance.user:
+        return Response(
+            {"error": "You don't have permission to make this action"}
+            , status=status.HTTP_403_FORBIDDEN)
     
-    def get_serializer(self, *args, **kwargs):
-        language = self.request.META.get("Accept-Language")
-        kwargs["language"] = language
-        
-        return super().get_serializer(*args, **kwargs)
-    
-    def create(self, request: HttpRequest, *args, **kwargs):
-        request.data["user"] = request.user.id
-        
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        
-        try:
-            self.perform_create(serializer)
-        except:
-            return Response({"error": "this user already rate this service, user can't rate same service twice"})
-        
+    def delete_instance(instance: models.ServiceRates):
+        instance.delete()
         Notification.objects.create(
             sender="System", sender_type="System"
-            , receiver=request.user.email, receiver_type="User"
-            , ar_content="تمت إضافة التقييم", en_content="rate added")
+            , receiver=instance.user.email, receiver_type="User"
+            , ar_content="تم حذف التقييم", en_content="rate deleted")
         
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response({"Done": "Deleted Successfully"}, status=status.HTTP_204_NO_CONTENT)
     
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer([instance, ], many=True)
-        return Response(serializer.data)
-    
-    def update(self, request, *args, **kwargs):
-        resp = super().update(request, *args, **kwargs)
+    def update_instance(instance: models.ServiceRates):
+        partial = True if request.method == "PATCH" else False
+        serializer = serializers.ServiceRatesSerializer(
+            instance, data=request.data, partial=partial, language=language)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         
         Notification.objects.create(
             sender="System", sender_type="System"
             , receiver=request.user.email, receiver_type="User"
             , ar_content="تم تعديل التقييم", en_content="rate updated")
         
-        return Response(resp.data, status=resp.status_code)
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     
-    def perform_destroy(self, instance):
-        super().perform_destroy(instance)
-        
-        Notification.objects.create(
-            sender="System", sender_type="System"
-            , receiver=instance.user.email, receiver_type="User"
-            , ar_content="تم حذف التقييم", en_content="rate deleted")
+    return delete_instance(instance) if request.method == "DELETE" else update_instance(instance)
 
+#
+@decorators.api_view(["GET"])
+@decorators.permission_classes([])
+def get_rate(request: HttpRequest, rate_id: int):
+    language = request.META.get("Accept-Language")
+    instance = models.ServiceRates.objects.filter(id=rate_id)
+    if not instance.exists():
+        return Response({"error": "No rate exists with this id"}, status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = serializers.ServiceRatesSerializer(instance, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
+#
+@decorators.api_view(["POST", ])
+def create_rate(request: HttpRequest):
+    
+    def perform_create(serializer):
+        serializer.save()
+    
+    language = request.META.get("Accept-Language")
+    request.data["user"] = request.user.id
+    
+    serializer = serializers.ServiceRatesSerializer(data=request.data, language=language)
+    serializer.is_valid(raise_exception=True)
+    
+    try:
+        perform_create(serializer)
+    except:
+        return Response(
+            {"error": "this user already rate this service, user can't rate same service twice"}
+            , status=status.HTTP_403_FORBIDDEN)
+    
+    Notification.objects.create(
+        sender="System", sender_type="System"
+        , receiver=request.user.email, receiver_type="User"
+        , ar_content="تمت إضافة التقييم", en_content="rate added")
+    
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+#
+@decorators.api_view(["GET", ])
+@authorization_with_method("list", "servicerates")
+def all_rates(request: HttpRequest):
+    language = request.META.get("Accept-Language")
+    queryset = models.ServiceRates.objects.all()
+    serializer = serializers.ServiceRatesSerializer(queryset, many=True, language=language)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+#
 @decorators.api_view(["GET", ])
 def location_rates(request: HttpRequest, location_id: int):
     language = request.META.get("Accept-Language")
@@ -77,9 +106,9 @@ def location_rates(request: HttpRequest, location_id: int):
     
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-# 
+#
 @decorators.api_view(["GET", ])
-def provider_rates(request: HttpRequest, provider_id: Optional[int]):
+def provider_rates(request: HttpRequest, provider_id: int):
     provider_id = provider_id or request.user.id
     language = request.META.get("Accept-Language")
     queryset = models.ServiceRates.objects.filter(
@@ -90,7 +119,7 @@ def provider_rates(request: HttpRequest, provider_id: Optional[int]):
 
 #
 @decorators.api_view(["GET", ])
-def user_rates(request: HttpRequest, user_id: Optional[int]):
+def user_rates(request: HttpRequest, user_id: int):
     user_id = user_id or request.user.id
     language = request.META.get("Accept-Language")
     queryset = models.ServiceRates.objects.filter(user__id=user_id)

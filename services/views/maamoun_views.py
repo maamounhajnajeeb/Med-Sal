@@ -7,7 +7,7 @@ from django.contrib.gis.geos import Point
 from django.http import HttpRequest
 
 from collections import defaultdict
-from typing import Any
+from typing import Any, Optional
 
 from services import models, serializers, helpers
 
@@ -16,7 +16,7 @@ from notification.models import Notification
 from utils.permission import HasPermission
 
 
-
+#
 class CreateService(generics.CreateAPIView, helpers.FileMixin):
     serializer_class = serializers.CreateServicesSerializer
     permission_classes = (HasPermission, )
@@ -41,7 +41,7 @@ class CreateService(generics.CreateAPIView, helpers.FileMixin):
         
         return Response(resp.data, status=resp.status_code)
 
-
+#
 class ServiceRUD(generics.RetrieveUpdateDestroyAPIView, helpers.FileMixin):
     serializer_class = serializers.RUDServicesSerializer
     permission_classes = (HasPermission, )
@@ -113,7 +113,7 @@ class ListAllServices(generics.ListAPIView):
 #
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def provider_services(request: HttpRequest, provider_id: int):
+def provider_services(request: HttpRequest, provider_id: int= None):
     """
     return services for specific provider
     """
@@ -128,7 +128,8 @@ def provider_services(request: HttpRequest, provider_id: int):
 @decorators.permission_classes([])
 def provider_services_by_category(request: HttpRequest, provider_id: int):
     """
-    return services number for each category in a service_provider
+    number of services for each categories available in specific provider
+    returns {category_id, category_name, services_count}
     """
     language = request.META.get("Accept-Language")
     queryset = models.Service.objects.filter(provider_location__service_provider=provider_id)
@@ -154,7 +155,7 @@ def provider_services_by_category(request: HttpRequest, provider_id: int):
     
     return Response(data, status=status.HTTP_200_OK)
 
-#
+
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
 def provider_category_services(request: HttpRequest, provider_id: int, category_id: int):
@@ -167,7 +168,7 @@ def provider_category_services(request: HttpRequest, provider_id: int, category_
     serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-#
+
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
 def category_services_by_name(request: HttpRequest, category_name: str):
@@ -184,26 +185,7 @@ def category_services_by_name(request: HttpRequest, category_name: str):
     serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-@decorators.api_view(["GET", ])
-@decorators.permission_classes([])
-def service_price_range(request: HttpRequest):
-    """
-    return services depending on price range
-    """
-    language = request.META.get("Accept-Language")
-    min_price, max_price = int(request.query_params["min_price"]), int(request.query_params["max_price"])
-    
-    queryset = models.Service.objects.filter(price__range=(min_price, max_price))
-    if not queryset.exists():
-        return Response({
-            "message": "No services found within this range"
-        }, status=status.HTTP_404_NOT_FOUND)
-    
-    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
-    return Response(serializer.data, status=status.HTTP_200_OK)
-
-
+#
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
 def multiple_filters(request: HttpRequest):
