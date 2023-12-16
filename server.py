@@ -3,4 +3,5 @@ from core.wsgi import application
 
 
 if __name__ == "__main__":
-    serve(app=application, port="8000")
+    print("Running waitress")
+    serve(app=application, host="127.0.0.1", port="8000")
