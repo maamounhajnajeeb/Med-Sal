@@ -77,9 +77,9 @@ def location_rates(request: HttpRequest, location_id: int):
     
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-# 
+#
 @decorators.api_view(["GET", ])
-def provider_rates(request: HttpRequest, provider_id: Optional[int]):
+def provider_rates(request: HttpRequest, provider_id: int):
     provider_id = provider_id or request.user.id
     language = request.META.get("Accept-Language")
     queryset = models.ServiceRates.objects.filter(
@@ -90,7 +90,7 @@ def provider_rates(request: HttpRequest, provider_id: Optional[int]):
 
 #
 @decorators.api_view(["GET", ])
-def user_rates(request: HttpRequest, user_id: Optional[int]):
+def user_rates(request: HttpRequest, user_id: int):
     user_id = user_id or request.user.id
     language = request.META.get("Accept-Language")
     queryset = models.ServiceRates.objects.filter(user__id=user_id)
