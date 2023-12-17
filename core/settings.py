@@ -74,9 +74,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication'
         , )
     
-    , 'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.ScopedRateThrottle'
-        , ]
+    # , 'DEFAULT_THROTTLE_CLASSES': [
+    #     'rest_framework.throttling.ScopedRateThrottle'
+    #     , ]
     
     , 'DEFAULT_THROTTLE_RATES': {
         'un_authenticated': '1/hour'
@@ -229,7 +229,7 @@ CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = 31536000 * 2
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
-SECURE_SSL_REDIRECT = True
+# SECURE_SSL_REDIRECT = True
 
 SECURE_REFERRER_POLICY = "strict-origin"
 
