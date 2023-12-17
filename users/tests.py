@@ -10,19 +10,22 @@ class MyTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user_data = {
-            "username" : "maamounnajeeb"
-            , "email" : "maamounnajeeb@gmail.com"
+            "email" : "maamounnajeeb@gmail.com"
             , "password":"sv_gtab101enter"
+            , "confirm_password":"sv_gtab101enter"
             , "is_active": True
+            , "phone": "+963932715313"
+            , "user_type": models.Users.Types.USER
         }
         
         cls.superuser_data = {
-            "username" : "maamounnajeebsuper"
-            , "email" : "maamounnajeebsuper@gmail.com"
+            "email" : "maamounnajeebsuper@gmail.com"
             , "password":"sv_gtab101enter"
+            , "confirm_password":"sv_gtab101enter"
             , "is_active": True
             , "is_superuser": True
             , "is_staff" : True
+            , "phone": "+963932715313"
             , "user_type": models.Users.Types.SUPER_ADMIN
         }
         
@@ -31,8 +34,7 @@ class MyTests(TestCase):
     
     def create_superuser(self) -> User:
         superuser = models.SuperAdmins.objects.create(
-            **self.superuser_data
-        )
+            **self.superuser_data)
         
         superuser.set_password(superuser.password)
         superuser.save()

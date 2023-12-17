@@ -2,9 +2,6 @@ from pathlib import Path
 from datetime import timedelta
 from django.utils.translation import gettext_lazy as _
 
-import os
-from environs import Env
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -13,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=zm+$3l^q2tb4)rs!b5++4v--x3&84vm8b#qh4$+y*2c)t1$)&'
+SECRET_KEY = 'tmr$uaqiaq#vuw_a+77jo^91^&sory+ez^_=bbfapnl-h4=v64'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -29,6 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     'django.contrib.gis', # To deal with gis database
     
@@ -54,6 +52,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -75,9 +74,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication'
         , )
     
-    , 'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.ScopedRateThrottle'
-        , ]
+    # , 'DEFAULT_THROTTLE_CLASSES': [
+    #     'rest_framework.throttling.ScopedRateThrottle'
+    #     , ]
     
     , 'DEFAULT_THROTTLE_RATES': {
         'un_authenticated': '1/hour'
@@ -223,6 +222,25 @@ LANGUAGES = (
     ("ar", _("Arabic"))
     , ('en', _("English"))
 )
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+SECURE_HSTS_SECONDS = 31536000 * 2
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+# SECURE_SSL_REDIRECT = True
+
+SECURE_REFERRER_POLICY = "strict-origin"
+
+# To support old browsers
+SECURE_BROWSER_XSS_FILTER = True
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 AUTHENTICATION_BACKENDS = [
     'users.backend.CustomAuthBackend',
