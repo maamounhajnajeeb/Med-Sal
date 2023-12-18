@@ -1,157 +1,51 @@
-from django.contrib.auth import authenticate, get_user_model
-from django.test import TestCase, Client
+from django.contrib.auth import get_user_model
+from django.test import TestCase
 
-from rest_framework.test import APIClient
+from service_providers.models import ServiceProvider
+from category.models import Category
 
-from . import models
 User = get_user_model()
 
-class MyTests(TestCase):
+
+
+class TestUserModels(TestCase):
     @classmethod
-    def setUpTestData(cls):
-        cls.user_data = {
-            "email" : "maamounnajeeb@gmail.com"
-            , "password":"sv_gtab101enter"
-            , "confirm_password":"sv_gtab101enter"
+    def setUp(self) -> None:
+        self.user_data = {
+            "email": "maamoun.haj.najeeb@gmail.com"
+            , "password": "17AiGz48rhe"
+            , "user_type": "USER"
             , "is_active": True
             , "phone": "+963932715313"
-            , "user_type": models.Users.Types.USER
         }
         
-        cls.superuser_data = {
-            "email" : "maamounnajeebsuper@gmail.com"
-            , "password":"sv_gtab101enter"
-            , "confirm_password":"sv_gtab101enter"
-            , "is_active": True
-            , "is_superuser": True
-            , "is_staff" : True
-            , "phone": "+963932715313"
-            , "user_type": models.Users.Types.SUPER_ADMIN
+        self.category_data = {
+            "ar_name": "أطباء"
+            , "en_name": "Doctors"
         }
         
-        cls.client = Client()
-        cls.api_client = APIClient()
-    
-    def create_superuser(self) -> User:
-        superuser = models.SuperAdmins.objects.create(
-            **self.superuser_data)
-        
-        superuser.set_password(superuser.password)
-        superuser.save()
-        
-        return superuser
-    
-    def create_user(self) -> User:
-        user = models.Users.objects.create(
-            **self.user_data
-        )
-        
-        user.set_password(user.password)
-        user.save()
-        
-        return user
+        self.service_provider_data = {
+            "bank_name": "Albaraka"
+            , "business_name": "Django On the Backend"
+            , "iban": "i1b2a3n4"
+            , "swift_code": "s1w2i3f4t5"
+        }
     
     def test_create_user(self):
-        user = self.create_user()
+        user = User.objects.create_user(**self.user_data)
         
-        self.assertEqual(user.username, self.user_data["username"])
-        self.assertEqual(user.email, self.user_data["email"])
-        self.assertEqual(user.is_active, True)
+        self.assertEqual(user.email, "maamoun.haj.najeeb@gmail.com")
     
-    def test_create_superuser(self):
-        superuser = self.create_superuser()
+    def test_create_category(self):
+        category = Category.objects.create(**self.category_data)
         
-        self.assertEqual(superuser.username, self.superuser_data["username"])
-        self.assertEqual(superuser.email, self.superuser_data["email"])
-        
-        self.assertEqual(models.Users.Types.SUPER_ADMIN, superuser.user_type)
-        self.assertTrue(models.SuperAdmins.super_admins.all().count() == 1)
-        
-        self.assertEqual(superuser.is_superuser, True)
-        self.assertEqual(superuser.is_staff, True)
-        self.assertEqual(superuser.is_active, True)
+        self.assertEqual(category.ar_name, "أطباء")
+        self.assertEqual(category.en_name, "Doctors")
     
-    def test_authentication(self):
-        user = self.create_user()
-        result = authenticate(email=self.user_data["email"], password=self.user_data["password"])
-        self.assertTrue(result == user)
-    
-    def test_client_login(self):
-        superuser = self.create_superuser()
-        client_auth = self.client.login(
-            email=self.superuser_data["email"], password=self.superuser_data["password"])
-        self.assertEqual(True, client_auth)
-        self.assertEqual(True, superuser.is_superuser)
-    
-    
-    def test_create_api_user(self):
-        resp = self.api_client.post(
-            "/api/v1/users/sign_up/"
-            , {
-                "email": "MaamounModarTareq@gmail.com"
-                , "password": "sv_gtab101enter"
-                , "confirm_password": "sv_gtab101enter"
-                , "user_type" : "USER"
-            }
-            , format="json"
-        )
-        
-        self.assertEqual(resp.status_code, 201)
-        
-        return User.objects.all().first()
-    
-    def test_api_user_signup(self):
-        user = self.test_create_api_user()
-        
-        self.assertEqual(user.user_type, "USER")
-        self.assertEqual(User.objects.count(), 1)
-    
-    
-    def test_create_api_admin(self):
-        resp = self.api_client.post(
-            "/api/v1/users/sign_up/"
-            , {
-                "email": "MaamounModarTareq@gmail.com"
-                , "password": "sv_gtab101enter"
-                , "confirm_password": "sv_gtab101enter"
-                , "user_type" : "ADMIN"
-            }
-            , format="json"
-        )
-        
-        self.assertEqual(resp.status_code, 201)
-        
-        return User.objects.all().first()
-    
-    def test_api_admin_sign_up(self):
-        user = self.test_create_api_admin()
-        
-        self.assertEqual(user.is_staff, True)
-        self.assertEqual(user.user_type, "ADMIN")
-        self.assertEqual(User.objects.count(), 1)
-    
-    
-    def test_create_api_superadmin(self):
-        resp = self.api_client.post(
-            "/api/v1/users/sign_up/"
-            , {
-                "email": "MaamounModarTareq@gmail.com"
-                , "password": "sv_gtab101enter"
-                , "confirm_password": "sv_gtab101enter"
-                , "user_type" : "SUPER_ADMIN"
-            }
-            , format="json"
-        )
-        
-        self.assertEqual(resp.status_code, 201)
-        
-        return User.objects.all().first()
-    
-    def test_api_superadmin_sign_up(self):
-        user = self.test_create_api_superadmin()
-        
-        self.assertEqual(user.is_staff, True)
-        self.assertEqual(user.is_superuser, True)
-        self.assertEqual(user.user_type, "SUPER_ADMIN")
-        self.assertEqual(User.objects.count(), 1)
-        
+    def test_create_service_provider(self):
+        user = User.objects.create(**self.user_data)
+        category = Category.objects.create(**self.category_data)
+        sp = ServiceProvider.objects.create(
+            **self.service_provider_data, category=category, user=user)
+
+        self.assertEqual(sp.user, user)

@@ -35,8 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ("id", "email", "phone", "image", "password", "password2", "user_type", )
         extra_kwargs = {
             'phone': {'required': True},
-            'image': {'required': True}
-        , }
+            'image': {'required': True} }
     
     def validate(self, attrs):
         password, password2 = attrs.get("password"), attrs.pop("password2")
