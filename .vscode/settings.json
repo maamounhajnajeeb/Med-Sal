@@ -4,7 +4,7 @@
     },
     "python.formatting.provider": "none",
     "python.testing.pytestArgs": [
-        "appointments"
+        "."
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
