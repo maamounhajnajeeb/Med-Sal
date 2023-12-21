@@ -10,7 +10,12 @@ router = routers.SimpleRouter()
 router.register("", views.CategoryViewSet, basename="category-functionality")
 
 urlpatterns = [
+    # Update, Destroy, Create Category
+    path("create/", views.CreateCategoryAPI.as_view(), name="create_category"),
+    path("update/<int:pk>/", views.UpdateCategoryAPI.as_view(), name="update_category"),
+    path("destroy/<int:pk>/", views.DestroyCategoryAPI.as_view(), name="destroy_category"),
     
+    #
     path("sub_categories/<int:pk>/", views.parent_sub_category, name="parent_sub_category"),
     path("prime_categories/", views.prime_categories, name="parent_sub_category"),
     path('search/', views.search_category, name="search_category"), # ?query=......

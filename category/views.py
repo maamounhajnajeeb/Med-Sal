@@ -1,10 +1,11 @@
 from rest_framework import viewsets, decorators
 from rest_framework import permissions, status
 from rest_framework.response import Response
+from rest_framework import generics
 
 from django.http import HttpRequest
 
-from .serializers import CategorySerializer
+from .serializers import CategorySerializer, CategoryCUDSerializer
 from .helpers import searching_func
 from .permissions import IsAdmin
 from .models import Category
@@ -53,16 +54,8 @@ def search_category(request: HttpRequest):
 class CategoryViewSet(viewsets.ModelViewSet):
     """
     path : "api/v1/category/"
-    
-    this view offers four api methods
-    
-    everybody method: get method (including: searching, listing and get specific record)
-    admins methods: post, update[patch, put] and delete methods
-    
+    this view offers one API method: [GET -> list, retrieve]
     you can call specific category by its id
-    also you can search for specific category by its name (via api/v1/category?serach=<category_name>)
-    
-    you can assign parent category for each sub category by using the parent id with the form data
     """
     
     serializer_class = CategorySerializer
@@ -72,7 +65,6 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def get_serializer(self, *args, **kwargs):
         langauge = self.request.META.get("Accept-Language")
         kwargs.setdefault("language", langauge)
-        
         return super().get_serializer(*args, **kwargs)
     
     def list(self, request, *args, **kwargs):
@@ -83,12 +75,34 @@ class CategoryViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def create(self, request, *args, **kwargs):
-        # resp = super().create(request, *args, **kwargs)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        resp = Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(
+            {"Error": f"Method {self.request.method} is not allowed"}
+            , status=status.HTTP_403_FORBIDDEN)
+    
+    def update(self, request, *args, **kwargs):
+        return Response(
+            {"Error": f"Method {self.request.method} is not allowed"}
+            , status=status.HTTP_403_FORBIDDEN)
+    
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"Error": f"Method {self.request.method} is not allowed"}
+            , status=status.HTTP_403_FORBIDDEN)
+
+
+class CreateCategoryAPI(generics.CreateAPIView):
+    queryset = Category.objects
+    permission_classes = (IsAdmin, )
+    serializer_class = CategoryCUDSerializer
+    
+    def get_serializer(self, *args, **kwargs):
+        langauge = self.request.META.get("Accept-Language")
+        kwargs.setdefault("language", langauge)
+        
+        return super().get_serializer(*args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        resp = super().create(request, *args, **kwargs)
         
         Notification.objects.create(
             sender="System", sender_type="System"
@@ -97,6 +111,17 @@ class CategoryViewSet(viewsets.ModelViewSet):
             , ar_content=f" تمت إضافة {resp.data['ar_name']}")
         
         return Response(resp.data, status=resp.status_code)
+
+class UpdateCategoryAPI(generics.UpdateAPIView):
+    queryset = Category.objects
+    permission_classes = (IsAdmin, )
+    serializer_class = CategoryCUDSerializer
+    
+    def get_serializer(self, *args, **kwargs):
+        langauge = self.request.META.get("Accept-Language")
+        kwargs.setdefault("language", langauge)
+        
+        return super().get_serializer(*args, **kwargs)
     
     def perform_update(self, serializer):
         instance = serializer.save()
@@ -106,6 +131,17 @@ class CategoryViewSet(viewsets.ModelViewSet):
             , receiver=self.request.user.email, receiver_type="System"
             , en_content=f"{instance.en_name} category updated"
             , ar_content=f" تم تعديل {instance.ar_name}")
+
+class DestroyCategoryAPI(generics.DestroyAPIView):
+    queryset = Category.objects
+    permission_classes = (IsAdmin, )
+    serializer_class = CategoryCUDSerializer
+    
+    def get_serializer(self, *args, **kwargs):
+        langauge = self.request.META.get("Accept-Language")
+        kwargs.setdefault("language", langauge)
+        
+        return super().get_serializer(*args, **kwargs)
     
     def perform_destroy(self, instance: Category):
         Notification.objects.create(
