@@ -536,7 +536,8 @@ def validate_2FA(request: HttpRequest, code: str):
 class LogIn(TokenObtainPairView):
     """
     login view
-    just editing the main login to add user(id, user_type) in the serializer
+    the main login response edited with user(id, user_type) in the serializer
     """
     serializer_class = serializers.LogInSerializer
-    permission_classes = (local_permissions.UnAuthenticated, )
+    # permission_classes = (local_permissions.UnAuthenticated, )
+    permission_classes = ()

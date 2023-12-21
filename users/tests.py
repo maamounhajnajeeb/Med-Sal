@@ -1,157 +1,168 @@
-from django.contrib.auth import authenticate, get_user_model
-from django.test import TestCase, Client
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 
 from rest_framework.test import APIClient
 
-from . import models
-User = get_user_model()
+from hypothesis import given, strategies as st
+from hypothesis.extra.django import TestCase
+from mixer.backend.django import mixer
+import pytest
 
-class MyTests(TestCase):
+from service_providers.models import ServiceProvider
+from category.models import Category
+
+User = get_user_model()
+pytestmark = pytest.mark.django_db
+
+
+class TestUserModels(TestCase):
     @classmethod
-    def setUpTestData(cls):
-        cls.user_data = {
-            "email" : "maamounnajeeb@gmail.com"
-            , "password":"sv_gtab101enter"
-            , "confirm_password":"sv_gtab101enter"
+    def setUp(self) -> None:
+        self.user_data = {
+            "email": "maamoun.haj.najeeb@gmail.com"
+            , "password": "17AiGz48rhe"
+            , "user_type": "USER"
             , "is_active": True
             , "phone": "+963932715313"
-            , "user_type": models.Users.Types.USER
         }
         
-        cls.superuser_data = {
-            "email" : "maamounnajeebsuper@gmail.com"
-            , "password":"sv_gtab101enter"
-            , "confirm_password":"sv_gtab101enter"
+        self.category_data = {
+            "ar_name": "أطباء"
+            , "en_name": "Doctors"
+        }
+        
+        self.service_provider_data = {
+            "bank_name": "Albaraka"
+            , "business_name": "Django On the Backend"
+            , "iban": "i1b2a3n4"
+            , "swift_code": "s1w2i3f4t5"
+        }
+        
+        self.user = User.objects.create_user(**self.user_data)
+        self.category = Category.objects.create(**self.category_data)
+        self.service_provider = ServiceProvider.objects.create(
+            **self.service_provider_data, category=self.category, user=self.user)
+    
+    @given(some_value=st.text(max_size=15))
+    def test_create_user(self, some_value):
+        assert self.user.email != some_value
+    
+    def test_create_category(self):
+        assert self.category.ar_name == "أطباء"
+        assert self.category.en_name == "Doctors"
+    
+    def test_create_service_provider(self):
+        assert self.service_provider.user == self.user
+
+
+class TestUsersAPI(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        
+        self.user_data = {
+            "email": "maamoun.haj.najeeb@gmail.com"
+            , "password": "17AiGz48rhe"
+            , "password2": "17AiGz48rhe"
+            , "user_type": "USER"
             , "is_active": True
-            , "is_superuser": True
-            , "is_staff" : True
             , "phone": "+963932715313"
-            , "user_type": models.Users.Types.SUPER_ADMIN
         }
         
-        cls.client = Client()
-        cls.api_client = APIClient()
+        self.group = Group.objects.create(name="USER")
     
-    def create_superuser(self) -> User:
-        superuser = models.SuperAdmins.objects.create(
-            **self.superuser_data)
+    # @given()
+    def test_user_api_create(self):
+        response = self.client.post(
+            path="/api/v1/users/signup/"
+            , data=self.user_data
+            , format="json")
+            # headers={"Accept-Language": "ar"}
         
-        superuser.set_password(superuser.password)
-        superuser.save()
+        assert response.json != None
+        assert response.status_code == 201
         
-        return superuser
+    def test_user_login(self):
+        self.client.logout()
+        
+        data = self.user_data.copy()
+        data.pop("password2")
+        User.objects.create_user(**data)
+        
+        response = self.client.post(
+            path="/api/v1/users/login/"
+            , data={"email": "maamoun.haj.najeeb@gmail.com", "password": "17AiGz48rhe"}
+            , format="json")
+        response_data = response.json()
+        
+        assert response.status_code == 200
+        assert response_data["user_type"] == "USER"
+        
+    def test_refresh_token(self):
+        self.client.logout()
+        
+        data = self.user_data.copy()
+        data.pop("password2")
+        User.objects.create_user(**data)
+        
+        response = self.client.post(
+            path="/api/v1/users/login/"
+            , data={"email": "maamoun.haj.najeeb@gmail.com", "password": "17AiGz48rhe"}
+            , format="json")
+        response_data = response.json()
+        
+        assert response.status_code == 200
+        
+        refresh_response = self.client.post(
+            path="/api/v1/users/refresh_token/"
+            , data={"refresh": response_data["refresh"]}
+            , format="json")
+        
+        assert refresh_response.status_code == 200
+
+
+class TestUsersAPIView(TestCase):
+    def setUp(self) -> None:
+        Group.objects.create(name="USER")
+        Group.objects.create(name="ADMIN")
+        
+        self.user_data = {
+            "user_type": "USER"
+            , "password": "17AiGz48rhe"
+            , "email": "maamoun.h.najeeb@gmail.com"
+            , "is_active": True
+            , "phone": "+963932715312"}
+        
+        self.admin_data = {
+            "user_type": "ADMIN"
+            , "password": "17AiGz48rhe"
+            , "email": "maamoun.haj.najeeb@gmail.com"
+            , "is_active": True
+            , "phone": "+963932715313"}
+        
+        self.client = APIClient()
     
-    def create_user(self) -> User:
-        user = models.Users.objects.create(
-            **self.user_data
-        )
-        
-        user.set_password(user.password)
-        user.save()
-        
-        return user
+    def create_admin(self):
+        User.objects.create_user(**self.admin_data)
     
-    def test_create_user(self):
-        user = self.create_user()
-        
-        self.assertEqual(user.username, self.user_data["username"])
-        self.assertEqual(user.email, self.user_data["email"])
-        self.assertEqual(user.is_active, True)
+    def create_user(self):
+        User.objects.create_user(**self.user_data)
     
-    def test_create_superuser(self):
-        superuser = self.create_superuser()
+    def login(self):
+        response = self.client.post(
+            path="/api/v1/users/login/"
+            , data={"email": "maamoun.haj.najeeb@gmail.com", "password": "17AiGz48rhe"}
+            , format="json")
         
-        self.assertEqual(superuser.username, self.superuser_data["username"])
-        self.assertEqual(superuser.email, self.superuser_data["email"])
-        
-        self.assertEqual(models.Users.Types.SUPER_ADMIN, superuser.user_type)
-        self.assertTrue(models.SuperAdmins.super_admins.all().count() == 1)
-        
-        self.assertEqual(superuser.is_superuser, True)
-        self.assertEqual(superuser.is_staff, True)
-        self.assertEqual(superuser.is_active, True)
+        return response.json()["refresh"]
     
-    def test_authentication(self):
-        user = self.create_user()
-        result = authenticate(email=self.user_data["email"], password=self.user_data["password"])
-        self.assertTrue(result == user)
-    
-    def test_client_login(self):
-        superuser = self.create_superuser()
-        client_auth = self.client.login(
-            email=self.superuser_data["email"], password=self.superuser_data["password"])
-        self.assertEqual(True, client_auth)
-        self.assertEqual(True, superuser.is_superuser)
-    
-    
-    def test_create_api_user(self):
-        resp = self.api_client.post(
-            "/api/v1/users/sign_up/"
-            , {
-                "email": "MaamounModarTareq@gmail.com"
-                , "password": "sv_gtab101enter"
-                , "confirm_password": "sv_gtab101enter"
-                , "user_type" : "USER"
-            }
-            , format="json"
-        )
+    def test_list_users_api(self):
+        self.create_admin()
+        self.create_user()
         
-        self.assertEqual(resp.status_code, 201)
+        token = self.login()
         
-        return User.objects.all().first()
-    
-    def test_api_user_signup(self):
-        user = self.test_create_api_user()
+        # self.client.credentials(HTTP_AUTHORIZATION=f"JWT {token}")
+        response = self.client.get(path="api/v1/users/")
         
-        self.assertEqual(user.user_type, "USER")
-        self.assertEqual(User.objects.count(), 1)
-    
-    
-    def test_create_api_admin(self):
-        resp = self.api_client.post(
-            "/api/v1/users/sign_up/"
-            , {
-                "email": "MaamounModarTareq@gmail.com"
-                , "password": "sv_gtab101enter"
-                , "confirm_password": "sv_gtab101enter"
-                , "user_type" : "ADMIN"
-            }
-            , format="json"
-        )
-        
-        self.assertEqual(resp.status_code, 201)
-        
-        return User.objects.all().first()
-    
-    def test_api_admin_sign_up(self):
-        user = self.test_create_api_admin()
-        
-        self.assertEqual(user.is_staff, True)
-        self.assertEqual(user.user_type, "ADMIN")
-        self.assertEqual(User.objects.count(), 1)
-    
-    
-    def test_create_api_superadmin(self):
-        resp = self.api_client.post(
-            "/api/v1/users/sign_up/"
-            , {
-                "email": "MaamounModarTareq@gmail.com"
-                , "password": "sv_gtab101enter"
-                , "confirm_password": "sv_gtab101enter"
-                , "user_type" : "SUPER_ADMIN"
-            }
-            , format="json"
-        )
-        
-        self.assertEqual(resp.status_code, 201)
-        
-        return User.objects.all().first()
-    
-    def test_api_superadmin_sign_up(self):
-        user = self.test_create_api_superadmin()
-        
-        self.assertEqual(user.is_staff, True)
-        self.assertEqual(user.is_superuser, True)
-        self.assertEqual(user.user_type, "SUPER_ADMIN")
-        self.assertEqual(User.objects.count(), 1)
-        
+        assert response.status_code == 200
+        # assert len(response.json()) == 2

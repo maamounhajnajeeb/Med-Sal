@@ -17,7 +17,7 @@ def choose_lang(request):
     
     IP_Address = request.META.get("REMOTE_ADDR")
     
-    language_code = request.headers.get("Accept-Language")
+    language_code = request.headers.get("Accept-Language") or "en"
     if language_code:
         language_code = language_code[:2]
         

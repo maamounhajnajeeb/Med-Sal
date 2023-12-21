@@ -4,16 +4,19 @@ from rest_framework import status
 
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
+from django.db.models import Q, Avg
 from django.http import HttpRequest
 
 from collections import defaultdict
-from typing import Any, Optional
+from functools import reduce
+from typing import Any
 
 from services import models, serializers, helpers
 
 from products.file_handler import UploadImages, DeleteFiles
 from notification.models import Notification
 from utils.permission import HasPermission
+from utils.catch_helper import catch
 
 
 #
@@ -193,63 +196,85 @@ def multiple_filters(request: HttpRequest):
     return services depending on specified filters
     filters set : {rate, category_name, (min_price, max_price), (longitude, latitude)}
     """
-    language = request.META.get("Accept-Language")
-    params = {}
-    callables = (check_rate, check_range, check_category)
-    for function in callables:
-        params = function(request, params, language=language)
+    params = request.query_params
     
-    queryset = check_distance(request, params)
-    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
+    q_expressions = set()
+    callables = (check_range, check_category)
+    for function in callables:
+        q_expressions.add(function(params))
+    
+    q_expressions.discard(None)
+    
+    queryset = check_distance(params, q_expressions=q_expressions)
+    queryset = check_rate(params, queryset)
+    
+    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=request.META.get("Accept-Language"))
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def check_distance(request: HttpRequest, params: dict[str, Any], **kwargs):
+def check_distance(params: dict[str, None], **kwargs):
     """
     helper function for multiple filters api function
     """
-    longitude, latitude = request.query_params.get("longitude"), request.query_params.get("latitude")
+    q_expressions = kwargs.get("q_expressions")
+    
+    longitude, latitude = params.get("longitude", None), params.get("latitude", None)
     if longitude and latitude:
         longitude, latitude = float(longitude), float(latitude)
         location = Point(longitude, latitude)
-        params["service_provider_location__location__distance_lt"] = (location, 1000000)
-    
+        q_exp=Q(service_provider_location__location__distance_lt=(location, 1000000))
+        
         queryset = models.Service.objects.filter(
-            **params).annotate(
+            q_exp, *q_expressions).annotate(
                 distance=Distance("service_provider_location__location", location)).order_by("distance")
     
-    queryset = models.Service.objects.filter(**params)
+    else:
+        queryset = models.Service.objects.filter(*q_expressions)
+    
     return queryset
 
-def check_category(request: HttpRequest, params: dict[str, Any], **kwargs):
+def check_category(params: dict[str, Any]):
     """
     helper function for multiple filters api function
     """
-    category_name = request.query_params.get("category_name")
-    if category_name:
-        q_exp = f"category__{kwargs.get('language')}_name__icontains"
-        params[q_exp] = str(category_name)
+    q_exp = None
+    category_ids = params.get("category_ids", None)
     
-    return params
+    if category_ids:
+        new_category_ids = catch(category_ids)
+    
+        q_exp = (Q(category__id=int(x)) for x in new_category_ids)
+        q_exp = reduce(lambda a, b: a | b, q_exp)
+    
+    return q_exp
 
-def check_range(request: HttpRequest, params: dict[str, Any], **kwargs):
+def check_range(params: dict[str, Any]):
     """
     helper function for multiple filters api function
     """
-    min_price, max_price = request.query_params.get("min_price"), request.query_params.get("max_price")
+    q_exp = None
+    min_price, max_price = params.get("min_price", None), params.get("max_price", None)
     if min_price and max_price:
         min_price, max_price = float(min_price), float(max_price)
-        params["price__range"] = (min_price, max_price)
+        q_exp = Q(price__range=(min_price, max_price))
     
-    return params
+    return q_exp
 
-def check_rate(request: HttpRequest, params: dict[str, Any], **kwargs):
+def check_rate(params: dict[str, None], services):
     """
     helper function for multiple filters api function
     """
-    rate = request.query_params.get("rate")
-    if rate:
-        rate = int(rate)
-        params["service_rates__rate"] = rate
+    rates = params.get("rates", None)
+    if not rates:
+        return services
     
-    return params
+    rates = catch(rates)
+    new_services = []
+    for service in services:
+        service_rate = service.service_rates.aggregate(Avg("rate"))["rate__avg"]
+        for rate in rates:
+            if rate-0.5 <= service_rate or service_rate >= rate+0.5:
+                new_services.append(service)
+                break
+    
+    return new_services

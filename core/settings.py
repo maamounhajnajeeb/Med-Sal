@@ -15,7 +15,7 @@ SECRET_KEY = 'tmr$uaqiaq#vuw_a+77jo^91^&sory+ez^_=bbfapnl-h4=v64'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["medsal-project.up.railway.app", "*"]
 
 
 # Application definition
@@ -226,9 +226,9 @@ LANGUAGES = (
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-SECURE_HSTS_SECONDS = 31536000 * 2
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_SECONDS = 31536000 * 2 # 2 year
 # SECURE_SSL_REDIRECT = True
 
 SECURE_REFERRER_POLICY = "strict-origin"
@@ -240,6 +240,9 @@ STORAGES = {
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    }
 }
 
 AUTHENTICATION_BACKENDS = [
