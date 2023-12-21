@@ -69,18 +69,17 @@ class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects
     permission_classes = (IsAdmin, )
     
-    def list(self, request, *args, **kwargs):
-        langauge = request.META.get("Accept-Language")
+    def get_serializer(self, *args, **kwargs):
+        langauge = self.request.META.get("Accept-Language")
+        kwargs.setdefault("language", langauge)
         
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, many=True, language=langauge)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return super().get_serializer(*args, **kwargs)
+    
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
     
     def retrieve(self, request, *args, **kwargs):
-        langauge = request.META.get("Accept-Language")
-        
-        instance = self.get_object()
-        serializer = self.get_serializer([instance, ], many=True, langauge=langauge)
+        serializer = self.get_serializer([self.get_object(), ], many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def create(self, request, *args, **kwargs):
