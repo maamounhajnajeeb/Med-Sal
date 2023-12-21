@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from django.db import connection
-from rest_framework.fields import empty
 
 from .models import Category
 
@@ -13,18 +12,11 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = "__all__"
     
     def __init__(self, *args, **kwargs):
-        # Don't pass the 'fields' arg up to the superclass
-        fields = kwargs.pop('fields', None)
-        
-        # Instantiate the superclass normally
-        super().__init__(*args, **kwargs)
-        
-        if fields is not None:
-            # Drop any fields that are not specified in the `fields` argument.
-            allowed = set(fields)
-            existing = set(self.fields)
-            for field_name in existing - allowed:
-                self.fields.pop(field_name)
+        language = kwargs.get('language')
+        if language:
+            self.language = kwargs.pop("language")
+        else:
+            self.language = None
     
     def create(self, validated_data):
         query = f"insert into category_category (en_name, ar_name) \
@@ -39,3 +31,10 @@ class CategorySerializer(serializers.ModelSerializer):
             cursor.execute(query)
             
         return Category.objects.all().last()
+    
+    def to_representation(self, instance: Category):
+        return {
+            "id": instance.id
+            , "name": instance.en_name if self.language == "en" else instance.ar_name
+            , "parent": instance.parent
+        }

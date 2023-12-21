@@ -18,35 +18,35 @@ from notification.models import Notification
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])
 def parent_sub_category(request, pk: int):
-    third_field = request.META.get("Accept-Language")
+    language = request.META.get("Accept-Language")
     
     queryset = Category.objects.filter(parent=pk)
-    serializer = CategorySerializer(queryset, fields={"id", "parent", f"{third_field}_name"}, many=True)
+    serializer = CategorySerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])
 def prime_categories(request):
-    third_field = request.META.get("Accept-Language")
+    language = request.META.get("Accept-Language")
     
     queryset = Category.objects.filter(parent=None)
-    serializer = CategorySerializer(queryset, fields={"id", "parent", f"{third_field}_name"}, many=True)
+    serializer = CategorySerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])
 def search_category(request: HttpRequest):
-    third_field = request.META.get("Accept-Language")
-    queryset = searching_func(request, third_field)
+    language = request.META.get("Accept-Language")
+    queryset = searching_func(request, language)
     
     if not queryset.exists():
         return Response({
             "message": "There is not result with this search key"
         }, status=status.HTTP_404_NOT_FOUND)
     
-    serializer = CategorySerializer(queryset, fields={"id", "parent", f"{third_field}_name"}, many=True)
+    serializer = CategorySerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -70,21 +70,26 @@ class CategoryViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAdmin, )
     
     def list(self, request, *args, **kwargs):
-        third_field = request.META.get("Accept-Language")
+        langauge = request.META.get("Accept-Language")
         
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, fields={"id", "parent", f"{third_field}_name"}, many=True)
+        serializer = self.get_serializer(queryset, many=True, language=langauge)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def retrieve(self, request, *args, **kwargs):
-        third_field = request.META.get("Accept-Language")
+        langauge = request.META.get("Accept-Language")
         
         instance = self.get_object()
-        serializer = self.get_serializer(instance, fields={"id", "parent", f"{third_field}_name"})
+        serializer = self.get_serializer([instance, ], many=True, langauge=langauge)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def create(self, request, *args, **kwargs):
-        resp = super().create(request, *args, **kwargs)
+        # resp = super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        resp = Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         
         Notification.objects.create(
             sender="System", sender_type="System"

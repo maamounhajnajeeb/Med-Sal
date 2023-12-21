@@ -15,7 +15,7 @@ SECRET_KEY = 'tmr$uaqiaq#vuw_a+77jo^91^&sory+ez^_=bbfapnl-h4=v64'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["medsal-project.up.railway.app", "*"]
 
 
 # Application definition
