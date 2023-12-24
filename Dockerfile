@@ -28,6 +28,10 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
+# Install required system dependencies
+RUN apt-get update && apt-get install --no-install-recommends -y \
+    && apt-get install gdal-bin -y 
+
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
 # Leverage a bind mount to requirements.txt to avoid having to copy them into
@@ -46,4 +50,4 @@ COPY . .
 EXPOSE 8000
 
 # Run the application.
-CMD py server.py
+CMD ["python", "server.py", "0.0.0.0:8000"]
