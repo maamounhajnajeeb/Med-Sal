@@ -18,13 +18,13 @@ class RUDNotification(generics.RetrieveUpdateDestroyAPIView):
         
         return super().get_serializer(*args, **kwargs)
     
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
-    
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer([instance, ], many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data)
+    
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
     
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
@@ -40,18 +40,14 @@ def all_notification(request: HttpRequest):
 
 
 @decorators.api_view(["GET", ])
-def provider_notifications(request: HttpRequest, user_type: str):
+def your_notifications(request: HttpRequest):
     language = request.META.get("Accept-Language")
+    user_type = request.user.user_type
     hash_table = {
-        "System": ("System", "System")
-        , "User": ("User", request.user.email)
-        , "Service_Provider": ("Service_Provider", request.user.email)
+        "ADMIN": ("System", "System")
+        , "USER": ("User", request.user.email)
+        , "SERVICE_PROVIDER": ("Service_Provider", request.user.email)
     }
-    
-    if user_type not in hash_table:
-        return Response(
-            {"error": "User Type must be one of this: User, Service_Provider or System"}
-            , status=status.HTTP_404_NOT_FOUND)
     
     queryset = models.Notification.objects.filter(
         receiver_type=hash_table[user_type][0], receiver=hash_table[user_type][1])

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from django.contrib.gis.db.models.functions import Distance
+from django.db.models import Count, Avg, Min, Max, Sum
 from django.contrib.gis.geos import Point
 from django.db.models import Q, Avg
 from django.http import HttpRequest
@@ -15,6 +16,8 @@ from services import models, serializers, helpers
 
 from products.file_handler import UploadImages, DeleteFiles
 from notification.models import Notification
+from category.models import Category
+
 from utils.permission import HasPermission
 from utils.catch_helper import catch
 
@@ -130,31 +133,55 @@ def provider_services(request: HttpRequest, provider_id: int= None):
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
 def provider_services_by_category(request: HttpRequest, provider_id: int):
+    # all_cat = Category.objects.annotate(num_of_services=Count("services", filter=Q(services__gt=1)))
+    # for cat in all_cat: cat.id, cat.ar_name, cat.en_name, cat.num_services
     """
     number of services for each categories available in specific provider
     returns {category_id, category_name, services_count}
     """
     language = request.META.get("Accept-Language")
     queryset = models.Service.objects.filter(provider_location__service_provider=provider_id)
+    prices = queryset.aggregate(min_price=Min("price"), max_price=Max("price"))
     
-    def aggregate_queryset(queryset):
+    def categories(queryset):
         frequencies = defaultdict(int)
         for query in queryset:
             category_id = query.category.id
             category_name = query.category.en_name if language == "en" else query.category.ar_name 
             
             frequencies[(category_id, category_name)] += 1
-        return frequencies
-    
-    def serialize_data(frequencies: defaultdict[tuple[int, str], int]):
-        data = []
-        for k, v in frequencies.items():
-            data.append({"category_id": k[0], "category_name": k[1], "services_count": v})
+            
+        def serialize_data(frequencies: defaultdict[tuple[int, str], int]):
+            data = []
+            for k, v in frequencies.items():
+                data.append({"category_id": k[0], "category_name": k[1], "services_count": v})
+            
+            return data
         
-        return data
+        return serialize_data(frequencies)
     
-    frequencies = aggregate_queryset(queryset)
-    data = serialize_data(frequencies)
+    def sizing_rates():
+        # first we filtered the provider services then we aggregate similar services and find it's average rate
+        queryset = models.ServiceRates.objects.filter(
+        service__provider_location__service_provider=provider_id).values(
+            "service").annotate(avg_rate=Avg("rate"))
+        
+        limits = { (4.5, 5): 5, (3.5, 4.5): 4, (2.5, 3.5): 3, (1.5, 2.5): 2, (0.5, 1.5): 1, (0, 0.5): 0 }
+        rates = defaultdict(int)
+        
+        for query in queryset:
+            for limit in limits:
+                if query["avg_rate"] >= limit[0] and query["avg_rate"] < limit[1]:
+                    rates[limits[limit]] += 1
+                    break
+        
+        return rates
+    
+    data = {}
+    
+    data["prices"] = {"min_price": prices["min_price"], "max_price": prices["max_price"]}
+    data["categories"] = categories(queryset)
+    data["rates"] = sizing_rates()
     
     return Response(data, status=status.HTTP_200_OK)
 

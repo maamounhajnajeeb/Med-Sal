@@ -21,7 +21,8 @@ class NotificationSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         return {
-            "sender": instance.sender
+            "id": instance.id
+            , "sender": instance.sender
             , "sender_type": instance.sender_type
             , "receiver": instance.receiver
             , "reveiver_type": instance.receiver_type
