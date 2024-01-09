@@ -8,8 +8,7 @@ from service_providers.models import ServiceProviderLocations
 class Product(models.Model):
     service_provider_location = models.ForeignKey(
         ServiceProviderLocations, on_delete=models.CASCADE, null=False)
-    # quantity = models.PositiveIntegerField()
-    quantity = models.IntegerField()
+    quantity = models.PositiveIntegerField()
     ar_title = models.CharField(max_length=128, null=False)
     en_title = models.CharField(max_length=128, null=False)
     ar_description = models.TextField(null=False)
