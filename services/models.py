@@ -16,7 +16,7 @@ class Service(models.Model):
     en_description = models.TextField(null=False)
     image = models.CharField(max_length=256, null=False)
     price = models.DecimalField(null=False, max_digits=8, decimal_places=2)
-    discount_ammount = models.PositiveSmallIntegerField(default=0)
+    discount_ammount = models.PositiveSmallIntegerField(default=0, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
