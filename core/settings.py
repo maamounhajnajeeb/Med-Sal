@@ -90,6 +90,9 @@ REST_FRAMEWORK = {
         'un_authenticated': '1/hour'
         , 'authenticated': '2/hour'
         , }
+    
+    , 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 9
     }
 
 

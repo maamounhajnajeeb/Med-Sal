@@ -69,7 +69,7 @@ class RUDServicesSerializer(serializers.ModelSerializer, FileMixin):
             , "created_at": instance.created_at
             , "updated_at": instance.updated_at
             , "rates" : {
-                "avg_rate": rates.aggregate(Avg("rate"))
+                "avg_rate": rates.aggregate(Avg("rate", default=0))
                 , "5 stars": rates.filter(rate=5).count()
                 , "4 stars": rates.filter(rate=4).count()
                 , "3 stars": rates.filter(rate=3).count()

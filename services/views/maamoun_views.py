@@ -161,7 +161,8 @@ def provider_services_by_category(request: HttpRequest, provider_id: int):
         return serialize_data(frequencies)
     
     def sizing_rates():
-        # first we filtered the provider services then we aggregate similar services and find it's average rate
+        # first we filtered the provider services
+        # then we aggregate similar services and find it's average rate
         queryset = models.ServiceRates.objects.filter(
         service__provider_location__service_provider=provider_id).values(
             "service").annotate(avg_rate=Avg("rate"))
@@ -221,7 +222,7 @@ def category_services_by_name(request: HttpRequest, category_name: str):
 def multiple_filters(request: HttpRequest):
     """
     return services depending on specified filters
-    filters set : {rate, category_name, (min_price, max_price), (longitude, latitude)}
+    filters set : {rates, categories, (min_price, max_price), (longitude, latitude)}
     """
     params = request.query_params
     
@@ -232,19 +233,18 @@ def multiple_filters(request: HttpRequest):
     
     q_expressions.discard(None)
     
-    queryset = check_distance(params, q_expressions=q_expressions)
+    queryset = check_distance(params=params, q_expressions=q_expressions)
     queryset = check_rate(params, queryset)
+    print(queryset.count())
     
     serializer = serializers.RUDServicesSerializer(queryset, many=True, language=request.META.get("Accept-Language"))
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def check_distance(params: dict[str, None], **kwargs):
+def check_distance(params: dict[str, None], q_expressions: set):
     """
     helper function for multiple filters api function
     """
-    q_expressions = kwargs.get("q_expressions")
-    
     longitude, latitude = params.get("longitude", None), params.get("latitude", None)
     if longitude and latitude:
         longitude, latitude = float(longitude), float(latitude)
@@ -265,11 +265,10 @@ def check_category(params: dict[str, Any]):
     helper function for multiple filters api function
     """
     q_exp = None
-    category_ids = params.get("category_ids", None)
-    
+    category_ids = params.get("categories", None)
     if category_ids:
         new_category_ids = catch(category_ids)
-    
+        
         q_exp = (Q(category__id=int(x)) for x in new_category_ids)
         q_exp = reduce(lambda a, b: a | b, q_exp)
     
@@ -287,20 +286,21 @@ def check_range(params: dict[str, Any]):
     
     return q_exp
 
-def check_rate(params: dict[str, None], services):
+def check_rate(params: dict[str, None], services_queryset):
     """
     helper function for multiple filters api function
     """
     rates = params.get("rates", None)
     if not rates:
-        return services
+        return services_queryset
     
     rates = catch(rates)
+    
     new_services = []
-    for service in services:
-        service_rate = service.service_rates.aggregate(Avg("rate"))["rate__avg"]
+    for service in services_queryset:
+        avg_service_rate = service.service_rates.aggregate(Avg("rate", default=0))["rate__avg"]
         for rate in rates:
-            if rate-0.5 <= service_rate or service_rate >= rate+0.5:
+            if rate-0.5 <= avg_service_rate <= rate+0.5:
                 new_services.append(service)
                 break
     
