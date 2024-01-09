@@ -36,7 +36,7 @@ urlpatterns = [
     # view all products
     path("all/", maamoun_views.AllProducts.as_view(), name="all_products"),
     
-    # view all products
+    # view all products inside price range
     path("filter/price_range/", maamoun_views.products_price_range, name="products_price_range"),
     
     # user rates
