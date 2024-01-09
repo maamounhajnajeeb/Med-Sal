@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from django.db.models import Avg
-from rest_framework.fields import empty
 
 from . import models
 
@@ -76,6 +75,7 @@ class ProudctSerializer(serializers.ModelSerializer):
             , "description": instance.ar_description if self.language == "ar" else instance.en_description
             , "images": instance.images.split(",")
             , "price": instance.price
+            , "discount_ammount": instance.discount_ammount
             , "rates": {
                 "avg_rate": instance.product_rates.aggregate(Avg("rate"))
                 , "5": instance.product_rates.filter(rate=5).count()

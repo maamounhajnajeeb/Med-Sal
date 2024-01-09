@@ -8,13 +8,14 @@ from service_providers.models import ServiceProviderLocations
 class Product(models.Model):
     service_provider_location = models.ForeignKey(
         ServiceProviderLocations, on_delete=models.CASCADE, null=False)
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField(default=0)
     ar_title = models.CharField(max_length=128, null=False)
     en_title = models.CharField(max_length=128, null=False)
     ar_description = models.TextField(null=False)
     en_description = models.TextField(null=False)
     images = models.CharField(max_length=255)
     price = models.DecimalField(null=False, max_digits=8, decimal_places=2)
+    discount_ammount = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateField(auto_now=True)
     
