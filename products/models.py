@@ -22,6 +22,9 @@ class Product(models.Model):
     def __str__(self) -> str:
         category = self.service_provider_location.service_provider.category
         return f"prt_id: {self.id}, prt_en_title: {self.en_title}, prt_category: {category}"
+    
+    class Meta:
+        ordering = ["id", ]
 
 
 class ProductRates(models.Model):

@@ -77,7 +77,7 @@ class ProudctSerializer(serializers.ModelSerializer):
             , "price": instance.price
             , "discount_ammount": instance.discount_ammount
             , "rates": {
-                "avg_rate": instance.product_rates.aggregate(Avg("rate"))
+                "avg_rate": instance.product_rates.aggregate(Avg("rate", default=0))
                 , "5": instance.product_rates.filter(rate=5).count()
                 , "4": instance.product_rates.filter(rate=4).count()
                 , "3": instance.product_rates.filter(rate=3).count()

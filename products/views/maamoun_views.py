@@ -5,13 +5,17 @@ from rest_framework.response import Response
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
 from django.http import HttpRequest
+from django.db.models import Q, Avg
+
+from functools import reduce
+from typing import Any
 
 from products import permissions as local_permissions
 from products import models, serializers, helpers
 from products.file_handler import UploadImages, DeleteFiles
 
-from typing import Any
-
+from core.pagination_classes.nine_element_paginator import CustomPagination
+from utils.catch_helper import catch
 from notification.models import Notification
 
 
@@ -187,66 +191,87 @@ def products_price_range(request: HttpRequest):
 @decorators.permission_classes([])
 def multiple_filters(request: HttpRequest):
     """
-    multiple filters helper function
+    query_params = {rates: list[numbers], min_price: number, max_price: number
+                    , categories: list[numbers], }
     """
     language = request.META.get("Accept-Language")
-    params = {}
+    params = request.query_params
     
-    callables = (check_rate, check_range, check_category)
+    q_expressions = set()
+    callables = (check_range, check_category)
     for func in callables:
-        params = func(request, params, language=language)
+        q_expressions.add(func(params))
     
-    queryset = check_distance(request, params)
+    q_expressions.discard(None)
     
-    serializer = serializers.ProudctSerializer(queryset, many=True, fields={"language": language})
+    queryset = check_distance(params=params, q_expressions=q_expressions)
+    queryset = check_rate(params, queryset)
+    
+    paginator = CustomPagination()
+    list_products = paginator.paginate_queryset(queryset, request)
+    
+    serializer = serializers.ProudctSerializer(list_products, many=True, fields={"language": language})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def check_distance(request: HttpRequest, params: dict[str, Any], **kwargs):
-    longitude, latitude = request.query_params.get("logitude"), request.query_params.get("latitude")
+def check_distance(params: dict[str, Any], q_expressions: set):
+    longitude, latitude = params.get("logitude"), params.get("latitude")
     if longitude and latitude:
         longitude, latitude = float(longitude), float(latitude)
         location = Point(longitude, latitude)
-        params["service_provider_location__location__distance_lt"] = (location, 1000000)
-    
+        q_exp=Q(service_provider_location__location__distance_lt=(location, 1000000))
+        
         queryset = models.Product.objects.filter(
-            **params).annotate(
+            q_exp, *q_expressions).annotate(
                 distance=Distance("service_provider_location__location", location)).order_by("distance")
     
-    queryset = models.Product.objects.filter(**params)
+    else:
+        queryset = models.Product.objects.filter(*q_expressions)
     
     return queryset
 
-def check_category(request: HttpRequest, params: dict[str, Any], **kwargs) -> dict[str, Any]:
+def check_category(params: dict[str, Any]):
     """
-    multiple filters helper function
+    helper function for multiple filters api function
     """
-    category_name = request.query_params.get("category_name")
-    if category_name:
-        category_name = str(category_name)
-        q_exp = f"service_provider_location__service_provider__category__{kwargs.get('language')}_name__icontains"
-        params[q_exp] = category_name
+    q_exp = None
+    category_ids = params.get("categories", None)
+    if category_ids:
+        new_category_ids = catch(category_ids)
+        
+        q_exp = (Q(category__id=int(x)) for x in new_category_ids)
+        q_exp = reduce(lambda a, b: a | b, q_exp)
     
-    return params
+    return q_exp
 
-def check_range(request: HttpRequest, params: dict[str, Any], **kwargs) -> dict[str, Any]:
+def check_range(params: dict[str, Any]):
     """
-    multiple filters helper function
+    helper function for multiple filters api function
     """
-    min_price, max_price = request.query_params.get("min_price"), request.query_params.get("max_price")
+    q_exp = None
+    min_price, max_price = params.get("min_price", None), params.get("max_price", None)
     if min_price and max_price:
         min_price, max_price = float(min_price), float(max_price)
-        params["price__range"] = (min_price, max_price)
+        q_exp = Q(price__range=(min_price, max_price))
     
-    return params
+    return q_exp
 
-def check_rate(request, params: dict[str, Any], **kwargs) -> dict[str, Any]:
+def check_rate(params: dict[str, None], products_queryset):
     """
-    multiple filters helper function
+    helper function for multiple filters api function
     """
-    # maybe we need a .distinct() function in the future because of reverse relationship
-    rate = int(request.query_params.get("rate"))
-    if rate:
-        params["product_rates__rate"] = rate
+    rates = params.get("rates", None)
+    if not rates:
+        return products_queryset
     
-    return params
+    rates = catch(rates)
+    
+    new_products = []
+    for product in products_queryset:
+        avg_product_rate = product.product_rates.aggregate(Avg("rate", default=0))["rate__avg"]
+        for rate in rates:
+            if rate-0.5 <= avg_product_rate <= rate+0.5:
+                new_products.append(product)
+                break
+    
+    return new_products
