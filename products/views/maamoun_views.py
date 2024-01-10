@@ -3,10 +3,11 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 
 from django.contrib.gis.db.models.functions import Distance
+from django.db.models import Q, Avg, Min, Max
 from django.contrib.gis.geos import Point
 from django.http import HttpRequest
-from django.db.models import Q, Avg
 
+from collections import defaultdict
 from functools import reduce
 from typing import Any
 
@@ -185,6 +186,43 @@ def products_price_range(request: HttpRequest):
     serializer = serializers.ProudctSerializer(queryset, many=True, fields={"language":language})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def provider_products_statistics(request: HttpRequest, provider_id: int):
+    # all_cat = Category.objects.annotate(num_of_services=Count("services", filter=Q(services__gt=1)))
+    # for cat in all_cat: cat.id, cat.ar_name, cat.en_name, cat.num_services
+    """
+    number of services for each categories available in specific provider
+    returns {category_id, category_name, services_count}
+    """
+    queryset = models.Product.objects.filter(service_provider_location__service_provider=provider_id)
+    prices = queryset.aggregate(min_price=Min("price"), max_price=Max("price"))
+    
+    def sizing_rates():
+        # first we filtered the provider services
+        # then we aggregate similar services and find it's average rate
+        queryset = models.ProductRates.objects.filter(
+        product__service_provider_location__service_provider=provider_id).values(
+            "product").annotate(avg_rate=Avg("rate"))
+        
+        limits = { (4.5, 5): 5, (3.5, 4.5): 4, (2.5, 3.5): 3, (1.5, 2.5): 2, (0.5, 1.5): 1, (0, 0.5): 0 }
+        rates = defaultdict(int)
+        
+        for query in queryset:
+            for limit in limits:
+                if query["avg_rate"] >= limit[0] and query["avg_rate"] < limit[1]:
+                    rates[limits[limit]] += 1
+                    break
+        
+        return rates
+    
+    data = {}
+    
+    data["prices"] = {"min_price": prices["min_price"], "max_price": prices["max_price"]}
+    data["rates"] = sizing_rates()
+    
+    return Response(data, status=status.HTTP_200_OK)
 
 
 @decorators.api_view(["GET", ])

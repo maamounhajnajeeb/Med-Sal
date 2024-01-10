@@ -24,6 +24,9 @@ urlpatterns = [
     # search product
     path("search/", maamoun_views.multiple_filters, name="multiple_filters"),
     
+    # provider products stats
+    path("provider/stats/<int:provider_id>/", maamoun_views.provider_products_statistics, name="provider_products_statistics"),
+    
     # view specific category products
     path("category/<int:pk>/", maamoun_views.products_by_category, name="products_by_category"),
     
