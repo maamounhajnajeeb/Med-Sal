@@ -22,7 +22,9 @@ class Service(models.Model):
     
     def __str__(self) -> str:
         return f"{self.en_title}, category: {self.category.en_name}, provider: {self.provider_location.service_provider.business_name}"
-
+    
+    class Meta:
+        ordering = ["id", ]
 
 class ServiceRates(models.Model):
     user = models.ForeignKey(

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from django.contrib.gis.db.models.functions import Distance
-from django.db.models import Count, Avg, Min, Max, Sum
+from django.db.models import Avg, Min, Max
 from django.contrib.gis.geos import Point
 from django.db.models import Q, Avg
 from django.http import HttpRequest
@@ -16,10 +16,11 @@ from services import models, serializers, helpers
 
 from products.file_handler import UploadImages, DeleteFiles
 from notification.models import Notification
-from category.models import Category
 
 from utils.permission import HasPermission
 from utils.catch_helper import catch
+
+from core.pagination_classes.nine_element_paginator import CustomPagination
 
 
 #
@@ -223,6 +224,7 @@ def multiple_filters(request: HttpRequest):
     """
     return services depending on specified filters
     filters set : {rates, categories, (min_price, max_price), (longitude, latitude)}
+    pagination applied
     """
     params = request.query_params
     
@@ -235,9 +237,11 @@ def multiple_filters(request: HttpRequest):
     
     queryset = check_distance(params=params, q_expressions=q_expressions)
     queryset = check_rate(params, queryset)
-    print(queryset.count())
     
-    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=request.META.get("Accept-Language"))
+    paginator = CustomPagination()
+    result_page = paginator.paginate_queryset(queryset, request)
+    
+    serializer = serializers.RUDServicesSerializer(result_page, many=True, language=request.META.get("Accept-Language"))
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
