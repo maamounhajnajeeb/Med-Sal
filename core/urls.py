@@ -49,6 +49,8 @@ urlpatterns = [
     # appointments app
     path("api/v1/appointments/", include("appointments.urls", namespace="appointments")),
     
+    # contact_us app
+    path("api/v1/contact_us/", include("contact_us.urls", namespace="contact_us")),
 ]
 
 if settings.DEBUG:

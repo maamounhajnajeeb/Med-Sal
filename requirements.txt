@@ -59,5 +59,6 @@ tzdata==2023.3
 tzlocal==5.2
 uritemplate==4.1.1
 urllib3==2.0.7
+uWSGI>=2.0.18,<2.1
 waitress==2.1.2
 whitenoise==6.6.0

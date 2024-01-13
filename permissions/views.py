@@ -1,3 +1,4 @@
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import viewsets, status
 from rest_framework import decorators
@@ -16,22 +17,23 @@ Users = get_user_model()
 class ContentTypeView(viewsets.ModelViewSet):
     queryset = ContentType.objects
     serializer_class = serializers.ContentTypeSerializer
-    permission_classes = ()
+    permission_classes = (IsAdminUser, )
 
 
 class GroupView(viewsets.ModelViewSet):
     queryset = Group.objects
-    permission_classes = ()
+    permission_classes = (IsAdminUser, )
     serializer_class = serializers.GroupSerializer
 
 
 class PermissionView(viewsets.ModelViewSet):
     queryset = Permission.objects
-    permission_classes = ()
+    permission_classes = (IsAdminUser, )
     serializer_class = serializers.PermissionSerializer
 
 
 @decorators.api_view(["GET", ])
+@decorators.permission_classes([IsAdminUser, ])
 def group_permissions(request, pk: int):
     group = helpers.Groups()
     queryset = group.get_permissions(group_id=pk)
@@ -41,6 +43,7 @@ def group_permissions(request, pk: int):
 
 
 @decorators.api_view(["GET", ])
+@decorators.permission_classes([IsAdminUser, ])
 def get_user_group(request: HttpRequest, pk):
     group = helpers.Groups()
     query_set = group.get_user_groups(pk)
@@ -50,6 +53,7 @@ def get_user_group(request: HttpRequest, pk):
 
 
 @decorators.api_view(["DELETE", ])
+@decorators.permission_classes([IsAdminUser, ])
 def execlude_user_from_group(request: HttpRequest):
     user_id, group_id = int(request.data.get("user_id")), int(request.data.get("group_id"))
     
@@ -60,6 +64,7 @@ def execlude_user_from_group(request: HttpRequest):
 
 
 @decorators.api_view(["POST", ])
+@decorators.permission_classes([IsAdminUser, ])
 def assign_user_to_group(request: HttpRequest):
     user_id, group_id = int(request.data.get("user_id")), int(request.data.get("group_id"))
     

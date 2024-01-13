@@ -7,26 +7,22 @@ from django.utils.translation import gettext_lazy as _
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'tmr$uaqiaq#vuw_a+77jo^91^&sory+ez^_=bbfapnl-h4=v64'
 # SECRET_KEY = os.environ.get("SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.environ.get("DEBUG", 0)))
 
 ALLOWED_HOSTS = ["127.0.0.1"]
 ALLOWED_HOSTS.extend(
     filter(
         None,
-        os.environ.get("ALLOWED_HOSTS", "").split(","),
+        os.environ.get("RAILWAY_HOST", "").split(","),
     )
 )
 
 
-# Application definition
+# Applications definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -43,7 +39,6 @@ INSTALLED_APPS = [
     "rest_framework_gis",
     "rest_framework",
     "corsheaders",
-    # "drf_yasg",
     
     # local apps
     "service_providers.apps.ServiceProvidersConfig",
@@ -56,6 +51,7 @@ INSTALLED_APPS = [
     "products.apps.ProductsConfig",
     "orders.apps.OrdersConfig",
     "users.apps.UsersConfig",
+    "contact_us.apps.ContactUsConfig",
 ]
 
 MIDDLEWARE = [
@@ -90,9 +86,6 @@ REST_FRAMEWORK = {
         'un_authenticated': '1/hour'
         , 'authenticated': '2/hour'
         , }
-    
-    # , 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    # 'PAGE_SIZE': 9
     }
 
 
@@ -116,9 +109,13 @@ EMAIL_PORT = 587
 CORS_ALLOWED_ORIGINS = (
         "http://localhost:3000",
         "http://localhost:8000",
+        "https://medsal-production.up.railway.app"
     )
 
-CSRF_TRUSTED_ORIGINS = ["https://localhost:3000"]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "https://medsal-production.up.railway.app"
+    ]
 
 ROOT_URLCONF = 'core.urls'
 
@@ -143,8 +140,6 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 from environs import Env
 
 def get_env_details():
@@ -161,7 +156,7 @@ def get_env_details():
 #         "NAME": os.environ.get("DB_NAME"),
 #         "USER": os.environ.get("DB_USER"), # your chosen or default database system name
 #         "PASSWORD": os.environ.get("DB_PASS"), #
-#         "PORT": "5432", # 5432
+#         "PORT": os.environ.get("DB_PORT"), # 5432
 #     }
 # }
 
@@ -251,7 +246,7 @@ CSRF_COOKIE_SECURE = True
 SECURE_HSTS_PRELOAD = True
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_SECONDS = 31536000 * 2 # 2 year
-# SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = True
 
 SECURE_REFERRER_POLICY = "strict-origin"
 
