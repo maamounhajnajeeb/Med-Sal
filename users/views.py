@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
 from django.http import HttpRequest
+from django.db.models import Q
 
 from rest_framework import permissions, decorators
 from rest_framework.response import Response
@@ -11,6 +12,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from typing import Any
 from random import randint
+from functools import reduce
 
 from . import serializers, helpers
 from . import models, permissions as local_permissions
@@ -541,3 +543,35 @@ class LogIn(TokenObtainPairView):
     serializer_class = serializers.LogInSerializer
     # permission_classes = (local_permissions.UnAuthenticated, )
     permission_classes = ()
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([permissions.IsAdminUser, ])
+def active_users_stats(request: HttpRequest):
+    active_accounts = Users.objects.filter(is_active=True)
+    
+    service_providers = active_accounts.filter(user_type="SERVICE_PROVIDER").count()
+    super_admins = active_accounts.filter(user_type="SUPER_ADMIN").count()
+    admins = active_accounts.filter(user_type="ADMIN").count()
+    users = active_accounts.filter(user_type="USER").count()
+    active_users_count = active_accounts.count()
+    
+    response_data = {
+        "active_accounts": active_users_count, "active_service_providers_accounts": service_providers,
+        "active_super_admins_accounts": super_admins, "active_admins_accounts": admins,
+        "active_users_accounts": users}
+    
+    return Response(data=response_data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([permissions.IsAdminUser, ])
+def search_users(request: HttpRequest, search_term: str):
+    query_text = search_term.split("_")
+    
+    Q_expression = reduce(lambda x, y: x | y,
+                (Q(email__icontains=word) for word in query_text))
+    queryset = Users.objects.filter(Q_expression)
+    serializer = serializers.SpecificUserSerializer(queryset, many=True)
+    
+    return Response(data=serializer.data, status=status.HTTP_200_OK)

@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
     'django.contrib.gis', # To deal with gis database
     
     # third party packages
