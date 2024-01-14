@@ -26,6 +26,7 @@ class CreateServicesSerializer(serializers.ModelSerializer):
             , "en_description": instance.en_description
             , "images": instance.image.split(",")
             , "price": instance.price
+            , "discount_ammount": instance.discount_ammount
             , "created_at": instance.created_at
             , "updated_at": instance.updated_at
         }
@@ -64,10 +65,11 @@ class RUDServicesSerializer(serializers.ModelSerializer, FileMixin):
             , "description": instance.ar_description if self.language == "ar" else instance.en_description
             , "images": instance.image.split(",")
             , "price": instance.price
+            , "discount_ammount": instance.discount_ammount
             , "created_at": instance.created_at
             , "updated_at": instance.updated_at
             , "rates" : {
-                "avg_rate": rates.aggregate(Avg("rate"))
+                "avg_rate": rates.aggregate(Avg("rate", default=0))
                 , "5 stars": rates.filter(rate=5).count()
                 , "4 stars": rates.filter(rate=4).count()
                 , "3 stars": rates.filter(rate=3).count()

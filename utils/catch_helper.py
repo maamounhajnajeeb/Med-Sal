@@ -2,7 +2,8 @@ def catch(params: str):
     new_params = []
     for param in params:
         try:
-            new_params.append(int(param))
+            new_param = int(param)
+            new_params.append(new_param)
         except:
             pass
     

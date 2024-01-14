@@ -49,7 +49,7 @@ urlpatterns = [
     path("rates/all/", rates_views.all_rates, name="all_rates"),
     # create rates for authenticated users #
     path("rates/create/", rates_views.create_rate, name="create_rate"),
-    # create rates for authenticated users #
+    # get specific rate #
     path("rates/<int:rate_id>/", rates_views.get_rate, name="get_rate"),
     # delete and update rates for rate owner #
     path("rates/delete_or_update/<int:rate_id>/", rates_views.update_delete_rate, name="update_delete_rate"),
@@ -59,5 +59,6 @@ urlpatterns = [
     path("rates/provider/<int:provider_id>/", rates_views.provider_rates, name="provider_rates"),
     # location rates #
     path("rates/location/<int:location_id>/", rates_views.location_rates, name="location_rates"),
-    
+    # service rates #
+    path("<int:service_id>/rates/", rates_views.service_rates, name="service_rates"),
 ]

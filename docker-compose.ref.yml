@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  web:
+    container_name: med_sal
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      # - ./:/app:ro
+      - ./:/app
+    ports:
+      - 8000:8000
+    environment:
+      - DB_HOST=db
+      - DB_NAME=devdb
+      - DB_USER=Maamoun
+      - DB_PASS=sv_gtab101enter
+    depends_on:
+      - db
+  
+  db: # this name must be the same in DB_HOST
+    container_name: db_app
+    image: postgis/postgis:16-3.4-alpine
+    restart: always
+    volumes:
+      - postgres-db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: devdb
+      POSTGRES_USER: Maamoun
+      POSTGRES_PASSWORD: sv_gtab101enter
+    ports:
+      - 5432:5432
+
+volumes:
+  postgres-db:

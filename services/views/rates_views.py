@@ -126,3 +126,18 @@ def user_rates(request: HttpRequest, user_id: int):
     serializer = serializers.ServiceRatesSerializer(queryset, many=True, language=language)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+#
+@decorators.api_view(["GET", ])
+def service_rates(request: HttpRequest, service_id: int):
+    """
+    return specific service rates with details
+    """
+    language = request.META.get("Accept-Language")
+    queryset = models.ServiceRates.objects.filter(service=service_id)
+    if not queryset.exists():
+        return Response({"message": "No rates for this service"}, status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = serializers.ServiceRatesSerializer(queryset, many=True, language=language)
+    
+    return Response(serializer.data, status=status.HTTP_200_OK)

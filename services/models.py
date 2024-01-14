@@ -15,13 +15,16 @@ class Service(models.Model):
     ar_description = models.TextField(null=False)
     en_description = models.TextField(null=False)
     image = models.CharField(max_length=256, null=False)
-    price = models.IntegerField()
+    price = models.DecimalField(null=False, max_digits=8, decimal_places=2)
+    discount_ammount = models.PositiveSmallIntegerField(default=0, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self) -> str:
         return f"{self.en_title}, category: {self.category.en_name}, provider: {self.provider_location.service_provider.business_name}"
-
+    
+    class Meta:
+        ordering = ["id", ]
 
 class ServiceRates(models.Model):
     user = models.ForeignKey(

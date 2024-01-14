@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from datetime import timedelta
 from django.utils.translation import gettext_lazy as _
@@ -6,19 +7,22 @@ from django.utils.translation import gettext_lazy as _
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'tmr$uaqiaq#vuw_a+77jo^91^&sory+ez^_=bbfapnl-h4=v64'
+# SECRET_KEY = os.environ.get("SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(int(os.environ.get("DEBUG", 0)))
 
-ALLOWED_HOSTS = ["medsal-project.up.railway.app", "*"]
+ALLOWED_HOSTS = ["127.0.0.1"]
+ALLOWED_HOSTS.extend(
+    filter(
+        None,
+        os.environ.get("RAILWAY_HOST", "").split(","),
+    )
+)
 
 
-# Application definition
+# Applications definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -35,7 +39,6 @@ INSTALLED_APPS = [
     "rest_framework_gis",
     "rest_framework",
     "corsheaders",
-    "drf_yasg",
     
     # local apps
     "service_providers.apps.ServiceProvidersConfig",
@@ -48,6 +51,7 @@ INSTALLED_APPS = [
     "products.apps.ProductsConfig",
     "orders.apps.OrdersConfig",
     "users.apps.UsersConfig",
+    "contact_us.apps.ContactUsConfig",
 ]
 
 MIDDLEWARE = [
@@ -105,9 +109,13 @@ EMAIL_PORT = 587
 CORS_ALLOWED_ORIGINS = (
         "http://localhost:3000",
         "http://localhost:8000",
+        "https://medsal-production.up.railway.app"
     )
 
-CSRF_TRUSTED_ORIGINS = ["https://localhost:3000"]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "https://medsal-production.up.railway.app"
+    ]
 
 ROOT_URLCONF = 'core.urls'
 
@@ -132,9 +140,6 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-import os
 from environs import Env
 
 def get_env_details():
@@ -142,6 +147,18 @@ def get_env_details():
     env.read_env()
     
     return os.getenv("PASSWORD")
+
+# Docker
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.contrib.gis.db.backends.postgis",
+#         "HOST": os.environ.get("DB_HOST"),
+#         "NAME": os.environ.get("DB_NAME"),
+#         "USER": os.environ.get("DB_USER"), # your chosen or default database system name
+#         "PASSWORD": os.environ.get("DB_PASS"), #
+#         "PORT": os.environ.get("DB_PORT"), # 5432
+#     }
+# }
 
 # Maamoun
 DATABASES = {

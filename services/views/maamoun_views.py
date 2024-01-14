@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from django.contrib.gis.db.models.functions import Distance
+from django.db.models import Avg, Min, Max
 from django.contrib.gis.geos import Point
 from django.db.models import Q, Avg
 from django.http import HttpRequest
@@ -15,8 +16,11 @@ from services import models, serializers, helpers
 
 from products.file_handler import UploadImages, DeleteFiles
 from notification.models import Notification
+
 from utils.permission import HasPermission
 from utils.catch_helper import catch
+
+from core.pagination_classes.nine_element_paginator import CustomPagination
 
 
 #
@@ -130,31 +134,56 @@ def provider_services(request: HttpRequest, provider_id: int= None):
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
 def provider_services_by_category(request: HttpRequest, provider_id: int):
+    # all_cat = Category.objects.annotate(num_of_services=Count("services", filter=Q(services__gt=1)))
+    # for cat in all_cat: cat.id, cat.ar_name, cat.en_name, cat.num_services
     """
     number of services for each categories available in specific provider
     returns {category_id, category_name, services_count}
     """
     language = request.META.get("Accept-Language")
     queryset = models.Service.objects.filter(provider_location__service_provider=provider_id)
+    prices = queryset.aggregate(min_price=Min("price"), max_price=Max("price"))
     
-    def aggregate_queryset(queryset):
+    def categories(queryset):
         frequencies = defaultdict(int)
         for query in queryset:
             category_id = query.category.id
             category_name = query.category.en_name if language == "en" else query.category.ar_name 
             
             frequencies[(category_id, category_name)] += 1
-        return frequencies
-    
-    def serialize_data(frequencies: defaultdict[tuple[int, str], int]):
-        data = []
-        for k, v in frequencies.items():
-            data.append({"category_id": k[0], "category_name": k[1], "services_count": v})
+            
+        def serialize_data(frequencies: defaultdict[tuple[int, str], int]):
+            data = []
+            for k, v in frequencies.items():
+                data.append({"category_id": k[0], "category_name": k[1], "services_count": v})
+            
+            return data
         
-        return data
+        return serialize_data(frequencies)
     
-    frequencies = aggregate_queryset(queryset)
-    data = serialize_data(frequencies)
+    def sizing_rates():
+        # first we filtered the provider services
+        # then we aggregate similar services and find it's average rate
+        queryset = models.ServiceRates.objects.filter(
+        service__provider_location__service_provider=provider_id).values(
+            "service").annotate(avg_rate=Avg("rate"))
+        
+        limits = { (4.5, 5): 5, (3.5, 4.5): 4, (2.5, 3.5): 3, (1.5, 2.5): 2, (0.5, 1.5): 1, (0, 0.5): 0 }
+        rates = defaultdict(int)
+        
+        for query in queryset:
+            for limit in limits:
+                if query["avg_rate"] >= limit[0] and query["avg_rate"] < limit[1]:
+                    rates[limits[limit]] += 1
+                    break
+        
+        return rates
+    
+    data = {}
+    
+    data["prices"] = {"min_price": prices["min_price"], "max_price": prices["max_price"]}
+    data["categories"] = categories(queryset)
+    data["rates"] = sizing_rates()
     
     return Response(data, status=status.HTTP_200_OK)
 
@@ -194,7 +223,8 @@ def category_services_by_name(request: HttpRequest, category_name: str):
 def multiple_filters(request: HttpRequest):
     """
     return services depending on specified filters
-    filters set : {rate, category_name, (min_price, max_price), (longitude, latitude)}
+    filters set : {rates, categories, (min_price, max_price), (longitude, latitude)}
+    pagination applied
     """
     params = request.query_params
     
@@ -205,19 +235,20 @@ def multiple_filters(request: HttpRequest):
     
     q_expressions.discard(None)
     
-    queryset = check_distance(params, q_expressions=q_expressions)
+    queryset = check_distance(params=params, q_expressions=q_expressions)
     queryset = check_rate(params, queryset)
     
-    serializer = serializers.RUDServicesSerializer(queryset, many=True, language=request.META.get("Accept-Language"))
+    paginator = CustomPagination()
+    result_page = paginator.paginate_queryset(queryset, request)
+    
+    serializer = serializers.RUDServicesSerializer(result_page, many=True, language=request.META.get("Accept-Language"))
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def check_distance(params: dict[str, None], **kwargs):
+def check_distance(params: dict[str, None], q_expressions: set):
     """
     helper function for multiple filters api function
     """
-    q_expressions = kwargs.get("q_expressions")
-    
     longitude, latitude = params.get("longitude", None), params.get("latitude", None)
     if longitude and latitude:
         longitude, latitude = float(longitude), float(latitude)
@@ -238,11 +269,10 @@ def check_category(params: dict[str, Any]):
     helper function for multiple filters api function
     """
     q_exp = None
-    category_ids = params.get("category_ids", None)
-    
+    category_ids = params.get("categories", None)
     if category_ids:
         new_category_ids = catch(category_ids)
-    
+        
         q_exp = (Q(category__id=int(x)) for x in new_category_ids)
         q_exp = reduce(lambda a, b: a | b, q_exp)
     
@@ -260,20 +290,21 @@ def check_range(params: dict[str, Any]):
     
     return q_exp
 
-def check_rate(params: dict[str, None], services):
+def check_rate(params: dict[str, None], services_queryset):
     """
     helper function for multiple filters api function
     """
     rates = params.get("rates", None)
     if not rates:
-        return services
+        return services_queryset
     
     rates = catch(rates)
+    
     new_services = []
-    for service in services:
-        service_rate = service.service_rates.aggregate(Avg("rate"))["rate__avg"]
+    for service in services_queryset:
+        avg_service_rate = service.service_rates.aggregate(Avg("rate", default=0))["rate__avg"]
         for rate in rates:
-            if rate-0.5 <= service_rate or service_rate >= rate+0.5:
+            if rate-0.5 <= avg_service_rate <= rate+0.5:
                 new_services.append(service)
                 break
     

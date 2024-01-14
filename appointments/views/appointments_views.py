@@ -80,7 +80,7 @@ class AppointmentRUD(generics.RetrieveUpdateDestroyAPIView):
 
 
 @decorators.api_view(["GET", ])
-@authorization_with_method("list", "appointments")
+@authorization_with_method("view", "appointments")
 def all_location_appointments(request: HttpRequest, location_id: int):
     """
     get all appointments for specific provider location

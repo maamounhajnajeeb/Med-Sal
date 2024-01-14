@@ -77,17 +77,17 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         return Response(
             {"Error": f"Method {self.request.method} is not allowed"}
-            , status=status.HTTP_403_FORBIDDEN)
+            , status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
     def update(self, request, *args, **kwargs):
         return Response(
             {"Error": f"Method {self.request.method} is not allowed"}
-            , status=status.HTTP_403_FORBIDDEN)
+            , status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
     def destroy(self, request, *args, **kwargs):
         return Response(
             {"Error": f"Method {self.request.method} is not allowed"}
-            , status=status.HTTP_403_FORBIDDEN)
+            , status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class CreateCategoryAPI(generics.CreateAPIView):

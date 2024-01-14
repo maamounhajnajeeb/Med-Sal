@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from django.db.models import Avg
-from rest_framework.fields import empty
 
 from . import models
 
@@ -34,10 +33,18 @@ class RateSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance: models.ProductRates):
         response = super().to_representation(instance)
-        response["product_title"] = instance.product.ar_title if self.language == "ar" else instance.product.en_title
-        response["user_email"] = instance.user.email
+        product_title = instance.product.ar_title if self.language == "ar" else instance.product.en_title
         
-        return response
+        resp = {
+            "rate_id": response.get("id")
+            , "actual_rate": response.get("rate")
+            , "user_id": response.get("user")
+            , "user_email": instance.user.email
+            , "product_id": response.get("product")
+            , "product_title": product_title
+        }
+        
+        return resp
 
 
 class ProudctSerializer(serializers.ModelSerializer):
@@ -68,8 +75,9 @@ class ProudctSerializer(serializers.ModelSerializer):
             , "description": instance.ar_description if self.language == "ar" else instance.en_description
             , "images": instance.images.split(",")
             , "price": instance.price
+            , "discount_ammount": instance.discount_ammount
             , "rates": {
-                "avg_rate": instance.product_rates.aggregate(Avg("rate"))
+                "avg_rate": instance.product_rates.aggregate(Avg("rate", default=0))
                 , "5": instance.product_rates.filter(rate=5).count()
                 , "4": instance.product_rates.filter(rate=4).count()
                 , "3": instance.product_rates.filter(rate=3).count()
