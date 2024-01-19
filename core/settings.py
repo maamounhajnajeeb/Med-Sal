@@ -6,11 +6,7 @@ from django.utils.translation import gettext_lazy as _
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'tmr$uaqiaq#vuw_a+77jo^91^&sory+ez^_=bbfapnl-h4=v64'
-# SECRET_KEY = os.environ.get("SECRET_KEY")
-
+SECRET_KEY = "3d9a9c547b8eac4412eae62daa2f250ef81cd94312964e5bf80007cf30014e4c"
 DEBUG = bool(int(os.environ.get("DEBUG", 0)))
 
 ALLOWED_HOSTS = ["127.0.0.1"]
@@ -22,18 +18,16 @@ ALLOWED_HOSTS.extend(
 )
 
 
-# Applications definition
-
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
+    'whitenoise.runserver_nostatic',
     'django.contrib.contenttypes',
+    'django.contrib.staticfiles',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'whitenoise.runserver_nostatic',
-    'django.contrib.staticfiles',
     'django.contrib.postgres',
-    'django.contrib.gis', # To deal with gis database
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.gis',
     
     # third party packages
     'rest_framework_simplejwt',
@@ -47,12 +41,12 @@ INSTALLED_APPS = [
     "notification.apps.NotificationConfig",
     "permissions.apps.PermissionsConfig",
     "deliveries.apps.DeliveriesConfig",
+    "contact_us.apps.ContactUsConfig",
     "category.apps.CategoryConfig",
     "services.apps.ServicesConfig",
     "products.apps.ProductsConfig",
     "orders.apps.OrdersConfig",
     "users.apps.UsersConfig",
-    "contact_us.apps.ContactUsConfig",
 ]
 
 MIDDLEWARE = [
@@ -78,10 +72,6 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication'
         , )
-    
-    # , 'DEFAULT_THROTTLE_CLASSES': [
-    #     'rest_framework.throttling.ScopedRateThrottle'
-    #     , ]
     
     , 'DEFAULT_THROTTLE_RATES': {
         'un_authenticated': '1/hour'

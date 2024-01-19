@@ -5,8 +5,6 @@ from django.conf import settings
 
 from . import views
 
-from rest_framework import permissions
-
 
 urlpatterns = [
     
@@ -15,6 +13,9 @@ urlpatterns = [
     
     # change language api
     path("api/v1/switch_language/", views.language_switcher, name="change_language"),
+    
+    # search in services
+    path("api/v1/<str:search_phrase>/", views.search_in_services_products, name="search_in_services_products"),
     
     # users app
     path('api/v1/users/', include("users.urls", namespace="users")),
@@ -51,6 +52,8 @@ urlpatterns = [
     
     # contact_us app
     path("api/v1/contact_us/", include("contact_us.urls", namespace="contact_us")),
+    
+    # 
 ]
 
 if settings.DEBUG:

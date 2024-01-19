@@ -56,12 +56,11 @@ class ProudctSerializer(serializers.ModelSerializer):
                 , "en_title", "ar_description", "en_description", "images", "price", )
     
     def __init__(self, instance=None, data=..., **kwargs):
-        fields = kwargs.get("fields")
-        if not fields:
+        language = kwargs.get("language")
+        if not language:
             self.language = None
         else:
-            fields = kwargs.pop("fields")
-            self.language = fields.get("language")
+            self.language = kwargs.pop("language")
         
         super().__init__(instance, data, **kwargs)
     
