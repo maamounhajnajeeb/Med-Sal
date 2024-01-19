@@ -26,22 +26,47 @@ def language_switcher(request: HttpRequest):
     return Response({"message": "language switched successfully"}, status=status.HTTP_200_OK)
 
 
+def get_callables(query_params):
+    if query_params.get("longitude") and query_params.get("latitude"):
+        longitude, latitude = query_params.pop("longitude"), query_params.pop("latitude")
+        query_params["distance"] = longitude, latitude
+    
+    if query_params.get("min_price") and query_params.get("max_price"):
+        min_price, max_price = query_params.get("min_price"), query_params.get("max_price")
+        query_params["range"] = min_price, max_price
+    
+    callables_hashtable = {
+        "distance": check_distance,"rate": check_rate,"range": check_range,
+        "category": check_category, "search": "", "paginage": ""
+    }
+    
+    callables = [callables_hashtable[key] for key in query_params.keys()]
+    return callables, query_params
+
+
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
 def search_in_services_products(request: HttpRequest):
-    language, search = request.META.get("Accept-Language"), request.data.get("search").replace("_", " ")
+    language, query_params = request.META.get("Accept-Language"), request.query_params
+    callables, query_params = get_callables(query_params)
     
-    service_queryset = Service.objects.annotate(
-        search=SearchVector("en_title", "ar_title")).filter(search=SearchQuery(search))
+    Q_exprs = set()
+    for func in callables:
+        Q_exprs.add(func(query_params, Q_exprs))
     
-    product_queryset = Product.objects.annotate(
-        search=SearchVector("en_title", "ar_title")).filter(search=SearchQuery(search))
+    # service_queryset = Service.objects.annotate(
+    #     search=SearchVector("en_title", "ar_title")).filter(search=SearchQuery(search))
     
-    service_serializer = RUDServicesSerializer(service_queryset, many=True, language=language)
-    product_serialzier = ProudctSerializer(product_queryset, many=True, language=language)
-    concatenated_queryset = list(chain(service_serializer.data, product_serialzier.data))
+    # product_queryset = Product.objects.annotate(
+    #     search=SearchVector("en_title", "ar_title")).filter(search=SearchQuery(search))
     
-    return Response(data=concatenated_queryset, status=status.HTTP_200_OK)
+    # service_serializer = RUDServicesSerializer(service_queryset, many=True, language=language)
+    # product_serialzier = ProudctSerializer(product_queryset, many=True, language=language)
+    # concatenated_queryset = list(chain(service_serializer.data, product_serialzier.data))
+    
+    # return Response(data=concatenated_queryset, status=status.HTTP_200_OK)
+    
+    return Response({"message": "hi"}, status=status.HTTP_200_OK)
 
 
 @decorators.api_view(["GET", ])
@@ -88,39 +113,33 @@ def check_distance(params: dict[str, Any], q_expressions: set):
     
     return q_expressions, queryset
 
-def check_category(params: dict[str, Any]):
+def check_category(query_params: dict[str, Any], Q_exprs: set):
     """
     helper function for multiple filters api function
     """
-    q_exp = None
-    category_ids = params.get("categories", None)
-    if category_ids:
-        new_category_ids = catch(category_ids)
-        
-        q_exp = (Q(category__id=int(x)) for x in new_category_ids)
-        q_exp = reduce(lambda a, b: a | b, q_exp)
+    category_ids = query_params.get("categories", None)
+    new_category_ids = catch(category_ids)
     
-    return q_exp
+    q_expr = (Q(category__id=int(x)) for x in new_category_ids)
+    q_expr = reduce(lambda a, b: a | b, q_expr)
+    
+    return q_expr
 
-def check_range(params: dict[str, Any]):
+def check_range(query_params: dict[str, Any], Q_exprs: set):
     """
     helper function for multiple filters api function
     """
-    q_exp = None
-    min_price, max_price = params.get("min_price", None), params.get("max_price", None)
-    if min_price and max_price:
-        min_price, max_price = float(min_price), float(max_price)
-        q_exp = Q(price__range=(min_price, max_price))
+    min_price, max_price = query_params.get("range")[0], query_params.get("range")[1]
+    min_price, max_price = float(min_price), float(max_price)
+    q_expr = Q(price__range=(min_price, max_price))
     
-    return q_exp
+    return q_expr
 
 def check_rate(params: dict[str, None], products_queryset):
     """
     helper function for multiple filters api function
     """
     rates = params.get("rates", None)
-    if not rates:
-        return products_queryset
     
     rates = catch(rates)
     

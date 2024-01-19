@@ -1,3 +1,4 @@
+from django.db.models import Avg
 from django.conf import settings
 from django.db import models
 
@@ -22,6 +23,10 @@ class Product(models.Model):
     def __str__(self) -> str:
         category = self.service_provider_location.service_provider.category
         return f"prt_id: {self.id}, prt_en_title: {self.en_title}, prt_category: {category}"
+    
+    @property
+    def average_rating(self):
+        return self.product_rates.all().aggregate(Avg("rate"))["rate_avg"]
     
     class Meta:
         ordering = ["id", ]
