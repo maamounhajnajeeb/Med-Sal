@@ -8,7 +8,7 @@ from typing import Optional
 
 from deliveries import models, serializers
 
-from utils.permission import HasPermission, authorization, authorization_with_method
+from utils.permission import HasPermission, authorization
 
 
 

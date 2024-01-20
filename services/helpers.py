@@ -1,15 +1,11 @@
 from django.core.files.storage import FileSystemStorage
 from django.http import HttpRequest
 from django.conf import settings
-from django.db.models import Q
 
-from category.models import Category
-from . import models
-
-from functools import reduce
 import uuid, os
 
 MEDIA_FOLDER = settings.MEDIA_ROOT
+
 
 
 class FileMixin():
@@ -49,15 +45,3 @@ class FileMixin():
                 print("Removed")
             except:
                 print("No such file")
-
-
-
-def searching_func(category_name):
-    text_seq = category_name.split("_")
-    
-    q_exp = (Q(category__en_name__icontains=x) | Q(category__ar_name__icontains=x) for x in text_seq)
-    
-    query_func = reduce(lambda x, y: x & y, q_exp)
-    queryset = models.Service.objects.filter(query_func)
-    
-    return queryset

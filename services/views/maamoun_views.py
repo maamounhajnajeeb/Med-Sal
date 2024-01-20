@@ -2,6 +2,7 @@ from rest_framework import generics, decorators
 from rest_framework.response import Response
 from rest_framework import status
 
+from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.contrib.gis.db.models.functions import Distance
 from django.db.models import Avg, Min, Max
 from django.contrib.gis.geos import Point
@@ -208,7 +209,11 @@ def category_services_by_name(request: HttpRequest, category_name: str):
     return services for specific category by category name
     """
     language = request.META.get("Accept-Language")
-    queryset = helpers.searching_func(category_name)
+    search_terms = category_name.split("_")
+    search_terms = (SearchQuery(word) for word in search_terms)
+    queryset = models.Service.objects.annotate(
+        search=SearchVector("category__en_name", "category__ar_name")
+            ).filter(search=reduce(lambda x, y : x | y, search_terms))
     
     if not queryset.exists():
         return Response({"message": "No services found relates to this category"}
