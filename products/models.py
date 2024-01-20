@@ -26,7 +26,7 @@ class Product(models.Model):
     
     @property
     def average_rating(self):
-        return self.product_rates.all().aggregate(Avg("rate"))["rate_avg"]
+        return self.product_rates.all().aggregate(Avg("rate", default=0))["rate__avg"]
     
     class Meta:
         ordering = ["id", ]

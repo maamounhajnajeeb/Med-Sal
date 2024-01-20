@@ -15,7 +15,7 @@ urlpatterns = [
     path("api/v1/switch_language/", views.language_switcher, name="change_language"),
     
     # search in services
-    path("api/v1/everything/", views.search_in_services_products, name="search_in_services_products"),
+    path("api/v1/services_&_products/", views.search_in_services_products, name="search_in_services_products"),
     
     # users app
     path('api/v1/users/', include("users.urls", namespace="users")),

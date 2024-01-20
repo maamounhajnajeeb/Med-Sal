@@ -18,7 +18,7 @@ class CreateServicesSerializer(serializers.ModelSerializer):
             "id": instance.id
             , "provider_location_id": instance.provider_location.id
             , "provider_name": instance.provider_location.service_provider.business_name
-            , "category_name": instance.category.en_name
+            , "category_title": instance.category.en_name
             , "ar_title": instance.ar_title
             , "en_title": instance.en_title
             , "ar_description": instance.ar_description
@@ -59,6 +59,7 @@ class RUDServicesSerializer(serializers.ModelSerializer, FileMixin):
             "id": instance.id
             , "provider_location_id": instance.provider_location.id
             , "provider_name": instance.provider_location.service_provider.business_name
+            , "category_id": instance.category.id
             , "category_name": category.en_name if self.language == "en" else category.ar_name
             , "title": instance.ar_title if self.language == "ar" else instance.en_title
             , "description": instance.ar_description if self.language == "ar" else instance.en_description

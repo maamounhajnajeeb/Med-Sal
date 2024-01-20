@@ -63,10 +63,14 @@ class ProudctSerializer(serializers.ModelSerializer):
         super().__init__(instance, data, **kwargs)
     
     def to_representation(self, instance: models.Product):
+        category = instance.service_provider_location.service_provider.category
+        
         return {
             "id": instance.id
             , "service_provider": instance.service_provider_location.service_provider.business_name
             , "service_provider_location": instance.service_provider_location.id
+            , "category_id": category.id
+            , "category_title": category.ar_name if self.language == "ar" else category.en_name 
             , "quantity": instance.quantity
             , "title": instance.ar_title if self.language == "ar" else instance.en_title
             , "description": instance.ar_description if self.language == "ar" else instance.en_description

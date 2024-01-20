@@ -26,7 +26,7 @@ class Service(models.Model):
     
     @property
     def average_rating(self):
-        return self.service_rates.all().aggregate(Avg("rate"))["rate_avg"]
+        return self.service_rates.all().aggregate(Avg("rate", default=0))["rate__avg"]
     
     class Meta:
         ordering = ["id", ]

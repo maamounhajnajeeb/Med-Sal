@@ -1,4 +1,4 @@
-def catch(params: str):
+def catch(params: str) -> list[int]:
     new_params = []
     for param in params:
         try:
