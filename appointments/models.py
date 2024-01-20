@@ -15,6 +15,7 @@ class Appointments(models.Model):
     service = models.ForeignKey(Service, on_delete=models.CASCADE, null=False, related_name="appointments")
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=False, on_delete=models.CASCADE, related_name="appointments")
+    diagonsis = models.TextField(null=True)
     from_time = models.TimeField(null=False)
     to_time = models.TimeField(null=False)
     date = models.DateField(null=False)

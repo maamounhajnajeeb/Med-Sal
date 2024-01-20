@@ -59,6 +59,7 @@ class ShowAppointmentsSerializer(serializers.ModelSerializer):
                 , "provider_id": instance.service.provider_location.service_provider.id
                 , "provider_business_name": instance.service.provider_location.service_provider.business_name
                 , "location_id": instance.service.provider_location.id
+                , "diagonsis": instance.diagonsis
                 , "created_at": instance.created_at
             }
         }

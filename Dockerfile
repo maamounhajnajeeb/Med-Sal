@@ -12,11 +12,9 @@ COPY requirements.txt requirements.txt
 
 RUN pip install -r requirements.txt && \
     apt-get update && \
-    # apt-get install -y gcc libc-dev linux-headers && \
     apt-get install -y postgresql-client && \
     apt-get install -y libpq-dev && \
     apt-get install -y binutils libproj-dev gdal-bin
-
 
 COPY . app
 WORKDIR /app
@@ -35,6 +33,8 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["entrypoint.sh"]
+# CMD ["entrypoint.sh"]
 
 # CMD ["python", "manage.py", "migrate"]
+
+# CMD ["uwsgi" "--http", ":8000", "--module", "core.wsgi"]

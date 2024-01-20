@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-from django.db.models import Avg
-
 from . import models
 
 from service_providers.models import ServiceProviderLocations
@@ -56,20 +54,23 @@ class ProudctSerializer(serializers.ModelSerializer):
                 , "en_title", "ar_description", "en_description", "images", "price", )
     
     def __init__(self, instance=None, data=..., **kwargs):
-        fields = kwargs.get("fields")
-        if not fields:
+        language = kwargs.get("language")
+        if not language:
             self.language = None
         else:
-            fields = kwargs.pop("fields")
-            self.language = fields.get("language")
+            self.language = kwargs.pop("language")
         
         super().__init__(instance, data, **kwargs)
     
     def to_representation(self, instance: models.Product):
+        category = instance.service_provider_location.service_provider.category
+        
         return {
             "id": instance.id
             , "service_provider": instance.service_provider_location.service_provider.business_name
             , "service_provider_location": instance.service_provider_location.id
+            , "category_id": category.id
+            , "category_title": category.ar_name if self.language == "ar" else category.en_name 
             , "quantity": instance.quantity
             , "title": instance.ar_title if self.language == "ar" else instance.en_title
             , "description": instance.ar_description if self.language == "ar" else instance.en_description
@@ -77,7 +78,7 @@ class ProudctSerializer(serializers.ModelSerializer):
             , "price": instance.price
             , "discount_ammount": instance.discount_ammount
             , "rates": {
-                "avg_rate": instance.product_rates.aggregate(Avg("rate", default=0))
+                "avg_rate": instance.average_rating
                 , "5": instance.product_rates.filter(rate=5).count()
                 , "4": instance.product_rates.filter(rate=4).count()
                 , "3": instance.product_rates.filter(rate=3).count()

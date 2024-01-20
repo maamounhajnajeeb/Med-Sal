@@ -11,9 +11,9 @@ from collections import defaultdict
 from functools import reduce
 from typing import Any
 
+from products.file_handler import UploadImages, DeleteFiles
 from products import permissions as local_permissions
 from products import models, serializers, helpers
-from products.file_handler import UploadImages, DeleteFiles
 
 from core.pagination_classes.nine_element_paginator import CustomPagination
 from utils.catch_helper import catch
@@ -33,7 +33,7 @@ class AllProducts(generics.ListAPIView):
         language = request.META.get("Accept-Language")
         
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, many=True, fields={"language": language})
+        serializer = self.get_serializer(queryset, many=True, language=language)
         return Response(serializer.data)
 
 
@@ -73,13 +73,14 @@ class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects
     
     def retrieve(self, request, *args, **kwargs):
-        lanuage = request.META.get("Accept-Language")
+        language = request.META.get("Accept-Language")
         
         instance = self.get_object()
-        serializer = self.get_serializer([instance], many=True, fields={"language": lanuage})
+        serializer = self.get_serializer([instance], many=True, language=language)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def update(self, request, *args, **kwargs):
+        language = request.META.get("Accept-Language")
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         
@@ -91,7 +92,7 @@ class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
             file_manager = UploadImages(request)
             data["images"] = file_manager.upload_files("products", request.FILES.getlist("images"))
             
-        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer = self.get_serializer(instance, data=data, partial=partial, language=language)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         
@@ -123,8 +124,9 @@ def products_by_category(request: HttpRequest, pk: int):
     pk here is category_id
     for everybody
     """
+    language = request.META.get("Accept-Language")
     queryset = models.Product.objects.filter(service_provider_location__service_provider__category=pk)
-    serializer = serializers.ProudctSerializer(queryset, many=True)
+    serializer = serializers.ProudctSerializer(queryset, many=True, language=language)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -137,8 +139,9 @@ def products_by_location(request: HttpRequest, pk: int):
     pk here is location_id
     for everybody
     """
+    language = request.META.get("Accept-Language")
     queryset = models.Product.objects.filter(service_provider_location=pk)
-    serializer = serializers.ProudctSerializer(queryset, many=True)
+    serializer = serializers.ProudctSerializer(queryset, many=True, language=language)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -151,8 +154,9 @@ def products_by_provider(request: HttpRequest, pk: int):
     pk here is service_provider_id
     for everybody
     """
+    language = request.META.get("Accept-Language")
     queryset = models.Product.objects.filter(service_provider_location__service_provider=pk)
-    serializer = serializers.ProudctSerializer(queryset, many=True)
+    serializer = serializers.ProudctSerializer(queryset, many=True, language=language)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -167,7 +171,7 @@ def category_products_by_name(request: HttpRequest, category_name: str):
         return Response({"message": "No products found relates to this category name"}
                     , status=status.HTTP_404_NOT_FOUND)
     
-    serializer = serializers.ProudctSerializer(queryset, many=True, fields={"language": language})
+    serializer = serializers.ProudctSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -183,7 +187,7 @@ def products_price_range(request: HttpRequest):
             "message": "No products found within this range"
         }, status=status.HTTP_404_NOT_FOUND)
     
-    serializer = serializers.ProudctSerializer(queryset, many=True, fields={"language":language})
+    serializer = serializers.ProudctSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -242,13 +246,13 @@ def multiple_filters(request: HttpRequest):
     
     q_expressions.discard(None)
     
-    queryset = check_distance(params=params, q_expressions=q_expressions)
+    q_expressions, queryset = check_distance(params=params, q_expressions=q_expressions)
     queryset = check_rate(params, queryset)
     
     paginator = CustomPagination()
     list_products = paginator.paginate_queryset(queryset, request)
     
-    serializer = serializers.ProudctSerializer(list_products, many=True, fields={"language": language})
+    serializer = serializers.ProudctSerializer(list_products, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -258,15 +262,16 @@ def check_distance(params: dict[str, Any], q_expressions: set):
         longitude, latitude = float(longitude), float(latitude)
         location = Point(longitude, latitude)
         q_exp=Q(service_provider_location__location__distance_lt=(location, 1000000))
+        q_expressions.add(q_exp)
         
-        queryset = models.Product.objects.filter(
-            q_exp, *q_expressions).annotate(
-                distance=Distance("service_provider_location__location", location)).order_by("distance")
+        queryset = models.Product.objects.annotate(
+            distance=Distance("service_provider_location__location", location)
+                ).order_by("distance")
     
     else:
-        queryset = models.Product.objects.filter(*q_expressions)
+        queryset = models.Product.objects
     
-    return queryset
+    return q_expressions, queryset
 
 def check_category(params: dict[str, Any]):
     """
