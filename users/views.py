@@ -1,8 +1,8 @@
+from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
 from django.http import HttpRequest
-from django.db.models import Q
 
 from rest_framework import permissions, decorators
 from rest_framework.response import Response
@@ -10,13 +10,13 @@ from rest_framework import status, generics
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from typing import Any
-from random import randint
 from functools import reduce
+from random import randint
+from typing import Any
 
-from . import serializers, helpers
 from . import models, permissions as local_permissions
 from . import throttles as local_throttles
+from . import serializers, helpers
 
 from notification.models import Notification
 from service_providers.models import ServiceProvider
@@ -541,8 +541,7 @@ class LogIn(TokenObtainPairView):
     the main login response edited with user(id, user_type) in the serializer
     """
     serializer_class = serializers.LogInSerializer
-    # permission_classes = (local_permissions.UnAuthenticated, )
-    permission_classes = ()
+    permission_classes = (local_permissions.UnAuthenticated, )
 
 
 @decorators.api_view(["GET", ])
@@ -567,11 +566,11 @@ def active_users_stats(request: HttpRequest):
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.IsAdminUser, ])
 def search_users(request: HttpRequest, search_term: str):
-    query_text = search_term.split("_")
+    search_terms = search_term.split("_")
+    search_q = (SearchQuery(word) for word in search_terms)
+    query = reduce(lambda x, y: x | y, search_q)
+    queryset = Users.objects.annotate(search=SearchVector("email")).filter(
+                    search=query)
     
-    Q_expression = reduce(lambda x, y: x | y,
-                (Q(email__icontains=word) for word in query_text))
-    queryset = Users.objects.filter(Q_expression)
     serializer = serializers.SpecificUserSerializer(queryset, many=True)
-    
     return Response(data=serializer.data, status=status.HTTP_200_OK)

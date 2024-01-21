@@ -2,6 +2,7 @@ from rest_framework import decorators, generics
 from rest_framework import permissions, status
 from rest_framework.response import Response
 
+from django.contrib.postgres.search import SearchVector, SearchQuery
 from django.contrib.gis.db.models.functions import Distance
 from django.db.models import Q, Avg, Min, Max
 from django.contrib.gis.geos import Point
@@ -13,7 +14,7 @@ from typing import Any
 
 from products.file_handler import UploadImages, DeleteFiles
 from products import permissions as local_permissions
-from products import models, serializers, helpers
+from products import models, serializers
 
 from core.pagination_classes.nine_element_paginator import CustomPagination
 from utils.catch_helper import catch
@@ -165,7 +166,12 @@ def products_by_provider(request: HttpRequest, pk: int):
 @decorators.permission_classes([])
 def category_products_by_name(request: HttpRequest, category_name: str):
     language = request.META.get("Accept-Language")
-    queryset = helpers.searching_func(category_name, language)
+    main_q = "service_provider_location__service_provider__category__"
+    search_terms = category_name.split("_")
+    search_terms = (SearchQuery(word) for word in search_terms)
+    queryset = models.Product.objects.annotate(
+        search=SearchVector(f"{main_q}en_name", f"{main_q}ar_name")
+                ).filter(search=reduce(lambda x, y: x | y, search_terms))
     
     if not queryset.exists():
         return Response({"message": "No products found relates to this category name"}
