@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.hashers import make_password
 from django.core.mail import send_mail
 from django.http import HttpRequest
+from django.db.models import Q
 
 from rest_framework import permissions, decorators
 from rest_framework.response import Response
@@ -564,13 +565,13 @@ def active_users_stats(request: HttpRequest):
 
 
 @decorators.api_view(["GET", ])
-@decorators.permission_classes([permissions.IsAdminUser, ])
+# @decorators.permission_classes([permissions.IsAdminUser, ])
+@decorators.permission_classes([])
 def search_users(request: HttpRequest, search_term: str):
     search_terms = search_term.split("_")
-    search_q = (SearchQuery(word) for word in search_terms)
-    query = reduce(lambda x, y: x | y, search_q)
-    queryset = Users.objects.annotate(search=SearchVector("email")).filter(
-                    search=query)
+    search_exprs = (Q(search=SearchQuery(word)) for word in search_terms)
+    search_func = reduce(lambda x, y: x | y, search_exprs)
+    queryset = Users.objects.annotate(search=SearchVector("email")).filter(search=search_func)
     
     serializer = serializers.SpecificUserSerializer(queryset, many=True)
     return Response(data=serializer.data, status=status.HTTP_200_OK)

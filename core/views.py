@@ -52,13 +52,14 @@ def check_range(query_params: dict[str, Any], services_queryset: QuerySet, produ
     return q_expr, q_expr, services_queryset, products_queryset
 
 def search_func(query_params: dict[str, Any], services_queryset: QuerySet, products_queryset: QuerySet):
-    words: str = query_params.get("search").replace("_", " ")
-    q_expr = Q(search=SearchQuery(words))
+    words: str = query_params.get("search").split("_")
+    q_exprs = (Q(search=SearchQuery(word)) for word in words)
+    q_func = reduce(lambda x, y: x | y, q_exprs)
     
     services_queryset = services_queryset.annotate(search=SearchVector("en_title", "ar_title"))
     products_queryset = products_queryset.annotate(search=SearchVector("en_title", "ar_title"))
     
-    return q_expr, q_expr, services_queryset, products_queryset
+    return q_func, q_func, services_queryset, products_queryset
 
 def check_rate(query_params: dict[str, Any], services_queryset: QuerySet, products_queryset: QuerySet):
     rates = catch(query_params.get("rates"))

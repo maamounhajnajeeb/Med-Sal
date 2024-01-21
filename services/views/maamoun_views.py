@@ -209,11 +209,13 @@ def category_services_by_name(request: HttpRequest, category_name: str):
     return services for specific category by category name
     """
     language = request.META.get("Accept-Language")
+    
     search_terms = category_name.split("_")
-    search_terms = (SearchQuery(word) for word in search_terms)
+    search_terms = (Q(search=SearchQuery(word)) for word in search_terms)
+    search_func = reduce(lambda x, y : x | y, search_terms)
+    
     queryset = models.Service.objects.annotate(
-        search=SearchVector("category__en_name", "category__ar_name")
-            ).filter(search=reduce(lambda x, y : x | y, search_terms))
+        search=SearchVector("category__en_name", "category__ar_name")).filter(search_func)
     
     if not queryset.exists():
         return Response({"message": "No services found relates to this category"}
