@@ -565,13 +565,12 @@ def active_users_stats(request: HttpRequest):
 
 
 @decorators.api_view(["GET", ])
-# @decorators.permission_classes([permissions.IsAdminUser, ])
-@decorators.permission_classes([])
+@decorators.permission_classes([permissions.IsAdminUser, ])
 def search_users(request: HttpRequest, search_term: str):
     search_terms = search_term.split("_")
-    search_exprs = (Q(search=SearchQuery(word)) for word in search_terms)
+    search_exprs = (Q(email__icontains=word) for word in search_terms)
     search_func = reduce(lambda x, y: x | y, search_exprs)
-    queryset = Users.objects.annotate(search=SearchVector("email")).filter(search=search_func)
+    queryset = Users.objects.filter(search_func)
     
     serializer = serializers.SpecificUserSerializer(queryset, many=True)
     return Response(data=serializer.data, status=status.HTTP_200_OK)
