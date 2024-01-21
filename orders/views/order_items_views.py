@@ -2,13 +2,15 @@ from rest_framework import generics, decorators
 from rest_framework.response import Response
 from rest_framework import status
 
+from django.db.models import Count, Q
 from django.http import HttpRequest
 
+from datetime import datetime
 from typing import Optional
 
 from orders import models, serializers
 
-from utils.permission import HasPermission, authorization_with_method
+from utils.permission import HasPermission, authorization_with_method, authorization
 from notification.models import Notification
 
 
@@ -98,3 +100,34 @@ def provider_items(request: HttpRequest):
     
     serializer = serializers.SpecificItemSerialzier(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@authorization("orderitem")
+def provider_orders_items_stats(req: HttpRequest):
+    query_params = req.query_params.copy()
+    try:
+        provider_id = int(query_params.pop("provider_id")[0])
+    except:
+        provider_id = req.user.id
+    
+    queryset = models.OrderItem.objects.filter(
+        product__service_provider_location__service_provider=provider_id)
+    
+    if not queryset.exists():
+        return Response(
+        {"message": "No product request came to this service provider"}, status=status.HTTP_404_NOT_FOUND)
+    
+    aggregations = queryset.aggregate(
+        pend=Count("status", filter=Q(status="PENDING")),
+        accept=Count("status", filter=Q(status="ACCEPTED")),
+        reject=Count("status", filter=Q(status="REJECTED"))
+        )
+    
+    all_reqs, last_reqs = queryset.count(), queryset.filter(last_update__day=datetime.now().day).count()
+    pend, accept, reject = aggregations["pend"], aggregations["accept"], aggregations["reject"]
+    
+    return Response(
+        {"all requests": all_reqs, "last_requests": last_reqs,"rejected requests": reject,
+        "pended requests": pend, "accepted requests": accept},
+        status=status.HTTP_200_OK)

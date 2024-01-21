@@ -167,11 +167,13 @@ def products_by_provider(request: HttpRequest, pk: int):
 def category_products_by_name(request: HttpRequest, category_name: str):
     language = request.META.get("Accept-Language")
     main_q = "service_provider_location__service_provider__category__"
+    
     search_terms = category_name.split("_")
-    search_terms = (SearchQuery(word) for word in search_terms)
+    search_exprs = (Q(search=SearchQuery(word)) for word in search_terms)
+    search_func = reduce(lambda x, y: x | y, search_exprs)
+    
     queryset = models.Product.objects.annotate(
-        search=SearchVector(f"{main_q}en_name", f"{main_q}ar_name")
-                ).filter(search=reduce(lambda x, y: x | y, search_terms))
+        search=SearchVector(f"{main_q}en_name", f"{main_q}ar_name")).filter(search_func)
     
     if not queryset.exists():
         return Response({"message": "No products found relates to this category name"}

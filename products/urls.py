@@ -12,7 +12,7 @@ router.register("rates", rates_view.RatesViewSet, basename="rates_view")
 
 
 urlpatterns = [
-    # create reate
+    # create rate
     path("rates/create/", rates_view.CreateRate.as_view(), name="create_rate"),
     
     # create product

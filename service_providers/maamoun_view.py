@@ -2,7 +2,11 @@ from rest_framework import generics, decorators
 from rest_framework import permissions, status
 from rest_framework.response import Response
 
+from django.contrib.postgres.search import SearchVector
 from django.http import HttpRequest
+from django.db.models import Q
+
+from functools import reduce
 
 from . import permissions as local_permissions
 from . import models, serializers
@@ -117,3 +121,21 @@ def show_category_providers(request, pk):
     serializer = ServiceProviderSerializer(queryset, many=True)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def search_on_providers_by_name_and_email(req: HttpRequest, search_term: str):
+    search_terms = search_term.split("_")
+    search_exprs = (Q(search__icontains=word) for word in search_terms)
+    search_func = reduce(lambda x, y: x | y, search_exprs)
+    
+    queryset = models.ServiceProvider.objects.annotate(
+        search=SearchVector("business_name", "email")).filter(search_func)
+    
+    if not queryset.exists():
+        return Response(
+            {"message": "No service providers available with this name"}, status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = ServiceProviderSerializer(queryset, many=True)
+    return Response(data=serializer.data, status=status.HTTP_200_OK)

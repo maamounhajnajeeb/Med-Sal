@@ -4,6 +4,9 @@ from rest_framework import status, generics
 
 from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.http import HttpRequest
+from django.db.models import Q
+
+from functools import reduce
 
 from .serializers import CategorySerializer, CategoryCUDSerializer
 from .permissions import IsAdmin
@@ -39,9 +42,10 @@ def prime_categories(request):
 @decorators.permission_classes([])
 def search_by_category_name(request: HttpRequest):
     language = request.META.get("Accept-Language")
-    words: str = request.query_params.get("category_name").replace("_", " ")
-    queryset = Category.objects.annotate(
-        search=SearchVector("en_name", "ar_name")).filter(search=SearchQuery(words))
+    words: str = request.query_params.get("category_name").split("_")
+    q_exprs = (Q(search=SearchQuery(word)) for word in words)
+    q_func = reduce(lambda x, y: x | y, q_exprs)
+    queryset = Category.objects.annotate(search=SearchVector("en_name", "ar_name")).filter(q_func)
     serializer = CategorySerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
