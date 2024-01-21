@@ -29,6 +29,11 @@ urlpatterns = [
     
     # Read, Delete, Update Specific location - safe method everybody - hard methods authorized only
     path("location/<int:pk>/", maamoun_view.LocationRUD.as_view(), name="location_rud"),
+    
+    # search on services providers by name and email
+    path("search_by_email_&_name/<str:search_term>/",
+        maamoun_view.search_on_providers_by_name_and_email,
+        name="search_on_providers_by_name_and_email")
 ]
 
 urlpatterns += router.urls
