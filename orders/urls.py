@@ -31,6 +31,7 @@ urlpatterns = [
     re_path(r"^items/user/(\d{1,})?$", order_items_views.user_items, name="user_items"),
     
     path("provider/items/", order_items_views.provider_items, name="provider_items"),
+    path("provider/stats/", order_items_views.provider_orders_items_stats, name="provider_orders_items_stats"),
     
     # rejected orders
     path("rejected/location/", rejected_orders_views.location_rejected_orders, name="location_rejected_orders"),

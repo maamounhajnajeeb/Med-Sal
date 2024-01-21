@@ -143,12 +143,13 @@ class SpecificItemSerialzier(serializers.ModelSerializer):
         
         return super().update(instance, validated_data)
     
-    def to_representation(self, instance):
+    def to_representation(self, instance: models.OrderItem):
         return {
             "id": instance.id
             , "order_id": instance.order.id
             , "user_id": instance.order.patient.id
             , "user_email": instance.order.patient.email
+            , "location_point": str(instance.product.service_provider_location.location)
             , "product_id": instance.product.id
             , "product_title": instance.product.en_title if self.language == "en" else instance.product.ar_title
             , "quantity": instance.quantity
