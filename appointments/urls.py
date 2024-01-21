@@ -10,6 +10,8 @@ urlpatterns = [
     # appointments
     path("create/", appointments_views.CreateAppointment.as_view(), name="create_appointment"),
     path("<int:pk>/", appointments_views.AppointmentRUD.as_view(), name="rud-appointment"),
+    path("provider/stats/",
+        appointments_views.provider_appointments_stats, name="provider_appointments_stats"),
     
     re_path(r"^provider/(\d{1,})?$"
             , appointments_views.all_provider_appointments

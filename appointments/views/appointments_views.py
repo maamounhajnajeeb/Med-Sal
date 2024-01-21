@@ -2,6 +2,7 @@ from rest_framework import status, decorators
 from rest_framework.response import Response
 from rest_framework import generics
 
+from django.db.models import Count, Q
 from django.http import HttpRequest
 
 from typing import Optional
@@ -99,8 +100,7 @@ def all_provider_appointments(request: HttpRequest, provider_id: Optional[int]):
     """
     language = request.META.get("Accept-Language")
     provider_id = provider_id or request.user.id
-    queryset = models.Appointments.objects.filter(
-        service__provider_location__service_provider=provider_id)
+    queryset = models.Appointments.objects.filter(service__provider_location__service_provider=provider_id)
     serializer = serializers.ShowAppointmentsSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -116,3 +116,26 @@ def all_user_appointments(request: HttpRequest, user_id: Optional[int]):
     queryset = models.Appointments.objects.filter(user__id=user_id)
     serializer = serializers.ShowAppointmentsSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@authorization_with_method("view", "appointments")
+def provider_appointments_stats(req: HttpRequest):
+    provider_id = req.query_params.get("provider_id")
+    if provider_id:
+        provider_id = int(provider_id)
+    else:
+        provider_id = req.user.id
+    
+    queryset = models.Appointments.objects.filter(service__provider_location__service_provider=provider_id)
+    result = queryset.aggregate(
+        all=Count("id"), rejected=Count("id", filter=Q(status="rejected")),
+        accepted=Count("id", filter=Q(status="accepted")),
+        pended=Count("id", filter=Q(status="pending")))
+    
+    response_data = {
+        "all": result["all"], "rejected": result["rejected"],
+        "accepted": result["accepted"], "pended": result["pended"],
+    }
+    
+    return Response(data=response_data, status=status.HTTP_200_OK)
