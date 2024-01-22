@@ -558,8 +558,7 @@ def logout(req: HttpRequest):
 
 
 @decorators.api_view(["GET", ])
-@decorators.permission_classes([])
-# @decorators.permission_classes([permissions.IsAdminUser, ])
+@decorators.permission_classes([permissions.IsAdminUser, ])
 def active_users_stats(req: HttpRequest):
     users_diagram = Users.objects.annotate(month=TruncMonth("date_joined")).values(
         "month").annotate(users_count=Count("id")).order_by("-month")
