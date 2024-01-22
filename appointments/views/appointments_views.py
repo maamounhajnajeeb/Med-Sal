@@ -120,22 +120,40 @@ def all_user_appointments(request: HttpRequest, user_id: Optional[int]):
 
 @decorators.api_view(["GET", ])
 @authorization_with_method("view", "appointments")
-def provider_appointments_stats(req: HttpRequest):
+def provider_appointments_dashborad(req: HttpRequest):
+    # this trick because maybe admin want to see or provider
+    language = req.META.get("Accept-Language")
     provider_id = req.query_params.get("provider_id")
     if provider_id:
         provider_id = int(provider_id)
     else:
         provider_id = req.user.id
     
-    queryset = models.Appointments.objects.filter(service__provider_location__service_provider=provider_id)
-    result = queryset.aggregate(
+    queryset = models.Appointments.objects.filter(
+        service__provider_location__service_provider=provider_id)
+    
+    stats = queryset.aggregate(
         all=Count("id"), rejected=Count("id", filter=Q(status="rejected")),
         accepted=Count("id", filter=Q(status="accepted")),
         pended=Count("id", filter=Q(status="pending")))
     
-    response_data = {
-        "all": result["all"], "rejected": result["rejected"],
-        "accepted": result["accepted"], "pended": result["pended"],
-    }
+    if req.query_params.get("appointment_stauts"):
+        appointment_status = req.query_params.get("appointment_status")
+        if appointment_status not in ["pending", "accepted", "rejected"]:
+            return Response(
+                {"message": "appointment_status should be one of those: ['pending','accepted','rejected']"},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        
+        appointment_filter = appointment_status
+        queryset = queryset.filter(status=appointment_filter)
     
+    serializer = serializers.ShowAppointmentsSerializer(queryset, many=True, language=language)
+    
+    response_data = {
+        "stats": {
+            "all": stats["all"], "rejected": stats["rejected"],
+            "accepted": stats["accepted"], "pended": stats["pended"]
+            },
+        "appointments": serializer.data
+    }
     return Response(data=response_data, status=status.HTTP_200_OK)

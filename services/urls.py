@@ -19,7 +19,7 @@ urlpatterns = [
     
     ### Services Filters ###
     # multiple filters
-    path("search/", maamoun_views.multiple_filters, name="multiple_filters"),
+    path("search/<int:provider_id>/", maamoun_views.search_in_provider_services, name="search_in_provider_services"),
     # search in services by service name
     path("by_name/<str:service_name>/", tareq_views.services_by_name, name="services_by_name"),
     # list services by distance
