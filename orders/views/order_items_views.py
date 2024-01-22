@@ -103,8 +103,9 @@ def provider_items(request: HttpRequest):
 
 
 @decorators.api_view(["GET", ])
-@authorization("orderitem")
-def provider_orders_items_stats(req: HttpRequest):
+@authorization_with_method("list", "orderitems")
+def provider_orders_dashboard(req: HttpRequest):
+    language = req.META.get("Accept-Language")
     query_params = req.query_params.copy()
     try:
         provider_id = int(query_params.pop("provider_id")[0])
@@ -119,15 +120,33 @@ def provider_orders_items_stats(req: HttpRequest):
         {"message": "No product request came to this service provider"}, status=status.HTTP_404_NOT_FOUND)
     
     aggregations = queryset.aggregate(
-        pended=Count("status", filter=Q(status="PENDING")),
-        accepted=Count("status", filter=Q(status="ACCEPTED")),
-        rejected=Count("status", filter=Q(status="REJECTED"))
+        last=Count("id", filter=Q(last_update__day=datetime.now().day)),
+        pended=Count("id", filter=Q(status="PENDING")),
+        accepted=Count("id", filter=Q(status="ACCEPTED")),
+        rejected=Count("id", filter=Q(status="REJECTED")),
+        all=Count("id")
         )
     
-    all_reqs, last_reqs = queryset.count(), queryset.filter(last_update__day=datetime.now().day).count()
-    pend, accept, reject = aggregations["pended"], aggregations["accepted"], aggregations["rejected"]
+    if req.query_params.get("order_status"):
+        order_status = req.query_params.get("order_status")
+        
+        if order_status not in ['PENDING', 'ACCEPTED', 'REJECTED']:
+            return Response(
+                {"message": "order_status should be on of those: ['PENDING','ACCEPTED','REJECTED']"},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        
+        queryset= queryset.filter(status=order_status)
     
-    return Response(
-        {"all requests": all_reqs, "last_requests": last_reqs,"rejected requests": reject,
-        "pended requests": pend, "accepted requests": accept},
-        status=status.HTTP_200_OK)
+    response_data = {
+        "stats": {
+            "all": aggregations["all"],
+            "last": aggregations["last"],
+            "pended": aggregations["pended"],
+            "accepted": aggregations["accepted"],
+            "rejected": aggregations["rejected"]
+            },
+        
+        "orders": serializers.SpecificItemSerialzier(queryset, many=True, language=language).data
+        }
+    
+    return Response(data=response_data, status=status.HTTP_200_OK)
