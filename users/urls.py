@@ -40,6 +40,7 @@ urlpatterns = [
     path("", views.list_all_users, name="all_users"), #
     path("<int:pk>/", views.UsersView.as_view(), name="specific_user"), #
     
+    path("logout/", views.logout, name="log_out"),
     path('login/', views.LogIn.as_view(), name='login'), # tested
     path('refresh_token/', TokenRefreshView.as_view(), name='token_refresh'), # tested
     

@@ -1,9 +1,9 @@
-from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.hashers import make_password
+from django.db.models.functions import TruncMonth
 from django.core.mail import send_mail
+from django.db.models import Q, Count
 from django.http import HttpRequest
-from django.db.models import Q
 
 from rest_framework import permissions, decorators
 from rest_framework.response import Response
@@ -19,9 +19,11 @@ from . import models, permissions as local_permissions
 from . import throttles as local_throttles
 from . import serializers, helpers
 
-from notification.models import Notification
-from service_providers.models import ServiceProvider
 from utils.permission import authorization_with_method, HasPermission
+from service_providers.models import ServiceProvider
+from notification.models import Notification
+from products.models import Product
+from services.models import Service
 
 Users = get_user_model()
 
@@ -544,22 +546,55 @@ class LogIn(TokenObtainPairView):
     serializer_class = serializers.LogInSerializer
     permission_classes = (local_permissions.UnAuthenticated, )
 
+from rest_framework_simplejwt.tokens import RefreshToken
+
+@decorators.api_view(["POST", ])
+def logout(req: HttpRequest):
+    refresh_token = req.data.get("refresh")
+    token = RefreshToken(refresh_token)
+    token.blacklist()
+    
+    return Response({"message": "Logged out successfully"}, status=status.HTTP_202_ACCEPTED)
+
 
 @decorators.api_view(["GET", ])
-@decorators.permission_classes([permissions.IsAdminUser, ])
-def active_users_stats(request: HttpRequest):
-    active_accounts = Users.objects.filter(is_active=True)
+@decorators.permission_classes([])
+# @decorators.permission_classes([permissions.IsAdminUser, ])
+def active_users_stats(req: HttpRequest):
+    users_diagram = Users.objects.annotate(month=TruncMonth("date_joined")).values(
+        "month").annotate(users_count=Count("id")).order_by("-month")
     
-    service_providers = active_accounts.filter(user_type="SERVICE_PROVIDER").count()
-    super_admins = active_accounts.filter(user_type="SUPER_ADMIN").count()
-    admins = active_accounts.filter(user_type="ADMIN").count()
-    users = active_accounts.filter(user_type="USER").count()
-    active_users_count = active_accounts.count()
+    products_stats, services_stats = Service.objects.all().count(), Product.objects.all().count()
+    
+    user_stats = Users.objects.all().aggregate(
+            active_service_providers=Count("id", filter=(Q(user_type="SERVICE_PROVIDER") & Q(is_active=True))),
+            active_super_admins=Count("id", filter=(Q(user_type="SUPER_ADMIN") & Q(is_active=True))),
+            active_admins=Count("id", filter=(Q(user_type="ADMIN") & Q(is_active=True))),
+            active_users=Count("id", filter=(Q(user_type="USER") & Q(is_active=True))),
+            all=Count("id"),
+            nonactive_service_providers=Count("id", filter=(Q(user_type="SERVICE_PROVIDER") & Q(is_active=False))),
+            nonactive_super_admins=Count("id", filter=(Q(user_type="SUPER_ADMIN") & Q(is_active=False))),
+            nonactive_admins=Count("id", filter=(Q(user_type="ADMIN") & Q(is_active=False))),
+            nonactive_users=Count("id", filter=(Q(user_type="USER") & Q(is_active=False)))
+        )
     
     response_data = {
-        "active_accounts": active_users_count, "active_service_providers_accounts": service_providers,
-        "active_super_admins_accounts": super_admins, "active_admins_accounts": admins,
-        "active_users_accounts": users}
+        "users_stats": {
+            "all_user": user_stats["all"], "active_patients": user_stats["active_users"],
+            "active_service_providers": user_stats["active_service_providers"],
+            "active_super_admins": user_stats["active_super_admins"],
+            "active_admins": user_stats["active_admins"],
+            "non_active_patients": user_stats["nonactive_users"],
+            "non_active_service_providers": user_stats["nonactive_service_providers"],
+            "non_active_super_admins": user_stats["nonactive_super_admins"],
+            "non_active_admins": user_stats["nonactive_admins"],
+            },
+        "services_&_products_stats": {
+            "products_number": products_stats,
+            "services_number": services_stats
+            },
+        "months_stats": [{key: query[key] for key in query} for query in users_diagram]
+        }
     
     return Response(data=response_data, status=status.HTTP_200_OK)
 

@@ -11,7 +11,9 @@ from deliveries.models import Delivery
 
 """ **{ the below serializer used in orders_view views }** """ #
 class ItemsSerializer(serializers.ModelSerializer):
-    
+    """
+    to use in orders serializer only
+    """
     class Meta:
         fields = ("id", "price", "quantity", "product", "last_update")
         model = models.OrderItem
