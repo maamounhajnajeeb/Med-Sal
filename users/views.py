@@ -546,6 +546,16 @@ class LogIn(TokenObtainPairView):
     serializer_class = serializers.LogInSerializer
     permission_classes = (local_permissions.UnAuthenticated, )
 
+from rest_framework_simplejwt.tokens import RefreshToken
+
+@decorators.api_view(["POST", ])
+def logout(req: HttpRequest):
+    refresh_token = req.data.get("refresh")
+    token = RefreshToken(refresh_token)
+    token.blacklist()
+    
+    return Response({"message": "Logged out successfully"}, status=status.HTTP_202_ACCEPTED)
+
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])

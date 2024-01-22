@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.gis',
     
     # third party packages
+    'rest_framework_simplejwt.token_blacklist',
     'rest_framework_simplejwt',
     "rest_framework_gis",
     "rest_framework",
@@ -86,6 +87,7 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(minutes=30),
     "ROTATE_REFRESH_TOKENS": True,
     "UPDATE_LAST_LOGIN": False,
+    "JTI_CLAIM": "jti" # added by default (for explaination)
 }
 
 

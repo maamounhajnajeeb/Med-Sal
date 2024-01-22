@@ -119,13 +119,13 @@ def provider_orders_items_stats(req: HttpRequest):
         {"message": "No product request came to this service provider"}, status=status.HTTP_404_NOT_FOUND)
     
     aggregations = queryset.aggregate(
-        pend=Count("status", filter=Q(status="PENDING")),
-        accept=Count("status", filter=Q(status="ACCEPTED")),
-        reject=Count("status", filter=Q(status="REJECTED"))
+        pended=Count("status", filter=Q(status="PENDING")),
+        accepted=Count("status", filter=Q(status="ACCEPTED")),
+        rejected=Count("status", filter=Q(status="REJECTED"))
         )
     
     all_reqs, last_reqs = queryset.count(), queryset.filter(last_update__day=datetime.now().day).count()
-    pend, accept, reject = aggregations["pend"], aggregations["accept"], aggregations["reject"]
+    pend, accept, reject = aggregations["pended"], aggregations["accepted"], aggregations["rejected"]
     
     return Response(
         {"all requests": all_reqs, "last_requests": last_reqs,"rejected requests": reject,
