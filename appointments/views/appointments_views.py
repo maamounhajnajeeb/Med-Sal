@@ -7,9 +7,9 @@ from django.http import HttpRequest
 
 from typing import Optional
 
+from utils.permission import authorization_with_method
 from appointments import models, serializers
 from notification.models import Notification
-from utils.permission import authorization_with_method
 
 
 
