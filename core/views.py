@@ -210,9 +210,9 @@ def overall_search_stats(req: Request):
         return categories
     categories = find_categories(main_services_queryset, main_products_queryset)
     
-    def find_location(sevices_queryset: QuerySet, products_queryset: QuerySet):
+    def find_locations(sevices_queryset: QuerySet, products_queryset: QuerySet):
         pass
-    locations = find_location(main_services_queryset, main_products_queryset)
+    locations = find_locations(main_services_queryset, main_products_queryset)
     
     response_data = {
         "price": {"min_price": min_price, "max_price": max_price},
