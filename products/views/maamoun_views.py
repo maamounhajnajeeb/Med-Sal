@@ -1,12 +1,12 @@
 from rest_framework import decorators, generics
 from rest_framework import permissions, status
 from rest_framework.response import Response
+from rest_framework.request import Request
 
 from django.contrib.postgres.search import SearchVector, SearchQuery
 from django.contrib.gis.db.models.functions import Distance
 from django.db.models import Q, Avg, Min, Max
 from django.contrib.gis.geos import Point
-from django.http import HttpRequest
 
 from collections import defaultdict
 from functools import reduce
@@ -119,7 +119,7 @@ class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])
-def products_by_category(request: HttpRequest, pk: int):
+def products_by_category(request: Request, pk: int):
     """
     get all products for specific category
     pk here is category_id
@@ -134,7 +134,7 @@ def products_by_category(request: HttpRequest, pk: int):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])
-def products_by_location(request: HttpRequest, pk: int):
+def products_by_location(request: Request, pk: int):
     """
     get all products for specific location
     pk here is location_id
@@ -149,7 +149,7 @@ def products_by_location(request: HttpRequest, pk: int):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.AllowAny, ])
-def products_by_provider(request: HttpRequest, pk: int):
+def products_by_provider(request: Request, pk: int):
     """
     get all products for specific service provider
     pk here is service_provider_id
@@ -164,7 +164,7 @@ def products_by_provider(request: HttpRequest, pk: int):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def category_products_by_name(request: HttpRequest, category_name: str):
+def category_products_by_name(request: Request, category_name: str):
     language = request.META.get("Accept-Language")
     main_q = "service_provider_location__service_provider__category__"
     
@@ -185,7 +185,7 @@ def category_products_by_name(request: HttpRequest, category_name: str):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def products_price_range(request: HttpRequest):
+def products_price_range(request: Request):
     language = request.META.get("Accept-Language")
     min_price, max_price = int(request.query_params["min_price"]), int(request.query_params["max_price"])
     
@@ -201,7 +201,7 @@ def products_price_range(request: HttpRequest):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def provider_products_statistics(request: HttpRequest, provider_id: int):
+def provider_products_statistics(request: Request, provider_id: int):
     # all_cat = Category.objects.annotate(num_of_services=Count("services", filter=Q(services__gt=1)))
     # for cat in all_cat: cat.id, cat.ar_name, cat.en_name, cat.num_services
     """
@@ -239,7 +239,7 @@ def provider_products_statistics(request: HttpRequest, provider_id: int):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def multiple_filters(request: HttpRequest):
+def multiple_filters(request: Request):
     """
     query_params = {rates: list[numbers], min_price: number, max_price: number
                     , categories: list[numbers], }

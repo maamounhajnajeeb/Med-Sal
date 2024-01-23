@@ -33,7 +33,10 @@ urlpatterns = [
     # search on services providers by name and email
     path("search_by_email_&_name/<str:search_term>/",
         maamoun_view.search_on_providers_by_name_and_email,
-        name="search_on_providers_by_name_and_email")
+        name="search_on_providers_by_name_and_email"),
+    
+    # provider services reports
+    path("reports/services/", views.provider_reports, name="provider_services_reports"),
 ]
 
 urlpatterns += router.urls

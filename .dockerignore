@@ -11,12 +11,10 @@
 **/.dockerignore
 # **/.env
 **/.git
-**/.gitignore
 **/.project
 **/.settings
 **/.toolstarget
 **/.vs
-**/.vscode
 **/*.*proj.user
 **/*.dbmdl
 **/*.jfm
@@ -30,8 +28,11 @@
 **/obj
 **/secrets.dev.yaml
 **/values.dev.yaml
+**/.vscode
+**/.gitignore
 LICENSE
 README.md
 problem.py
 new.txt
 entrypoint.sh
+.hypothesis
