@@ -37,6 +37,9 @@ urlpatterns = [
     
     # provider services reports
     path("reports/services/", views.provider_reports, name="provider_services_reports"),
+    
+    # provider patients result (under report section)
+    path("reports/patients/", views.provider_patient_api, name="provider_patient_api"),
 ]
 
 urlpatterns += router.urls

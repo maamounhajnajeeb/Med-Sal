@@ -6,6 +6,7 @@ from django.contrib.postgres.search import SearchVector, SearchQuery
 from django.contrib.gis.db.models.functions import Distance
 from django.db.models import Q, Avg, QuerySet, Max, Min
 from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import D
 
 from collections import defaultdict
 from functools import reduce
@@ -13,6 +14,7 @@ from typing import Any
 
 from core.pagination_classes.nine_element_paginator import custom_pagination_function
 
+from service_providers.models import ServiceProviderLocations
 from services.serializers import RUDServicesSerializer
 from products.serializers import ProudctSerializer
 from products.models import Product
@@ -164,9 +166,9 @@ def search_in_services_products(request: Request):
 @decorators.permission_classes([])
 def overall_search_stats(req: Request):
     language = req.META.get("Accept-Language")
-    # longitude, latitude = req.query_params.get("longitude"), req.query_params.get("latitude")
-    # if not (longitude and latitude):
-    #     return Response({"message": "longitude & latitude are needed"}, status=status.HTTP_400_BAD_REQUEST)
+    longitude, latitude = req.query_params.get("longitude"), req.query_params.get("latitude")
+    if not (longitude and latitude):
+        return Response({"message": "longitude & latitude are needed"}, status=status.HTTP_400_BAD_REQUEST)
     
     main_services_queryset, main_products_queryset = Service.objects, Product.objects
     
@@ -210,9 +212,14 @@ def overall_search_stats(req: Request):
         return categories
     categories = find_categories(main_services_queryset, main_products_queryset)
     
-    def find_locations(sevices_queryset: QuerySet, products_queryset: QuerySet):
-        pass
-    locations = find_locations(main_services_queryset, main_products_queryset)
+    def find_locations(sevices_queryset: QuerySet, products_queryset: QuerySet, longitude, latitude):
+        location = Point(float(longitude), float(latitude))
+        products_queryset = ServiceProviderLocations.objects.filter(
+            location__distance_lte=(location, D(km=10)))
+        # print(products_queryset)
+        return products_queryset.count()
+        
+    locations = find_locations(main_services_queryset, main_products_queryset, longitude, latitude)
     
     response_data = {
         "price": {"min_price": min_price, "max_price": max_price},

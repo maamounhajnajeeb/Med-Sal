@@ -4,7 +4,7 @@ from rest_framework.request import Request
 from rest_framework import decorators
 
 from django.db.models.functions import TruncMonth
-from django.db.models import QuerySet, Count
+from django.db.models import Count, Q
 
 from .models import UpdateProfileRequests
 from . import permissions, serializers
@@ -74,17 +74,16 @@ def main_counter(provider_id: int, language: str):
     # stats
     stats = {}
     services_stats = Appointments.objects.filter(
-        service__provider_location__service_provider=provider_id, status="accepted").values(
-            f"service__{language}_title").annotate(
-                count=Count("service"))
+        service__provider_location__service_provider=provider_id,
+        status="accepted", result__isnull=False).values(
+            f"service__{language}_title").annotate(count=Count("service"))
     services_stats = [
         {"title": stat[f"service__{language}_title"],"count": stat["count"]} for stat in services_stats
         ]
     
     products_stats = OrderItem.objects.filter(
         product__service_provider_location__service_provider=provider_id, status="ACCEPTED").values(
-            f"product__{language}_title").annotate(
-                count=Count("product"))
+            f"product__{language}_title").annotate(count=Count("product"))
     products_stats = [
         {"title": stat[f"product__{language}_title"],"count": stat["count"]} for stat in products_stats
         ]
@@ -139,7 +138,8 @@ def provider_reports(req: Request):
     # each appointments is a customer (even if the customer comes more than one time)
     # this contains orders and appointments
     users_appointments = Appointments.objects.filter(
-        service__provider_location__service_provider=provider_id, status="accepted").annotate(
+        service__provider_location__service_provider=provider_id,
+        status="accepted", result__isnull=False).annotate(
             month=TruncMonth('updated_at')).values("month").annotate(total=Count("user"))
     users_orders = OrderItem.objects.filter(status="ACCEPTED",
         product__service_provider_location__service_provider=provider_id).annotate(
@@ -164,4 +164,21 @@ def provider_reports(req: Request):
         "users_diagram": users_diagram
     }
     
+    return Response(response, status=status.HTTP_200_OK)
+
+
+# to be updated
+@decorators.api_view(["GET", ])
+@authorization_with_method("list", "appointments")
+def provider_patient_api(req: Request):
+    language = req.META.get("Accept-Language")
+    queryset = Appointments.objects.filter(
+        service__provider_location__service_provider=req.user.id, result__isnull=False).values(
+            "id", "result").aggregate(
+                general=Count("id", filter=Q(result="General_Check")),
+                finished=Count("id", filter=Q(result="Treatment_Finished")),
+                continuous=Count("id", filter=Q(result="Continuous_Treatment")))
+    response = [
+        {"patient_type": key, "patient_count": value} for key, value in queryset.items()
+    ]
     return Response(response, status=status.HTTP_200_OK)
