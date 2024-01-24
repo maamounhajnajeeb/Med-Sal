@@ -102,7 +102,7 @@ def main_counter(provider_id: int, language: str):
     services_count = Service.objects.filter(provider_location__service_provider=30).count()
     products_count = Product.objects.filter(service_provider_location__service_provider=30).count()
     users_count = Appointments.objects.filter(
-        service__provider_location__service_provider=30).distinct("user").count()
+        service__provider_location__service_provider=30, status="accepted").distinct("user").count()
     
     counts["product"], counts["services"], counts["users"] = services_count, products_count, users_count
     
