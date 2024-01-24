@@ -3,10 +3,10 @@ from django.contrib.auth.hashers import make_password
 from django.db.models.functions import TruncMonth
 from django.core.mail import send_mail
 from django.db.models import Q, Count
-from django.http import HttpRequest
 
 from rest_framework import permissions, decorators
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework import status, generics
 
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -21,7 +21,9 @@ from . import serializers, helpers
 
 from utils.permission import authorization_with_method, HasPermission
 from service_providers.models import ServiceProvider
+from appointments.models import Appointments
 from notification.models import Notification
+from orders.models import OrderItem
 from products.models import Product
 from services.models import Service
 
@@ -30,7 +32,7 @@ Users = get_user_model()
 # 
 @decorators.api_view(["GET", ])
 @authorization_with_method("list", "users")
-def list_all_users(request: HttpRequest):
+def list_all_users(request: Request):
     """
     get all users and show them to admins
     """
@@ -92,7 +94,7 @@ class ServiceProviderCreate(generics.CreateAPIView):
     queryset = ServiceProvider.objects
     permission_classes = (local_permissions.UnAuthenticated, )
     
-    def create(self, request: HttpRequest, *args, **kwargs):
+    def create(self, request: Request, *args, **kwargs):
         query = models.EmailConfirmation.objects.filter(ip_address=self.request.META.get("REMOTE_ADDR"))
         if query.exists():
             return Response(
@@ -115,7 +117,7 @@ class ServiceProviderCreate(generics.CreateAPIView):
 
 @decorators.api_view(["POST", ])
 @decorators.permission_classes([permissions.IsAdminUser, ])
-def accept_provider_account(request: HttpRequest, provider_id: int, respond: str):
+def accept_provider_account(request: Request, provider_id: int, respond: str):
     respond = respond.capitalize()
     provider = ServiceProvider.objects.filter(id=provider_id)
     if not provider.exists():
@@ -200,7 +202,7 @@ class SignUp(generics.CreateAPIView):
     permission_classes = (local_permissions.UnAuthenticated, )
     queryset = Users.objects
     
-    def create(self, request: HttpRequest, *args, **kwargs):
+    def create(self, request: Request, *args, **kwargs):
         query = models.EmailConfirmation.objects.filter(ip_address=self.request.META.get("REMOTE_ADDR"))
         if query.exists():
             return Response(
@@ -224,7 +226,7 @@ class SignUp(generics.CreateAPIView):
 # 
 @decorators.api_view(["GET"])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
-def email_confirmation(request: HttpRequest):
+def email_confirmation(request: Request):
     """
     this function is to use after sign up for confirmation email confirmation puprose
     """
@@ -265,7 +267,7 @@ def email_confirmation(request: HttpRequest):
 @decorators.api_view(["POST", ])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
 @decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
-def resend_email_validation(request: HttpRequest):
+def resend_email_validation(request: Request):
     """
     this function is used when email_confirmation failed to send email
     """
@@ -287,7 +289,7 @@ def resend_email_validation(request: HttpRequest):
 
 #
 @decorators.api_view(["POST", ])
-def change_email(request: HttpRequest):
+def change_email(request: Request):
     """
     give authenticated user ability to change his/her email
     and send a confirmation message to the new email.
@@ -315,7 +317,7 @@ def change_email(request: HttpRequest):
 
 #
 @decorators.api_view(["GET", ])
-def accept_email_change(request: HttpRequest, token: str):
+def accept_email_change(request: Request, token: str):
     """
     check if the link sent to email is real
     and make the new email official email for user
@@ -339,7 +341,7 @@ def accept_email_change(request: HttpRequest, token: str):
 
 #
 @decorators.api_view(["POST", ])
-def check_password(request: HttpRequest):
+def check_password(request: Request):
     """
     first step to change password to authenticated users
     """
@@ -362,7 +364,7 @@ def check_password(request: HttpRequest):
 
 #
 @decorators.api_view(["POST", ])
-def change_password(request: HttpRequest):
+def change_password(request: Request):
     """
     second step to change password to authenticated users
     """
@@ -376,7 +378,7 @@ def change_password(request: HttpRequest):
 #
 @decorators.api_view(["POST", ])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
-def reset_password(request: HttpRequest):
+def reset_password(request: Request):
     """
     first step to unauthenticated users to reset there password
     it send an email with a 6 digits code
@@ -406,7 +408,7 @@ def reset_password(request: HttpRequest):
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
 @decorators.throttle_classes([local_throttles.UnAuthenticatedRateThrottle, ])
-def resend_code(request: HttpRequest):
+def resend_code(request: Request):
     ip_address = request.META.get("REMOTE_ADDR")
     record = models.PasswordReset.objects.filter(ip_address=ip_address)
     
@@ -449,7 +451,7 @@ def enter_code(request):
 #
 @decorators.api_view(["POST", ])
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
-def new_password(request: HttpRequest):
+def new_password(request: Request):
     """
     third step
     saving the new password to user record if every scenario goes will
@@ -474,7 +476,7 @@ def new_password(request: HttpRequest):
 
 
 @decorators.api_view(["POST"])
-def send_2FA_code(request: HttpRequest):
+def send_2FA_code(request: Request):
     """
     send 2FA code
     """
@@ -496,7 +498,7 @@ def send_2FA_code(request: HttpRequest):
 
 @decorators.api_view(["POST", ])
 @decorators.throttle_classes([local_throttles.AuthenticatedRateThrottle])
-def resend_2fa_code(request: HttpRequest):
+def resend_2fa_code(request: Request):
     """
     resend the 2FA code
     """
@@ -520,7 +522,7 @@ def resend_2fa_code(request: HttpRequest):
 
 
 @decorators.api_view(["POST", ])
-def validate_2FA(request: HttpRequest, code: str):
+def validate_2FA(request: Request, code: str):
     """
     check if the 2FA code is valid
     """
@@ -549,7 +551,7 @@ class LogIn(TokenObtainPairView):
 from rest_framework_simplejwt.tokens import RefreshToken
 
 @decorators.api_view(["POST", ])
-def logout(req: HttpRequest):
+def logout(req: Request):
     refresh_token = req.data.get("refresh")
     token = RefreshToken(refresh_token)
     token.blacklist()
@@ -557,50 +559,88 @@ def logout(req: HttpRequest):
     return Response({"message": "Logged out successfully"}, status=status.HTTP_202_ACCEPTED)
 
 
-@decorators.api_view(["GET", ])
-@decorators.permission_classes([permissions.IsAdminUser, ])
-def active_users_stats(req: HttpRequest):
-    users_diagram = Users.objects.annotate(month=TruncMonth("date_joined")).values(
-        "month").annotate(users_count=Count("id")).order_by("-month")
+def main_counter(language: str):
+    """
+    helper function
+    """
+    # stats
+    stats = {}
+    services_stats = Appointments.objects.filter(status="accepted", result__isnull=False).values(
+        f"service__{language}_title").annotate(count=Count("service"))
+    services_stats = [
+        {"title": stat[f"service__{language}_title"],"count": stat["count"]} for stat in services_stats
+        ]
     
-    products_stats, services_stats = Service.objects.all().count(), Product.objects.all().count()
+    products_stats = OrderItem.objects.filter(status="ACCEPTED").values(
+        f"product__{language}_title").annotate(count=Count("product"))
+    products_stats = [
+        {"title": stat[f"product__{language}_title"],"count": stat["count"]} for stat in products_stats
+        ]
     
-    user_stats = Users.objects.all().aggregate(
-            active_service_providers=Count("id", filter=(Q(user_type="SERVICE_PROVIDER") & Q(is_active=True))),
-            active_super_admins=Count("id", filter=(Q(user_type="SUPER_ADMIN") & Q(is_active=True))),
-            active_admins=Count("id", filter=(Q(user_type="ADMIN") & Q(is_active=True))),
-            active_users=Count("id", filter=(Q(user_type="USER") & Q(is_active=True))),
-            all=Count("id"),
-            nonactive_service_providers=Count("id", filter=(Q(user_type="SERVICE_PROVIDER") & Q(is_active=False))),
-            nonactive_super_admins=Count("id", filter=(Q(user_type="SUPER_ADMIN") & Q(is_active=False))),
-            nonactive_admins=Count("id", filter=(Q(user_type="ADMIN") & Q(is_active=False))),
-            nonactive_users=Count("id", filter=(Q(user_type="USER") & Q(is_active=False)))
-        )
-    
-    response_data = {
-        "users_stats": {
-            "all_user": user_stats["all"], "active_patients": user_stats["active_users"],
-            "active_service_providers": user_stats["active_service_providers"],
-            "active_super_admins": user_stats["active_super_admins"],
-            "active_admins": user_stats["active_admins"],
-            "non_active_patients": user_stats["nonactive_users"],
-            "non_active_service_providers": user_stats["nonactive_service_providers"],
-            "non_active_super_admins": user_stats["nonactive_super_admins"],
-            "non_active_admins": user_stats["nonactive_admins"],
-            },
-        "services_&_products_stats": {
-            "products_number": products_stats,
-            "services_number": services_stats
-            },
-        "months_stats": [{key: query[key] for key in query} for query in users_diagram]
+    user_stats = {
+        "admins_count": Users.objects.filter(user_type="ADMIN").count(),
+        "patients_count": Users.objects.filter(user_type="USER").count(),
+        "super_admins_count": Users.objects.filter(user_type="SUPER_ADMIN").count(),
+        "service_providers_count": Users.objects.filter(user_type="SERVICE_PROVIDER").count(),
         }
     
-    return Response(data=response_data, status=status.HTTP_200_OK)
+    stats["products_stats"], stats["services_stats"] = products_stats, services_stats
+    stats["user_stats"] = user_stats
+    
+    # counts
+    # in users count, we take unique users
+    counts = {
+        "products": Product.objects.count(),
+        "services_count": Service.objects.count(),
+        "users": Users.objects.count(),
+    }
+    
+    return counts, stats
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([permissions.IsAdminUser, ])
+def admin_reports(req: Request):
+    language = req.META.get("Accept-Language")
+    counts, stats = main_counter(language)
+    
+    products_diagram = Product.objects.annotate(
+            month=TruncMonth("updated_at")).values("month").annotate(products=Count("id"))
+    products_diagram = [
+        {"year": result["month"].year, "month": result["month"].month, "products_count": result["products"]}
+        for result in products_diagram
+    ]
+    
+    services_diagram = Service.objects.annotate(
+            month=TruncMonth("updated_at")).values("month").annotate(
+                services=Count("id"))
+    services_diagram = [
+        {"year": result["month"].year, "month": result["month"].month, "services_count": result["services"]}
+        for result in services_diagram
+    ]
+    
+    # each appointments is a customer (even if the customer comes more than one time)
+    # this contains orders and appointments
+    users_count = Users.objects.filter(is_active=True).annotate(
+        month=TruncMonth('date_joined')).values("month").annotate(total=Count("id"))
+    users_diagram = [
+        {"year": user["month"].year, "month": user["month"].month, "total_users": user["total"]} 
+            for user in users_count
+    ]
+    
+    response = {
+        "stats": stats,
+        "counts": counts,
+        "services_diagram": services_diagram,
+        "products_diagram": products_diagram,
+        "users_diagram": users_diagram
+    }
+    
+    return Response(response, status=status.HTTP_200_OK)
 
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.IsAdminUser, ])
-def search_users(request: HttpRequest, search_term: str):
+def search_users(request: Request, search_term: str):
     search_terms = search_term.split("_")
     search_exprs = (Q(email__icontains=word) for word in search_terms)
     search_func = reduce(lambda x, y: x | y, search_exprs)
