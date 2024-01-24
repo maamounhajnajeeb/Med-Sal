@@ -9,7 +9,6 @@ from django.db.models import QuerySet, Count
 from .models import UpdateProfileRequests
 from . import permissions, serializers
 
-from service_providers.models import ServiceProvider
 from appointments.models import Appointments
 from orders.models import OrderItem
 from services.models import Service
@@ -69,6 +68,9 @@ class ServiceProviderUpdateRequestViewSet(viewsets.ModelViewSet):
 
 
 def main_counter(provider_id: int, language: str):
+    """
+    helper function
+    """
     # stats
     stats = {}
     services_stats = Appointments.objects.filter(
@@ -98,6 +100,7 @@ def main_counter(provider_id: int, language: str):
     stats["user_stats"] = user_stats
     
     # counts
+    # in users count, we take unique users
     counts = {}
     services_count = Service.objects.filter(provider_location__service_provider=30).count()
     products_count = Product.objects.filter(service_provider_location__service_provider=30).count()
@@ -113,10 +116,11 @@ def main_counter(provider_id: int, language: str):
 @authorization_with_method("list", "appointments")
 def provider_reports(req: Request):
     language = req.META.get("Accept-Language")
-    counts, stats = main_counter(req.user.id, language)
+    provider_id = req.user.id
+    counts, stats = main_counter(provider_id, language)
     
     products_diagram = Product.objects.filter(
-        service_provider_location__service_provider=30).annotate(
+        service_provider_location__service_provider=provider_id).annotate(
             month=TruncMonth("updated_at")).values("month").annotate(products=Count("id"))
     products_diagram = [
         {"year": result["month"].year, "month": result["month"].month, "products_count": result["products"]}
@@ -124,7 +128,7 @@ def provider_reports(req: Request):
     ]
     
     services_diagram = Service.objects.filter(
-        provider_location__service_provider=30).annotate(
+        provider_location__service_provider=provider_id).annotate(
             month=TruncMonth("updated_at")).values("month").annotate(
                 services=Count("id"))
     services_diagram = [
@@ -132,11 +136,32 @@ def provider_reports(req: Request):
         for result in services_diagram
     ]
     
+    # each appointments is a customer (even if the customer comes more than one time)
+    # this contains orders and appointments
+    users_appointments = Appointments.objects.filter(
+        service__provider_location__service_provider=provider_id, status="accepted").annotate(
+            month=TruncMonth('updated_at')).values("month").annotate(total=Count("user"))
+    users_orders = OrderItem.objects.filter(status="ACCEPTED",
+        product__service_provider_location__service_provider=provider_id).annotate(
+            month=TruncMonth("last_update")).values("month").annotate(total=Count("order"))
+    
+    bigger = users_orders if len(users_orders) > len(users_appointments) else users_appointments
+    smaller = users_orders if len(users_orders) < len(users_appointments) else users_appointments
+    users_diagram = [
+        {"year": appointment["month"].year, "month": appointment["month"].month, "total_cutomers": order["total"]+appointment["total"]} 
+            for appointment, order in zip(users_appointments, users_orders)
+    ]
+    users_diagram.extend(
+        {"year": bigger[i]["month"].year, "month": bigger[i]["month"].month, "total_cutomers": bigger[i]["total"]} 
+            for i in range(len(smaller), len(bigger))
+    )
+    
     response = {
         "stats": stats,
         "counts": counts,
         "services_diagram": services_diagram,
         "products_diagram": products_diagram,
+        "users_diagram": users_diagram
     }
     
     return Response(response, status=status.HTTP_200_OK)
