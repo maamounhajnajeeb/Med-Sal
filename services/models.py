@@ -31,6 +31,7 @@ class Service(models.Model):
     class Meta:
         ordering = ["id", ]
 
+
 class ServiceRates(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="user_services_rates")

@@ -12,6 +12,11 @@ class Appointments(models.Model):
         PENDING = ('pending', 'Pending')
         ACCEPTED = ('accepted', 'Accepted')
     
+    class Result(models.TextChoices):
+        CONTINUOUS_TREATMENT = ('Continuous_Treatment', 'continuous_treatment')
+        TREATMENT_FINISHED = ('Treatment_Finished', 'treatment_finished')
+        GENERAL_CHECK = ('General_Check', 'general_check')
+    
     service = models.ForeignKey(Service, on_delete=models.CASCADE, null=False, related_name="appointments")
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=False, on_delete=models.CASCADE, related_name="appointments")
@@ -19,9 +24,9 @@ class Appointments(models.Model):
     from_time = models.TimeField(null=False)
     to_time = models.TimeField(null=False)
     date = models.DateField(null=False)
-    status = models.CharField(
-        max_length=15, choices=AppointmentStatus.choices, null=False
+    status = models.CharField(max_length=15, choices=AppointmentStatus.choices, null=False
         , default=AppointmentStatus.PENDING)
+    result = models.CharField(max_length=22, choices=Result.choices, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

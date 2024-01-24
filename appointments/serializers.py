@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from appointments.models import Appointments
+
 from .models import Appointments, RejectedAppointments
 
 
@@ -60,10 +62,19 @@ class ShowAppointmentsSerializer(serializers.ModelSerializer):
                 , "provider_business_name": instance.service.provider_location.service_provider.business_name
                 , "location_id": instance.service.provider_location.id
                 , "diagonsis": instance.diagonsis
+                , "result": instance.result
                 , "status": instance.status
                 , "created_at": instance.created_at
             }
         }
+
+
+class DailyAppointmentsSerializer(ShowAppointmentsSerializer):
+    def to_representation(self, instance: Appointments):
+        resp = super().to_representation(instance)
+        resp["details"]["patient_image"] = instance.user.image.path
+        
+        return resp
 
 
 class RejectedSerializer(serializers.ModelSerializer):

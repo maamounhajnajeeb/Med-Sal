@@ -1,12 +1,13 @@
 from rest_framework import decorators, status
 from rest_framework.response import Response
+from rest_framework.request import Request
 
 from django.contrib.postgres.search import SearchVector, SearchQuery
 from django.contrib.gis.db.models.functions import Distance
-from django.db.models import Q, Avg, QuerySet
+from django.db.models import Q, Avg, QuerySet, Max, Min
 from django.contrib.gis.geos import Point
-from django.http import HttpRequest
 
+from collections import defaultdict
 from functools import reduce
 from typing import Any
 
@@ -21,7 +22,7 @@ from utils.catch_helper import catch
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def language_switcher(request: HttpRequest):
+def language_switcher(request: Request):
     return Response({"message": "language switched successfully"}, status=status.HTTP_200_OK)
 
 
@@ -124,7 +125,7 @@ def get_callables(query_params: dict[str, Any]):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def search_in_services_products(request: HttpRequest):
+def search_in_services_products(request: Request):
     # first we get the language and query_params, then we make main querysets
     language, query_params = request.META.get("Accept-Language"), request.query_params
     services_main_queryset, products_main_queryset = Service.objects, Product.objects
@@ -157,3 +158,67 @@ def search_in_services_products(request: HttpRequest):
     serialized_products = ProudctSerializer(paginated_products, many=True, language=language)
     
     return Response(data=serialized_services.data + serialized_products.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def overall_search_stats(req: Request):
+    language = req.META.get("Accept-Language")
+    # longitude, latitude = req.query_params.get("longitude"), req.query_params.get("latitude")
+    # if not (longitude and latitude):
+    #     return Response({"message": "longitude & latitude are needed"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    main_services_queryset, main_products_queryset = Service.objects, Product.objects
+    
+    def find_prices(services_queryset: QuerySet, products_queryset: QuerySet):
+        services = services_queryset.aggregate(max=Max("price"), min=Min("price"))
+        products = products_queryset.aggregate(max=Max("price"), min=Min("price"))
+        
+        return min(services["min"], products["min"]), max(services["max"], products["max"])
+    min_price, max_price = find_prices(main_services_queryset, main_products_queryset)
+    
+    def find_rates(services_queryset: QuerySet, products_queryset: QuerySet):
+        limits = {(4.5, 5): 5, (3.5, 4.5): 4, (2.5, 3.5): 3, (1.5, 2.5): 2, (0.5, 1.5): 1, (0, 0.5): 0}
+        rates = defaultdict(int)
+        
+        for queryset in [services_queryset.all(), products_queryset.all()]:
+            for query in queryset:
+                for limit in limits:
+                    if query.average_rating >= limit[0] and query.average_rating < limit[1]:
+                        rates[limits[limit]] += 1
+                        break
+        
+        return rates
+    rates = find_rates(main_services_queryset, main_products_queryset)
+    
+    def find_categories(services_queryset: QuerySet, products_queryset: QuerySet):
+        categories = defaultdict(int)
+        
+        for product in products_queryset.all():
+            product_repeat = product.service_provider_location.service_provider.category
+            if language == "en":
+                categories[product_repeat.en_name] += 1
+            else:
+                categories[product_repeat.ar_name] += 1
+        
+        for service in services_queryset.all():
+            if language == "en":
+                categories[service.category.en_name] += 1
+            else:
+                categories[service.category.ar_name] += 1
+        
+        return categories
+    categories = find_categories(main_services_queryset, main_products_queryset)
+    
+    def find_locations(sevices_queryset: QuerySet, products_queryset: QuerySet):
+        pass
+    locations = find_locations(main_services_queryset, main_products_queryset)
+    
+    response_data = {
+        "price": {"min_price": min_price, "max_price": max_price},
+        "rates": rates,
+        "categories": categories,
+        "locations": locations
+    }
+    
+    return Response(data=response_data, status=status.HTTP_200_OK)

@@ -14,8 +14,11 @@ urlpatterns = [
     # change language api
     path("api/v1/switch_language/", views.language_switcher, name="change_language"),
     
-    # search in services
+    # search in services & products overall the system
     path("api/v1/services_&_products/", views.search_in_services_products, name="search_in_services_products"),
+    
+    # overall system products & services stats
+    path("api/v1/services_&_products/stats/", views.overall_search_stats, name="overall_search_stats"),
     
     # users app
     path('api/v1/users/', include("users.urls", namespace="users")),
