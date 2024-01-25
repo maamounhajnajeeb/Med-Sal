@@ -36,10 +36,10 @@ urlpatterns = [
         name="search_on_providers_by_name_and_email"),
     
     # provider services reports
-    path("reports/services/", views.provider_reports, name="provider_services_reports"),
+    path("reports/", views.provider_reports, name="provider_services_reports"),
     
     # provider patients result (under report section)
-    path("reports/patients/", views.provider_patient_api, name="provider_patient_api"),
+    path("reports/tables/", views.provider_tables_api, name="provider_tables_api"),
 ]
 
 urlpatterns += router.urls

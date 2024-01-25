@@ -51,6 +51,7 @@ urlpatterns = [
     
     # statistical endpoints
     path("admin/reports/", views.admin_reports, name="admin_reports"),
+    path("admin/reports/table/", views.admin_dashboard_details_table, name="admin_dashboard_details_table"),
     
     # search in users by email
     path("search/<str:search_term>/", views.search_users, name="search_users"),

@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.hashers import make_password
 from django.db.models.functions import TruncMonth
+from django.contrib.auth.models import Group
 from django.core.mail import send_mail
 from django.db.models import Q, Count
 
@@ -23,6 +24,7 @@ from utils.permission import authorization_with_method, HasPermission
 from service_providers.models import ServiceProvider
 from appointments.models import Appointments
 from notification.models import Notification
+from category.models import Category
 from orders.models import OrderItem
 from products.models import Product
 from services.models import Service
@@ -568,27 +570,20 @@ def main_counter(language: str):
     services_stats = Appointments.objects.filter(status="accepted", result__isnull=False).values(
         f"service__{language}_title").annotate(count=Count("service"))
     services_stats = [
-        {"title": stat[f"service__{language}_title"],"count": stat["count"]} for stat in services_stats
-        ]
+        {"title": stat[f"service__{language}_title"],"count": stat["count"]} for stat in services_stats ]
     
     products_stats = OrderItem.objects.filter(status="ACCEPTED").values(
         f"product__{language}_title").annotate(count=Count("product"))
     products_stats = [
-        {"title": stat[f"product__{language}_title"],"count": stat["count"]} for stat in products_stats
-        ]
+        {"title": stat[f"product__{language}_title"], "count": stat["count"]} for stat in products_stats ]
     
-    user_stats = {
-        "admins_count": Users.objects.filter(user_type="ADMIN").count(),
-        "patients_count": Users.objects.filter(user_type="USER").count(),
-        "super_admins_count": Users.objects.filter(user_type="SUPER_ADMIN").count(),
-        "service_providers_count": Users.objects.filter(user_type="SERVICE_PROVIDER").count(),
-        }
+    user_stats = Group.objects.values("name").annotate(Count("user"))
+    user_stats = {key["name"]: key["user__count"] for key in user_stats}
     
     stats["products_stats"], stats["services_stats"] = products_stats, services_stats
     stats["user_stats"] = user_stats
     
     # counts
-    # in users count, we take unique users
     counts = {
         "products": Product.objects.count(),
         "services_count": Service.objects.count(),
@@ -596,6 +591,7 @@ def main_counter(language: str):
     }
     
     return counts, stats
+
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([permissions.IsAdminUser, ])
@@ -607,25 +603,23 @@ def admin_reports(req: Request):
             month=TruncMonth("updated_at")).values("month").annotate(products=Count("id"))
     products_diagram = [
         {"year": result["month"].year, "month": result["month"].month, "products_count": result["products"]}
-        for result in products_diagram
-    ]
+        for result in products_diagram ]
     
     services_diagram = Service.objects.annotate(
             month=TruncMonth("updated_at")).values("month").annotate(
                 services=Count("id"))
     services_diagram = [
         {"year": result["month"].year, "month": result["month"].month, "services_count": result["services"]}
-        for result in services_diagram
-    ]
+        for result in services_diagram ]
     
-    # each appointments is a customer (even if the customer comes more than one time)
-    # this contains orders and appointments
-    users_count = Users.objects.filter(is_active=True).annotate(
-        month=TruncMonth('date_joined')).values("month").annotate(total=Count("id"))
+    # each appointment is a customer (even if the customer comes more than one time)
+    # this contains orders and appointments 
+    # we get active and non-active users here
+    users_count = Users.objects.annotate(month=TruncMonth('date_joined')).values("month").annotate(
+            total=Count("id"))
     users_diagram = [
         {"year": user["month"].year, "month": user["month"].month, "total_users": user["total"]} 
-            for user in users_count
-    ]
+            for user in users_count ]
     
     response = {
         "stats": stats,
@@ -636,6 +630,23 @@ def admin_reports(req: Request):
     }
     
     return Response(response, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([permissions.IsAdminUser, ])
+def admin_dashboard_details_table(req: Request):
+    language = req.META.get("Accept-Language")
+    users_table = Group.objects.values("name").annotate(
+        active=Count("user", filter=Q(user__is_active=True)),
+        not_active=Count("user", filter=Q(user__is_active=False)))
+    services_table = Category.objects.values(f"{language}_name").annotate(service_count=Count("services"))
+    products_table = Category.objects.values(
+        f"{language}_name").annotate(
+            products_count=Count("services_providers__locations__product"))
+    
+    return Response({
+        "users_table": users_table, "products_table": products_table, "services_table": services_table
+        }, status=status.HTTP_200_OK)
 
 
 @decorators.api_view(["GET", ])
