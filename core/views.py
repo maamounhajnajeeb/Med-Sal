@@ -3,8 +3,8 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 
 from django.contrib.postgres.search import SearchVector, SearchQuery
+from django.db.models import Q, Avg, QuerySet, Max, Min, Count
 from django.contrib.gis.db.models.functions import Distance
-from django.db.models import Q, Avg, QuerySet, Max, Min
 from django.contrib.gis.geos import Point
 from django.contrib.gis.measure import D
 
@@ -14,9 +14,8 @@ from typing import Any
 
 from core.pagination_classes.nine_element_paginator import custom_pagination_function
 
-from service_providers.models import ServiceProviderLocations
-from services.serializers import RUDServicesSerializer
 from products.serializers import ProudctSerializer
+from services.serializers import RUDServicesSerializer
 from products.models import Product
 from services.models import Service
 from utils.catch_helper import catch
@@ -214,18 +213,28 @@ def overall_search_stats(req: Request):
     
     def find_locations(sevices_queryset: QuerySet, products_queryset: QuerySet, longitude, latitude):
         location = Point(float(longitude), float(latitude))
-        products_queryset = ServiceProviderLocations.objects.filter(
-            location__distance_lte=(location, D(km=10)))
-        # print(products_queryset)
-        return products_queryset.count()
-        
+        close_products = products_queryset.filter(
+            service_provider_location__location__distance_lte=(location, D(km=10))).aggregate(
+                close_products=Count("id"))
+        far_products = products_queryset.filter(
+            service_provider_location__location__distance_gt=(location, D(km=10))).aggregate(
+                far_products=Count("id"))
+        close_services = sevices_queryset.filter(
+            provider_location__location__distance_lte=(location, D(km=10))).aggregate(
+                close_services=Count("id"))
+        far_services = sevices_queryset.filter(
+            provider_location__location__distance_gt=(location, D(km=10))).aggregate(
+                far_services=Count("id"))
+        close = close_products["close_products"] + close_services["close_services"]
+        far = far_services["far_services"] + far_products["far_products"]
+        return close, far
     locations = find_locations(main_services_queryset, main_products_queryset, longitude, latitude)
     
     response_data = {
         "price": {"min_price": min_price, "max_price": max_price},
         "rates": rates,
         "categories": categories,
-        "locations": locations
+        "locations": {"close": locations[0], "far": locations[1]}
     }
     
     return Response(data=response_data, status=status.HTTP_200_OK)

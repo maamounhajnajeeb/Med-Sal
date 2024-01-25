@@ -103,6 +103,8 @@ def main_counter(provider_id: int, language: str):
     counts = {}
     services_count = Service.objects.filter(provider_location__service_provider=30).count()
     products_count = Product.objects.filter(service_provider_location__service_provider=30).count()
+    
+    # each accepted appointment even if the result is False
     users_count = Appointments.objects.filter(
         service__provider_location__service_provider=30, status="accepted").distinct("user").count()
     
@@ -170,15 +172,29 @@ def provider_reports(req: Request):
 # to be updated
 @decorators.api_view(["GET", ])
 @authorization_with_method("list", "appointments")
-def provider_patient_api(req: Request):
+def provider_tables_api(req: Request):
     language = req.META.get("Accept-Language")
-    queryset = Appointments.objects.filter(
+    users_table = Appointments.objects.filter(
         service__provider_location__service_provider=req.user.id, result__isnull=False).values(
-            "id", "result").aggregate(
-                general=Count("id", filter=Q(result="General_Check")),
-                finished=Count("id", filter=Q(result="Treatment_Finished")),
-                continuous=Count("id", filter=Q(result="Continuous_Treatment")))
-    response = [
-        {"patient_type": key, "patient_count": value} for key, value in queryset.items()
-    ]
+            "result").annotate(
+                General_Check=Count("result", filter=Q(result="General_Check")),
+                Treatment_Finished=Count("result", filter=Q(result="Treatment_Finished")),
+                Continuous_Treatment=Count("result", filter=Q(result="Continuous_Treatment")))
+    users_table = {
+        key["result"]: max(key["General_Check"], key["Treatment_Finished"], key["Continuous_Treatment"])
+        for key in users_table }
+    
+    services_table = Appointments.objects.filter(
+        service__provider_location__service_provider=req.user.id, result__isnull=False).values(
+            f"service__{language}_title").annotate(
+                active=Count(f"service__{language}_title", filter=~Q(result="Treatment_Finished")),
+                not_active=Count(f"service__{language}_title", filter=Q(result="Treatment_Finished")) )
+    services_table = {
+        key[f"service__{language}_title"]: {"active": key["active"], "not-active": key["not_active"]}
+        for key in services_table }
+    
+    response = {
+        "users_table": users_table,
+        "services_table": services_table,}
+    
     return Response(response, status=status.HTTP_200_OK)

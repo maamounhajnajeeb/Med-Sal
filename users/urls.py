@@ -50,7 +50,8 @@ urlpatterns = [
     path("validate_2fa/<str:code>/", views.validate_2FA, name="validate_2FA"),
     
     # statistical endpoints
-    path("stats/", views.active_users_stats, name="active_users_stats"),
+    path("admin/reports/", views.admin_reports, name="admin_reports"),
+    path("admin/reports/table/", views.admin_dashboard_details_table, name="admin_dashboard_details_table"),
     
     # search in users by email
     path("search/<str:search_term>/", views.search_users, name="search_users"),

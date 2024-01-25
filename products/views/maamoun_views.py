@@ -5,10 +5,10 @@ from rest_framework.request import Request
 
 from django.contrib.postgres.search import SearchVector, SearchQuery
 from django.contrib.gis.db.models.functions import Distance
-from django.db.models import Q, Avg, Min, Max
+from django.contrib.gis.measure import D
+from django.db.models import Q, Avg, QuerySet
 from django.contrib.gis.geos import Point
 
-from collections import defaultdict
 from functools import reduce
 from typing import Any
 
@@ -16,9 +16,9 @@ from products.file_handler import UploadImages, DeleteFiles
 from products import permissions as local_permissions
 from products import models, serializers
 
-from core.pagination_classes.nine_element_paginator import CustomPagination
-from utils.catch_helper import catch
+from core.pagination_classes.nine_element_paginator import custom_pagination_function
 from notification.models import Notification
+from utils.catch_helper import catch
 
 
 
@@ -199,130 +199,119 @@ def products_price_range(request: Request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-@decorators.api_view(["GET", ])
-@decorators.permission_classes([])
-def provider_products_statistics(request: Request, provider_id: int):
-    # all_cat = Category.objects.annotate(num_of_services=Count("services", filter=Q(services__gt=1)))
-    # for cat in all_cat: cat.id, cat.ar_name, cat.en_name, cat.num_services
+def check_category(query_params: dict[str, Any], products_queryset: QuerySet):
     """
-    number of services for each categories available in specific provider
-    returns {category_id, category_name, services_count}
+    helper function for multiple filters api function
     """
-    queryset = models.Product.objects.filter(service_provider_location__service_provider=provider_id)
-    prices = queryset.aggregate(min_price=Min("price"), max_price=Max("price"))
+    category_ids = query_params.get("categories", None)
+    new_category_ids = catch(category_ids)
     
-    def sizing_rates():
-        # first we filtered the provider services
-        # then we aggregate similar services and find it's average rate
-        queryset = models.ProductRates.objects.filter(
-        product__service_provider_location__service_provider=provider_id).values(
-            "product").annotate(avg_rate=Avg("rate"))
-        
-        limits = { (4.5, 5): 5, (3.5, 4.5): 4, (2.5, 3.5): 3, (1.5, 2.5): 2, (0.5, 1.5): 1, (0, 0.5): 0 }
-        rates = defaultdict(int)
-        
-        for query in queryset:
-            for limit in limits:
-                if query["avg_rate"] >= limit[0] and query["avg_rate"] < limit[1]:
-                    rates[limits[limit]] += 1
-                    break
-        
-        return rates
+    services_q_expr = (
+        Q(service_provider_location__service_provider__category__id=int(x)) for x in new_category_ids)
+    services_q_expr = reduce(lambda a, b: a | b, services_q_expr)
     
-    data = {}
-    
-    data["prices"] = {"min_price": prices["min_price"], "max_price": prices["max_price"]}
-    data["rates"] = sizing_rates()
-    
-    return Response(data, status=status.HTTP_200_OK)
+    return services_q_expr, products_queryset
 
-
-@decorators.api_view(["GET", ])
-@decorators.permission_classes([])
-def multiple_filters(request: Request):
+def check_range(query_params: dict[str, Any], products_queryset: QuerySet):
     """
-    query_params = {rates: list[numbers], min_price: number, max_price: number
-                    , categories: list[numbers], }
+    helper function for multiple filters api function
     """
-    language = request.META.get("Accept-Language")
-    params = request.query_params
+    min_price, max_price = query_params.get("range")[0][0], query_params.get("range")[1][0]
+    min_price, max_price = float(min_price), float(max_price)
+    q_expr = Q(price__range=(min_price, max_price))
     
-    q_expressions = set()
-    callables = (check_range, check_category)
-    for func in callables:
-        q_expressions.add(func(params))
-    
-    q_expressions.discard(None)
-    
-    q_expressions, queryset = check_distance(params=params, q_expressions=q_expressions)
-    queryset = check_rate(params, queryset)
-    
-    paginator = CustomPagination()
-    list_products = paginator.paginate_queryset(queryset, request)
-    
-    serializer = serializers.ProudctSerializer(list_products, many=True, language=language)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return q_expr, products_queryset
 
-
-def check_distance(params: dict[str, Any], q_expressions: set):
-    longitude, latitude = params.get("logitude"), params.get("latitude")
-    if longitude and latitude:
-        longitude, latitude = float(longitude), float(latitude)
-        location = Point(longitude, latitude)
-        q_exp=Q(service_provider_location__location__distance_lt=(location, 1000000))
-        q_expressions.add(q_exp)
-        
-        queryset = models.Product.objects.annotate(
-            distance=Distance("service_provider_location__location", location)
-                ).order_by("distance")
+def search_func(query_params: dict[str, Any], products_queryset: QuerySet):
+    words: str = query_params.get("search").split("_")
+    q_exprs = (Q(search=SearchQuery(word)) for word in words)
+    q_func = reduce(lambda x, y: x | y, q_exprs)
     
+    products_queryset = products_queryset.annotate(search=SearchVector("en_title", "ar_title"))
+    
+    return q_func, products_queryset
+
+def check_rate(query_params: dict[str, Any], products_queryset: QuerySet):
+    rates = catch(query_params.get("rates"))
+    
+    products_queryset = products_queryset.prefetch_related("product_rates")
+    products_queryset = products_queryset.annotate(avg_rate=Avg("product_rates__rate"))
+    
+    q_expr = (Q(avg_rate__gt=rate-0.5) & Q(avg_rate__lte=rate+0.5) for rate in rates)
+    q_expr = reduce(lambda x, y: x | y, q_expr)
+    
+    return q_expr, products_queryset
+
+def check_distance(query_params: dict[str, Any], products_queryset: QuerySet):
+    location = Point(query_params.get("distance"), srid=4326)
+    
+    products_q_expr = Q(service_provider_location__location__distance_lte=(location, D(km=10)))
+    products_queryset = products_queryset.annotate(
+        distance=Distance("service_provider_location__location", location)).order_by("distance")
+    
+    return products_q_expr, products_queryset
+
+def get_pagination(pagination_number: int):
+    a = pagination_number // 2
+    b = pagination_number - a
+    return a, b
+
+def get_callables(query_params: dict[str, Any]):
+    new_query_params = query_params.copy()
+    
+    # taking care of pagination number
+    pagination_number = new_query_params.pop("pagination_number", None)
+    if pagination_number is None:
+        pagination_number = 9
     else:
-        queryset = models.Product.objects
+        pagination_number = int(pagination_number[0])
     
-    return q_expressions, queryset
+    # switching longitude and latitude to distance within query_params
+    if new_query_params.get("longitude") and new_query_params.get("latitude"):
+        longitude, latitude = new_query_params.pop("longitude")[0], new_query_params.pop("latitude")[0]
+        new_query_params["distance"] = float(longitude), float(latitude)
+    
+    # switching min_price and max_price to price__range within query_params
+    if new_query_params.get("min_price") and new_query_params.get("max_price"):
+        min_price, max_price = new_query_params.pop("min_price"), new_query_params.pop("max_price")
+        new_query_params["range"] = min_price, max_price
+    
+    callables_hashtable = {
+        "distance": check_distance, "search": search_func,
+        "rates": check_rate, "range": check_range,
+        "categories": check_category
+    }
+    
+    callables = [callables_hashtable[key] for key in new_query_params.keys()]
+    return callables, new_query_params, pagination_number
 
-def check_category(params: dict[str, Any]):
-    """
-    helper function for multiple filters api function
-    """
-    q_exp = None
-    category_ids = params.get("categories", None)
-    if category_ids:
-        new_category_ids = catch(category_ids)
-        
-        q_exp = (Q(category__id=int(x)) for x in new_category_ids)
-        q_exp = reduce(lambda a, b: a | b, q_exp)
-    
-    return q_exp
 
-def check_range(params: dict[str, Any]):
-    """
-    helper function for multiple filters api function
-    """
-    q_exp = None
-    min_price, max_price = params.get("min_price", None), params.get("max_price", None)
-    if min_price and max_price:
-        min_price, max_price = float(min_price), float(max_price)
-        q_exp = Q(price__range=(min_price, max_price))
+@decorators.api_view(["GET", ])
+@decorators.permission_classes([])
+def search_in_provider_products(request: Request, provider_id: int):
+    # first we get the language and query_params, then we make main querysets
+    language, query_params = request.META.get("Accept-Language"), request.query_params
+    products_main_queryset = models.Product.objects
     
-    return q_exp
-
-def check_rate(params: dict[str, None], products_queryset):
-    """
-    helper function for multiple filters api function
-    """
-    rates = params.get("rates", None)
-    if not rates:
-        return products_queryset
+    # then we get the callabels which mapped with the served query_params, and take care of pagination num
+    callables, query_params, pagination_number = get_callables(query_params)
     
-    rates = catch(rates)
+    # then we prepare the Q_exprs that will filter the querysets
+    # we stand on callabels and query_params from the last step
+    services_Q_exprs = set()
+    for func in callables:
+        services_Q_expr, products_main_queryset = func(query_params, products_main_queryset)
+        services_Q_exprs.add(services_Q_expr)
     
-    new_products = []
-    for product in products_queryset:
-        avg_product_rate = product.product_rates.aggregate(Avg("rate", default=0))["rate__avg"]
-        for rate in rates:
-            if rate-0.5 <= avg_product_rate <= rate+0.5:
-                new_products.append(product)
-                break
+    # here we apply filtering (if exists) on the querysets
+    products_main_queryset = products_main_queryset.filter(
+        service_provider_location__service_provider=provider_id ,*services_Q_exprs)
     
-    return new_products
+    # paginate the queryset under the client-side rules
+    services_paginator = custom_pagination_function(pagination_number)
+    paginated_services = services_paginator.paginate_queryset(products_main_queryset, request)
+    
+    # serializing the queryset data
+    serialized_services = serializers.ProudctSerializer(paginated_services, many=True, language=language)
+    
+    return Response(data=serialized_services.data, status=status.HTTP_200_OK)
