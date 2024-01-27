@@ -174,14 +174,13 @@ def provider_reports(req: Request):
 @authorization_with_method("list", "appointments")
 def provider_tables_api(req: Request):
     language = req.META.get("Accept-Language")
+    
     users_table = Appointments.objects.filter(
         service__provider_location__service_provider=req.user.id, result__isnull=False).values(
             "result").annotate(
-                General_Check=Count("result", filter=Q(result="General_Check")),
-                Treatment_Finished=Count("result", filter=Q(result="Treatment_Finished")),
-                Continuous_Treatment=Count("result", filter=Q(result="Continuous_Treatment")))
-    users_table = {
-        key["result"]: max(key["General_Check"], key["Treatment_Finished"], key["Continuous_Treatment"])
+                active=Count("user", filter=Q(user__is_active=True)),
+                not_active=Count("user", filter=Q(user__is_active=False)) )
+    users_table = { key["result"]: {"not_active": key["not_active"], "active": key["active"]} 
         for key in users_table }
     
     services_table = Appointments.objects.filter(
@@ -193,8 +192,15 @@ def provider_tables_api(req: Request):
         key[f"service__{language}_title"]: {"active": key["active"], "not-active": key["not_active"]}
         for key in services_table }
     
+    products_table = Product.objects.filter(service_provider_location__service_provider=req.user.id).values(
+            f"{language}_title").annotate(count=Count("orders__id"))
+    products_table = {
+        key[f"{language}_title"]: key["count"] for key in products_table }
+    
     response = {
         "users_table": users_table,
-        "services_table": services_table,}
+        "services_table": services_table,
+        "products_table": products_table,
+        }
     
     return Response(response, status=status.HTTP_200_OK)

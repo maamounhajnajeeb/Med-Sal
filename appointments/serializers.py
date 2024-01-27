@@ -64,6 +64,7 @@ class ShowAppointmentsSerializer(serializers.ModelSerializer):
                 , "diagonsis": instance.diagonsis
                 , "result": instance.result
                 , "status": instance.status
+                , "note": instance.note
                 , "created_at": instance.created_at
             }
         }

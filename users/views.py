@@ -639,13 +639,30 @@ def admin_dashboard_details_table(req: Request):
     users_table = Group.objects.values("name").annotate(
         active=Count("user", filter=Q(user__is_active=True)),
         not_active=Count("user", filter=Q(user__is_active=False)))
-    services_table = Category.objects.values(f"{language}_name").annotate(service_count=Count("services"))
-    products_table = Category.objects.values(
-        f"{language}_name").annotate(
-            products_count=Count("services_providers__locations__product"))
+    users_table = {
+        key["name"]: {"active": key["active"], "not_active": key["not_active"]} for key in users_table }
+    
+    services_table = Category.objects.values(f"{language}_name").annotate(
+        active=Count("services", filter=Q(services__is_active=True)),
+        not_active=Count("services", filter=Q(services__is_active=False)))
+    services_table = {
+        key[f"{language}_name"]: {"active": key["active"], "not_active": key["not_active"]} 
+        for key in services_table
+    }
+    
+    products_table = Category.objects.values(f"{language}_name").annotate(
+        active=Count("services_providers__locations__product",
+            filter=Q(services_providers__locations__product__is_active=True)),
+        not_active=Count("services_providers__locations__product",
+            filter=Q(services_providers__locations__product__is_active=False)))
+    products_table = {
+        key[f"{language}_name"]: {"active": key["active"], "not_active": key["not_active"]} 
+        for key in products_table
+    }
     
     return Response({
-        "users_table": users_table, "products_table": products_table, "services_table": services_table
+        "users_table": users_table, "products_table": products_table,
+        "services_table": services_table
         }, status=status.HTTP_200_OK)
 
 

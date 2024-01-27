@@ -1,8 +1,9 @@
 from rest_framework import routers
 
-from django.urls import path, re_path
+from django.urls import re_path
 
-from deliveries.views import maamoun_views, tareq_views
+
+from deliveries.views import maamoun_views
 
 app_name = "delivery"
 

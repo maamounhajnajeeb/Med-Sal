@@ -15,7 +15,7 @@ class ItemsSerializer(serializers.ModelSerializer):
     to use in orders serializer only
     """
     class Meta:
-        fields = ("id", "price", "quantity", "product", "last_update")
+        fields = ("id", "price", "quantity", "product", "note", "last_update")
         model = models.OrderItem
     
     def __init__(self, instance=None, data=..., **kwargs):
@@ -25,7 +25,7 @@ class ItemsSerializer(serializers.ModelSerializer):
         
         super().__init__(instance, data, **kwargs)
     
-    def to_representation(self, instance):
+    def to_representation(self, instance: models.OrderItem):
         
         return {
             "order_id": instance.order.id
@@ -35,6 +35,7 @@ class ItemsSerializer(serializers.ModelSerializer):
             , "quantity": instance.quantity
             , "price": instance.price
             , "status": instance.status
+            , "note": instance.note
             , "last_update": instance.last_update
         }
 
@@ -67,12 +68,14 @@ class OrdersSerializer(serializers.ModelSerializer): #
         OrdersItems = []
         for OrderDict in validated_data.get("items"):
             product, quantity = OrderDict["product"], OrderDict["quantity"] or 1
-            price = round(product.price * quantity, 2)
+            price, note = round(product.price * quantity, 2), OrderDict["note"]
             
             product.quantity -= quantity
             product.save()
             
-            item = models.OrderItem(order=order, product=product, quantity=quantity, price=price)
+            item = models.OrderItem(
+                order=order, product=product, quantity=quantity, price=price, note=note
+                )
             OrdersItems.append(item)
         
         models.OrderItem.objects.bulk_create(OrdersItems)
@@ -157,6 +160,7 @@ class SpecificItemSerialzier(serializers.ModelSerializer):
             , "quantity": instance.quantity
             , "unit_price": instance.price
             , "status": instance.status
+            , "note": instance.note
             , "last_update": instance.last_update
         }
 

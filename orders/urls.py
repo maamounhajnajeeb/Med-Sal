@@ -2,7 +2,7 @@ from django.urls import path, re_path
 from rest_framework import routers
 
 from orders.views import ( 
-    cart_views, tareq_views, orders_views, rejected_orders_views, order_items_views, reports
+    cart_views, orders_views, rejected_orders_views, order_items_views, reports
     )
 
 
