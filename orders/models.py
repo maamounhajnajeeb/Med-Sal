@@ -32,6 +32,7 @@ class CartItems(models.Model):
     patient = models.ForeignKey(User, on_delete=models.CASCADE, null=False, related_name="cart")
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=False)
     quantity = models.IntegerField(default=1)
+    note = models.TextField(null=True)
     
     def __str__(self) -> str:
         return f"{self.patient.email}: {self.product} -> quantity: {self.quantity}"

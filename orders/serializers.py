@@ -99,7 +99,7 @@ class CartSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.CartItems
-        fields = ("id", "product", "quantity", "patient", )
+        fields = ("id", "product", "quantity", "patient", "note", )
     
     def __init__(self, instance=None, data=..., **kwargs):
         language = kwargs.get("language")
@@ -122,6 +122,7 @@ class CartSerializer(serializers.ModelSerializer):
             , "product_id": instance.product.id
             , "product_name": instance.product.ar_title if self.language == "ar" else instance.product.en_title
             , "quantity": instance.quantity
+            , "note": instance.note
             }
 
 
@@ -161,35 +162,6 @@ class SpecificItemSerialzier(serializers.ModelSerializer):
             , "unit_price": instance.price
             , "status": instance.status
             , "note": instance.note
-            , "last_update": instance.last_update
-        }
-
-
-class ReportItemSerialzier(serializers.ModelSerializer):
-    
-    class Meta:
-        model = models.OrderItem
-        fields = "__all__"
-    
-    def __init__(self, instance=None, data=..., **kwargs):
-        language = kwargs.get("language")
-        if language:
-            self.language = kwargs.pop("language")
-        
-        super().__init__(instance, data, **kwargs)
-    
-    def to_representation(self, instance):
-        return {
-            "id": instance.id
-            , "order_id": instance.order.id
-            , "user_id": instance.order.patient.id
-            , "user_email": instance.order.patient.email
-            , "product_id": instance.product.id
-            , "product_title": instance.product.en_title if self.language == "en" else instance.product.ar_title
-            , "quantity": instance.quantity
-            , "unit_price": instance.price
-            , "total_price": instance.total_price
-            , "status": instance.status
             , "last_update": instance.last_update
         }
 
