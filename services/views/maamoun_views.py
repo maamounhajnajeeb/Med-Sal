@@ -1,13 +1,13 @@
 from rest_framework import generics, decorators
+from rest_framework import status, permissions
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.request import Request
 
 from django.contrib.postgres.search import SearchQuery, SearchVector
 from django.contrib.gis.db.models.functions import Distance
 from django.db.models import Q, Avg, QuerySet
 from django.db.models import Avg, Min, Max
 from django.contrib.gis.geos import Point
-from django.http import HttpRequest
 
 from collections import defaultdict
 from functools import reduce
@@ -33,8 +33,12 @@ class CreateService(generics.CreateAPIView, helpers.FileMixin):
     def get_permissions(self):
         return [permission("service") for permission in self.permission_classes]
     
-    def create(self, request: HttpRequest, *args, **kwargs):
+    def create(self, request: Request, *args, **kwargs):
         image_objs = request.FILES.getlist("image")
+        if not image_objs:
+            return Response({"Error": "we need at least one image for each service"},
+                status=status.HTTP_400_BAD_REQUEST)
+            
         upload_images = UploadImages(request)
         images_names = upload_images.upload_files("services", image_objs)
         
@@ -80,7 +84,7 @@ class ServiceRUD(generics.RetrieveUpdateDestroyAPIView, helpers.FileMixin):
         
         return super().perform_destroy(instance)
     
-    def update(self, request: HttpRequest, *args, **kwargs):
+    def update(self, request: Request, *args, **kwargs):
         data = request.data
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
@@ -121,7 +125,7 @@ class ListAllServices(generics.ListAPIView):
 #
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def provider_services(request: HttpRequest, provider_id: int= None):
+def provider_services(request: Request, provider_id: int= None):
     """
     return services for specific provider
     """
@@ -134,7 +138,7 @@ def provider_services(request: HttpRequest, provider_id: int= None):
 # 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def provider_services_by_category(request: HttpRequest, provider_id: int):
+def provider_services_by_category(request: Request, provider_id: int):
     # all_cat = Category.objects.annotate(num_of_services=Count("services", filter=Q(services__gt=1)))
     # for cat in all_cat: cat.id, cat.ar_name, cat.en_name, cat.num_services
     """
@@ -191,7 +195,7 @@ def provider_services_by_category(request: HttpRequest, provider_id: int):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def provider_category_services(request: HttpRequest, provider_id: int, category_id: int):
+def provider_category_services(request: Request, provider_id: int, category_id: int):
     """
     return category related services for a specific provider
     """
@@ -204,7 +208,7 @@ def provider_category_services(request: HttpRequest, provider_id: int, category_
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def category_services_by_name(request: HttpRequest, category_name: str):
+def category_services_by_name(request: Request, category_name: str):
     """
     return services for specific category by category name
     """
@@ -313,7 +317,7 @@ def get_callables(query_params: dict[str, Any]):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([])
-def search_in_provider_services(request: HttpRequest, provider_id: int):
+def search_in_provider_services(request: Request, provider_id: int):
     # first we get the language and query_params, then we make main querysets
     language, query_params = request.META.get("Accept-Language"), request.query_params
     services_main_queryset = models.Service.objects
@@ -340,3 +344,25 @@ def search_in_provider_services(request: HttpRequest, provider_id: int):
     serialized_services = serializers.RUDServicesSerializer(paginated_services, many=True, language=language)
     
     return Response(data=serialized_services.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["POST", ])
+@decorators.permission_classes([permissions.IsAdminUser, ])
+def activation_switcher(req: Request, pk: int):
+    service_obj = models.Service.objects.filter(id=pk)
+    if not service_obj.exists():
+        return Response({"Error": "Service object not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    activation_status = req.data.get("status")
+    if activation_status:
+        activation_status = True if activation_status == "true" else False
+        service_obj = service_obj.first()
+        service_obj.is_active = activation_status
+        service_obj.save()
+        return Response(
+            {"Message": f"Activation status for the service with id: {pk} changed to: {activation_status}"},
+            status=status.HTTP_202_ACCEPTED)
+    
+    return Response(
+        {"Error": "status attr needed in order to change the service activation status"},
+        status=status.HTTP_400_BAD_REQUEST)

@@ -46,7 +46,11 @@ class CreateProduct(generics.CreateAPIView):
     serializer_class = serializers.ProudctSerializer
     queryset = models.Product.objects
     
-    def create(self, request, *args, **kwargs):
+    def create(self, request: Request, *args, **kwargs):
+        if not request.FILES.getlist("images"):
+            return Response({"Error": "we need at least one image for each product"},
+                    status=status.HTTP_400_BAD_REQUEST)
+        
         new_file_names = self._upload_images(request)
         request.data["images"] = new_file_names
         resp = super().create(request, *args, **kwargs)
@@ -315,3 +319,27 @@ def search_in_provider_products(request: Request, provider_id: int):
     serialized_services = serializers.ProudctSerializer(paginated_services, many=True, language=language)
     
     return Response(data=serialized_services.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["POST", ])
+@decorators.permission_classes([permissions.IsAdminUser, ])
+def activation_switcher(req: Request, pk: int):
+    product_obj = models.Product.objects.filter(id=pk)
+    if not product_obj.exists():
+        return Response(
+            {"Error": "Product objects with this id does not exist"}, status=status.HTTP_404_NOT_FOUND)
+    
+    activation_status = req.data.get("status")
+    if activation_status:
+        activation_status = False if activation_status == "false" else True
+        product_obj = product_obj.first()
+        product_obj.is_active = activation_status
+        product_obj.save()
+        
+        return Response(
+            {"Message": f"Activation status changed to {activation_status} for product with id: {pk}"},
+            status=status.HTTP_201_CREATED)
+    
+    return Response(
+        {"Error": "We need status attr to detect activation action to the product object"},
+        status=status.HTTP_400_BAD_REQUEST)

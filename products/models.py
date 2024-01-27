@@ -17,6 +17,7 @@ class Product(models.Model):
     images = models.CharField(max_length=255)
     price = models.DecimalField(null=False, max_digits=8, decimal_places=2)
     discount_ammount = models.PositiveSmallIntegerField(default=0, null=False)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateField(auto_now_add=True)
     updated_at = models.DateField(auto_now=True)
     
