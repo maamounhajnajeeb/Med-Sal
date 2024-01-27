@@ -26,6 +26,7 @@ class CreateServicesSerializer(serializers.ModelSerializer):
             , "images": instance.image.split(",")
             , "price": instance.price
             , "discount_ammount": instance.discount_ammount
+            , "is_active": instance.is_active
             , "created_at": instance.created_at
             , "updated_at": instance.updated_at
         }
@@ -66,6 +67,7 @@ class RUDServicesSerializer(serializers.ModelSerializer, FileMixin):
             , "images": instance.image.split(",")
             , "price": instance.price
             , "discount_ammount": instance.discount_ammount
+            , "is_active": instance.is_active
             , "created_at": instance.created_at
             , "updated_at": instance.updated_at
             , "rates" : {

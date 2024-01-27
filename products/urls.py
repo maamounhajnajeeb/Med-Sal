@@ -21,6 +21,9 @@ urlpatterns = [
     # read, update, destroy specific product
     path("<int:pk>/", maamoun_views.RUDProduct.as_view(), name="specifc_product"),
     
+    # activation switcher
+    path("<int:pk>/activation_switcher/", maamoun_views.activation_switcher, name="activation_switcher"),
+    
     # search product
     path("provider/search/<int:provider_id>/",
         maamoun_views.search_in_provider_products, name="search_in_provider_products"),

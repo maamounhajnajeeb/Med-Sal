@@ -15,6 +15,8 @@ urlpatterns = [
     path("all/", maamoun_views.ListAllServices.as_view(), name="all_services"),
     # 3] rud services
     path("<int:pk>/", maamoun_views.ServiceRUD.as_view(), name="service_rud"),
+    # 4] change service activation status [for admins only]
+    path("<int:pk>/activation_switcher/", maamoun_views.activation_switcher, name="activation_switcher"),
     
     
     ### Services Filters ###
