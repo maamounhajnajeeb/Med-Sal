@@ -93,9 +93,7 @@ def provider_today_appointments(req: Request):
     last_five_queryset = main_queryset.filter(result__isnull=False).order_by("-updated_at")[5:]
     
     date = datetime.now()
-    day, month, year = str(date.day), str(date.month), str(date.year)
-    # Appointments.objects.filter(
-    # updated_at__month=1, updated_at__day=27, updated_at__year=2024).count()
+    day, month, year = date.day, date.month, date.year
     today_appointments = main_queryset.filter(
         updated_at__day=day, updated_at__month=month, updated_at__year=year)
     
