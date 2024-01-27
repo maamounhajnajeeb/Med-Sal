@@ -27,6 +27,7 @@ class Appointments(models.Model):
     status = models.CharField(max_length=15, choices=AppointmentStatus.choices, null=False
         , default=AppointmentStatus.PENDING)
     result = models.CharField(max_length=22, choices=Result.choices, null=True)
+    note = models.TextField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
