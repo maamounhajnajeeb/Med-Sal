@@ -174,6 +174,7 @@ def provider_reports(req: Request):
 @authorization_with_method("list", "appointments")
 def provider_tables_api(req: Request):
     language = req.META.get("Accept-Language")
+    
     users_table = Appointments.objects.filter(
         service__provider_location__service_provider=req.user.id, result__isnull=False).values(
             "result").annotate(
@@ -193,8 +194,17 @@ def provider_tables_api(req: Request):
         key[f"service__{language}_title"]: {"active": key["active"], "not-active": key["not_active"]}
         for key in services_table }
     
+    products_table = Product.objects.filter(
+        service_provider_location__service_provider=req.user.id).values(
+            f"{language}_title").annotate(count=Count("orders__id"))
+    products_table = {
+        key[f"{language}_title"]: key["count"] for key in products_table
+    }
+    
     response = {
         "users_table": users_table,
-        "services_table": services_table,}
+        "services_table": services_table,
+        "products_table": products_table,
+        }
     
     return Response(response, status=status.HTTP_200_OK)
