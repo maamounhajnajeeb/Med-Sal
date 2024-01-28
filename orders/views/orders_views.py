@@ -1,5 +1,6 @@
 from rest_framework import generics, decorators
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework import status
 
 from django.http import HttpRequest
@@ -35,8 +36,14 @@ class CreateOrder(generics.CreateAPIView):
         kwargs.setdefault("language", self.request.META.get("Accept-Language"))
         return super().get_serializer(*args, **kwargs)
     
-    def create(self, request, *args, **kwargs):
-        resp = super().create(request, *args, **kwargs)
+    def create(self, request: Request, *args, **kwargs):
+        data = request.data.copy()
+        data["patient"] = request.user.id
+        
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
         
         Notification.objects.create(
             sender="System", sender_type="System"
@@ -44,7 +51,7 @@ class CreateOrder(generics.CreateAPIView):
             , ar_content="تم تأكيد العملية"
             , en_content="Operation confirmed")
         
-        return Response(resp.data, status=resp.status_code)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class RetrieveDestroyOrders(generics.RetrieveDestroyAPIView):

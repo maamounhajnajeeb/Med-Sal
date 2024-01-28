@@ -15,7 +15,7 @@ class ItemsSerializer(serializers.ModelSerializer):
     to use in orders serializer only
     """
     class Meta:
-        fields = ("id", "price", "quantity", "product", "note", "last_update")
+        fields = ("id", "price", "quantity", "product", "note", "location", "last_update")
         model = models.OrderItem
     
     def __init__(self, instance=None, data=..., **kwargs):
@@ -36,6 +36,7 @@ class ItemsSerializer(serializers.ModelSerializer):
             , "price": instance.price
             , "status": instance.status
             , "note": instance.note
+            , "location": str(instance.location)
             , "last_update": instance.last_update
         }
 
@@ -69,12 +70,13 @@ class OrdersSerializer(serializers.ModelSerializer): #
         for OrderDict in validated_data.get("items"):
             product, quantity = OrderDict["product"], OrderDict["quantity"] or 1
             price, note = round(product.price * quantity, 2), OrderDict["note"]
+            location = OrderDict["location"]
             
             product.quantity -= quantity
             product.save()
             
             item = models.OrderItem(
-                order=order, product=product, quantity=quantity, price=price, note=note
+                order=order, product=product, quantity=quantity, price=price, note=note, location=location
                 )
             OrdersItems.append(item)
         
@@ -94,12 +96,12 @@ class OrdersSerializer(serializers.ModelSerializer): #
         }
 
 
-""" **{ serializer below user in cart views classes and functions}** """ #
+""" **{ serializer below used in cart views classes and functions}** """ #
 class CartSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.CartItems
-        fields = ("id", "product", "quantity", "patient", )
+        fields = ("id", "product", "quantity", "patient", "note", "location", )
     
     def __init__(self, instance=None, data=..., **kwargs):
         language = kwargs.get("language")
@@ -111,7 +113,7 @@ class CartSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         quantity = attrs.get("quantity")
         if quantity <= 0:
-            raise serializers.ValidationError({"error": "quantity must be more than 1 or more"})
+            raise serializers.ValidationError({"error": "quantity must be 1 or more"})
         
         return super().validate(attrs)
     
@@ -122,6 +124,8 @@ class CartSerializer(serializers.ModelSerializer):
             , "product_id": instance.product.id
             , "product_name": instance.product.ar_title if self.language == "ar" else instance.product.en_title
             , "quantity": instance.quantity
+            , "location": str(instance.location)
+            , "note": instance.note
             }
 
 
@@ -161,35 +165,7 @@ class SpecificItemSerialzier(serializers.ModelSerializer):
             , "unit_price": instance.price
             , "status": instance.status
             , "note": instance.note
-            , "last_update": instance.last_update
-        }
-
-
-class ReportItemSerialzier(serializers.ModelSerializer):
-    
-    class Meta:
-        model = models.OrderItem
-        fields = "__all__"
-    
-    def __init__(self, instance=None, data=..., **kwargs):
-        language = kwargs.get("language")
-        if language:
-            self.language = kwargs.pop("language")
-        
-        super().__init__(instance, data, **kwargs)
-    
-    def to_representation(self, instance):
-        return {
-            "id": instance.id
-            , "order_id": instance.order.id
-            , "user_id": instance.order.patient.id
-            , "user_email": instance.order.patient.email
-            , "product_id": instance.product.id
-            , "product_title": instance.product.en_title if self.language == "en" else instance.product.ar_title
-            , "quantity": instance.quantity
-            , "unit_price": instance.price
-            , "total_price": instance.total_price
-            , "status": instance.status
+            , "location": str(instance.location)
             , "last_update": instance.last_update
         }
 
@@ -205,6 +181,7 @@ class RejectedOrderSerializer(serializers.ModelSerializer):
         
         return {
             "order_id": original_resp.get("order")
+            , "location": str(instance.order.location)
             , "user_email": instance.order.order.patient.email
             , "reason": original_resp["reason"]
             , "read": instance.read

@@ -25,6 +25,7 @@ class DeliverySerializer(serializers.ModelSerializer):
         
         return {
             "order_id": instance.order.id
+            , "location": str(instance.order.location)
             , "product_id": instance.order.product.id
             , "product_title": product.en_title if self.language == "en" else product.ar_title 
             , "delivered": instance.delivered

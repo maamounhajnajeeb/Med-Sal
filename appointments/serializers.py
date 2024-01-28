@@ -66,6 +66,7 @@ class ShowAppointmentsSerializer(serializers.ModelSerializer):
                 , "status": instance.status
                 , "note": instance.note
                 , "created_at": instance.created_at
+                , "updated_at": instance.updated_at
             }
         }
 
