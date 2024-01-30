@@ -4,10 +4,10 @@ services:
   web:
     container_name: med_sal
     build: .
-    command: gunicorn core.wsgi
+    # command: gunicorn core.wsgi
     volumes:
-      # - ./:/app:ro
-      - ./:/app
+      - ./:/app:ro
+      # - ./:/app
     ports:
       - 8000:8000
     environment:

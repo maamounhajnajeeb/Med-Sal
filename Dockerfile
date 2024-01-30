@@ -35,6 +35,5 @@ EXPOSE 8000
 
 # CMD ["entrypoint.sh"]
 
-# CMD ["python", "manage.py", "migrate"]
-
-# CMD ["uwsgi" "--http", ":8000", "--module", "core.wsgi"]
+CMD ["python", "manage.py", "migrate"]
+ENTRYPOINT ["/bin/sh", "-c" , "python manage.py migrate && gunicorn --preload --env DJANGO_SETTINGS_MODULE=core.settings -c python:core.config.gunicorn_config core.wsgi"]
