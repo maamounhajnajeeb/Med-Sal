@@ -1,21 +1,23 @@
 import os
+import dj_database_url
 from pathlib import Path
 from datetime import timedelta
 from django.utils.translation import gettext_lazy as _
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "3d9a9c547b8eac4412eae62daa2f250ef81cd94312964e5bf80007cf30014e4c"
-DEBUG = bool(int(os.environ.get("DEBUG", 0)))
 
-ALLOWED_HOSTS = ["127.0.0.1"]
-ALLOWED_HOSTS.extend(
-    filter(
-        None,
-        os.environ.get("RAILWAY_HOST", "").split(","),
+SECRET_KEY = "3d9a9c547b8eac4412eae62daa2f250ef81cd94312964e5bf80007cf30014e4c"
+# DEBUG = bool(int(os.environ.get("DEBUG", 0)))
+DEBUG = True
+
+# ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["medsal-production.up.railway.app", "127.0.0.1"]
+ALLOWED_HOSTS.append(
+        os.environ.get("Railway_Host", "").split(",")
     )
-)
 
 
 INSTALLED_APPS = [
@@ -78,6 +80,7 @@ REST_FRAMEWORK = {
         'un_authenticated': '1/hour'
         , 'authenticated': '2/hour'
         , }
+    
     }
 
 
@@ -102,7 +105,7 @@ EMAIL_PORT = 587
 CORS_ALLOWED_ORIGINS = (
         "http://localhost:3000",
         "http://localhost:8000",
-        "https://medsal-production.up.railway.app"
+        "https://medsal-production.up.railway.app",
     )
 
 CSRF_TRUSTED_ORIGINS = [
@@ -129,29 +132,18 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
-# Database
-from environs import Env
-
-def get_env_details():
-    env = Env()
-    env.read_env()
-    
-    return os.getenv("PASSWORD")
-
 # Docker
 # DATABASES = {
-#     "default": {
-#         "ENGINE": "django.contrib.gis.db.backends.postgis",
-#         "HOST": os.environ.get("DB_HOST"),
-#         "NAME": os.environ.get("DB_NAME"),
-#         "USER": os.environ.get("DB_USER"), # your chosen or default database system name
-#         "PASSWORD": os.environ.get("DB_PASS"), #
-#         "PORT": os.environ.get("DB_PORT"), # 5432
-#     }
+#     "default": dj_database_url.config(
+#         default=os.environ.get("DataBase_URL")
+#         , conn_max_age=600
+#     )
 # }
+# DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
 
 # Maamoun
 DATABASES = {
@@ -159,7 +151,7 @@ DATABASES = {
         "ENGINE": "django.contrib.gis.db.backends.postgis",
         "NAME": "med_sal", # my database name, you can change
         "USER": "postgres", # your chosen or default database system name
-        "PASSWORD": get_env_details(), #
+        "PASSWORD": "17AiGz48rhe", #
         "HOST": "", # localhost
         "PORT": "", # 5432
     }
@@ -178,9 +170,6 @@ DATABASES = {
 # }
 
 
-# Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -197,10 +186,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
-
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / "static" # for production
 STATICFILES_DIRS = [BASE_DIR / "core/assets"] # for development
@@ -211,22 +196,17 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-AUTH_USER_MODEL = "users.Users" #
+AUTH_USER_MODEL = "users.Users"
+
 
 GDAL_LIBRARY_PATH = 'C:\OSGeo4W\\bin\gdal307.dll'
 
-DATETIME_INPUT_FORMATS = [
-    '%Y-%m-%d %H:%M:%S',
-]
 
-# USE_TZ = True
+USE_TZ = True
 
 TIME_ZONE = 'Asia/Riyadh'
 
 LANGUAGE_CODE = "en-us" # default language
-
-# USE_I18N = True
-# USE_L10N = True
 
 LANGUAGES = (
     ("ar", _("Arabic"))
