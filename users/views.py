@@ -210,7 +210,7 @@ class SignUp(generics.CreateAPIView):
             return Response(
                 {"message": "You registered in this site, but you didn't confirm your email, "
                         "you can send a new email confirmation if you didn't receive one at the first time"}
-                , status=status.HTTP_403_FORBIDDEN)
+                , status=status.HTTP_406_NOT_ACCEPTABLE)
             
         resp = super().create(request, *args, **kwargs)
         pk, email = resp.data["id"], resp.data["email"]

@@ -39,6 +39,11 @@ class UserSerializer(serializers.ModelSerializer):
             }
     
     def validate(self, attrs):
+        user_type = attrs.get("user_type")
+        if user_type == "SERVICE_PROVIDER":
+            raise serializers.ValidationError(
+                {"user_type": "user_type must be one of those: USER, SUPER_ADMIN or ADMIN"})
+        
         password, password2 = attrs.get("password"), attrs.pop("password2")
         if password != password2:
             raise serializers.ValidationError({"password": "Password fields didn't match."})
