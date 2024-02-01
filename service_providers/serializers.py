@@ -33,13 +33,12 @@ class ServiceProviderUpdateRequestSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         origin_repr = super().to_representation(instance)
         
-        admin_name = Admins.objects.filter(id=origin_repr["checked_by"])
-        if admin_name.exists():
-            admin_name = admin_name.first().email
-        else: 
-            admin_name = None
+        admin_obj = Admins.objects.filter(id=origin_repr["checked_by"])
+        admin_name = None
+        if admin_obj.exists():
+            admin_name = admin_obj.first().email
+            origin_repr["admin_email"] = admin_name
         
-        origin_repr["checked_by_email"] = admin_name
         return origin_repr
 
 

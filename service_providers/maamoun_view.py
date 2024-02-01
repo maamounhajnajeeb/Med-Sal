@@ -127,6 +127,7 @@ def show_category_providers(request, pk):
 @decorators.permission_classes([])
 def search_on_providers_by_name_and_email(req: HttpRequest, search_term: str):
     search_terms = search_term.split("_")
+    
     search_exprs = (Q(search__icontains=word) for word in search_terms)
     search_func = reduce(lambda x, y: x | y, search_exprs)
     

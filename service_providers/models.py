@@ -56,7 +56,8 @@ class UpdateProfileRequests(models.Model):
         ACCEPTED = ('accepted', 'Accepted')
     
     provider_requested = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE)
-    checked_by = models.ForeignKey(Admins, null=True, on_delete = models.CASCADE, related_name='admin_approved_profile_requests')
+    checked_by = models.ForeignKey(Admins, null=True,
+        on_delete=models.CASCADE, related_name='admin_approved_profile_requests')
     sent_data = models.JSONField(null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

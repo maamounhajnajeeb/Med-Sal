@@ -20,6 +20,7 @@ from utils.permission import authorization_with_method
 
 
 @decorators.api_view(["GET", ])
+@authorization_with_method("check", "update_profile_requests")
 def check_provider_update_status(request: Request):
     provider_id: int = request.user.id
     queryset = UpdateProfileRequests.objects.filter(provider_requested=provider_id)
