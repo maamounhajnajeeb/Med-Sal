@@ -62,6 +62,7 @@ class SendMail:
             full_path = f"{protocol}://{host}{self.view}"
         else:
             full_path = f"{protocol}://{host}{self.view}{self.token}"
+            # full_path = f"{protocol}://{host}{self.view}{self.token}/"
         
         return f"please use this link to verify your account: \n {full_path}"
         

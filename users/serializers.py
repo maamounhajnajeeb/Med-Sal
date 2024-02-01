@@ -96,10 +96,12 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
                 , "bank_name", "iban", "swift_code", "account_status")
     
     def validate(self, attrs):
-        user_type = attrs.get("user").get("user_type")
-        if user_type != "SERVICE_PROVIDER":
-            raise serializers.ValidationError(
-                {"user_type": "user_type must be one of those: USER, SUPER_ADMIN or ADMIN"})
+        user: Users = attrs.get("user")
+        if user:
+            if user.user_type != "SERVICE_PROVIDER":
+                raise serializers.ValidationError(
+                    {"user_type": "user_type must be one of those: USER, SUPER_ADMIN or ADMIN"})
+        return super().validate(attrs)
     
     def update(self, instance, validated_data):
         if validated_data.get("provider_file"):

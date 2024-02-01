@@ -13,7 +13,6 @@ SECRET_KEY = "3d9a9c547b8eac4412eae62daa2f250ef81cd94312964e5bf80007cf30014e4c"
 # DEBUG = bool(int(os.environ.get("DEBUG", 0)))
 DEBUG = True
 
-# ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 ALLOWED_HOSTS = ["medsal-production.up.railway.app", "127.0.0.1"]
 # ALLOWED_HOSTS.append(
 #         os.environ.get("Railway_Host", "").split(",")
@@ -76,15 +75,15 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication'
         , )
     
-    , 'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
-    ]
+    # , 'DEFAULT_THROTTLE_CLASSES': [
+    #     'rest_framework.throttling.AnonRateThrottle',
+    #     'rest_framework.throttling.UserRateThrottle'
+    # ]
     
-    , 'DEFAULT_THROTTLE_RATES': {
-        'anon': '2/hour'
-        , 'user': '2/hour'
-        , }
+    # , 'DEFAULT_THROTTLE_RATES': {
+    #     'anon': '2/hour'
+    #     , 'user': '2/hour'
+    #     , }
     }
 
 

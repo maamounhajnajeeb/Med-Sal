@@ -10,22 +10,22 @@ urlpatterns = [
     # not authenticated
     path("signup/", views.SignUp.as_view(), name="sign_up"), # #
     path("service_providers/", views.ServiceProviderCreate.as_view(), name="service_provider"), # #
+    path("service_providers/all/", views.ServiceProviderList.as_view(), name="service_provider_list"), # #
     
     # admin
-    path("service_providers/check_account/<str:respond>/<int:provider_id>/"
+    path("service_providers/change_account_status/<str:respond>/<int:provider_id>/"
         , views.accept_provider_account, name="accept_provider_account"),
-    path("service_providers/all/", views.ServiceProviderList.as_view(), name="service_provider_list"), #
     
     # mixed: safe method for everybody, else owners and admins only
-    path("service_provider/<int:pk>/", views.ServiceProviderRUD.as_view(), name="service_provider_rud"),
+    path("service_provider/<int:pk>/", views.ServiceProviderRUD.as_view(), name="service_provider_rud"), #
     
     # not authenticated
     path("email_confirmation/", views.email_confirmation, name="email_confirmation"), # #
     path("resend_email_validation/", views.resend_email_validation, name="resend_email_validation"), # #
     
     # authenticated
-    path("accept_new_email/<str:token>/", views.accept_email_change, name="accept_email_changing"),#
-    path("change_email/", views.change_email, name="email_change"), #
+    path("accept_new_email/<str:token>/", views.accept_email_change, name="accept_email_changing"),# #
+    path("change_email/", views.change_email, name="email_change"), # #
     
     # authenticated
     path("check_password/", views.check_password, name="check_password"), # #
