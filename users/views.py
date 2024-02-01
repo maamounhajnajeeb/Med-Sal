@@ -42,6 +42,7 @@ def list_all_users(request: Request):
     serializer = serializers.UserSerializer(queryset, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 #
 class UsersView(generics.RetrieveUpdateDestroyAPIView):
     """
@@ -54,6 +55,9 @@ class UsersView(generics.RetrieveUpdateDestroyAPIView):
     
     def get_permissions(self):
         return [permission("users") for permission in self.permission_classes]
+    
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
     
     def update(self, request, *args, **kwargs):
         if request.data.get("image"):
@@ -102,7 +106,7 @@ class ServiceProviderCreate(generics.CreateAPIView):
             return Response(
                 {"message": "You registered in this site, but you didn't confirm your email, "
                         "you can send a new email confirmation if you didn't receive one at the first time"}
-                , status=status.HTTP_403_FORBIDDEN)
+                , status=status.HTTP_406_NOT_ACCEPTABLE)
             
         resp = super().create(request, *args, **kwargs)
         pk, email = resp.data["id"], resp.data["user"]["email"]
@@ -230,7 +234,7 @@ class SignUp(generics.CreateAPIView):
 @decorators.permission_classes([local_permissions.UnAuthenticated, ])
 def email_confirmation(request: Request):
     """
-    this function is to use after sign up for confirmation email confirmation puprose
+    this function is to use after sign up for email confirmation puprose
     """
     ip_address = request.META.get("REMOTE_ADDR")
     query = models.EmailConfirmation.objects.filter(ip_address=ip_address)
@@ -304,6 +308,7 @@ def change_email(request: Request):
         , view="/api/v1/users/accept_new_email/")
     confirm.send_mail()
     
+    # we can make more than one email confirmation request if it doesn't work form the first time
     try:
         user_record = models.EmailChange.objects.get(user_id=user_id)
         user_record.new_email, user_record.token = new_email, confirm.token
@@ -371,6 +376,10 @@ def change_password(request: Request):
     second step to change password to authenticated users
     """
     new_pwd = request.data.get("new_password")
+    if not new_pwd:
+        return Response({"Error": "new_password needed for changing current user password"}
+            , status=status.HTTP_400_BAD_REQUEST)
+    
     helpers.set_password(request.user, new_pwd)
     
     return Response({
@@ -439,6 +448,8 @@ def enter_code(request):
     and depending on that it give user ability to write new password
     """
     code = request.data.get("code")
+    if not code:
+        return Response({"Error": "you should put the code from email"}, status=status.HTTP_400_BAD_REQUEST)
     
     record = models.PasswordReset.objects.filter(code=code)
     if not record.exists():
@@ -477,7 +488,7 @@ def new_password(request: Request):
     }, status=status.HTTP_202_ACCEPTED)
 
 
-@decorators.api_view(["POST"])
+@decorators.api_view(["POST", ])
 def send_2FA_code(request: Request):
     """
     send 2FA code
@@ -487,8 +498,8 @@ def send_2FA_code(request: Request):
         return Response({"error": "You've already receive an 2FA code, check you inbox or resent it"}
                 , status=status.HTTP_403_FORBIDDEN)
     
-    instance = models.PasswordReset.objects.create(ip_address=request.META.get("REMOTE_ADDR")
-        , code="".join(str(randint(0, 9)) for _ in range(6)), user=request.user)
+    instance = models.PasswordReset.objects.create(ip_address=request.META.get("REMOTE_ADDR"),
+        code="".join(str(randint(0, 9)) for _ in range(6)), user=request.user)
     
     send_mail(subject="2 Factor Authentication"
         , message=f"put this code: {instance.code} in the input field"
@@ -499,7 +510,7 @@ def send_2FA_code(request: Request):
 
 
 @decorators.api_view(["POST", ])
-@decorators.throttle_classes([local_throttles.AuthenticatedRateThrottle])
+@decorators.throttle_classes([local_throttles.AuthenticatedRateThrottle, ])
 def resend_2fa_code(request: Request):
     """
     resend the 2FA code
@@ -555,6 +566,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 @decorators.api_view(["POST", ])
 def logout(req: Request):
     refresh_token = req.data.get("refresh")
+    if not refresh_token:
+        return Response({"Error": "Refresh Token needed"}, status=status.HTTP_400_BAD_REQUEST)
+    
     token = RefreshToken(refresh_token)
     token.blacklist()
     

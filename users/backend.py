@@ -12,7 +12,7 @@ class CustomAuthBackend(BaseBackend):
                 return user
         except CustomUser.DoesNotExist:
             return None
-
+    
     def get_user(self, user_id):
         try:
             return CustomUser.objects.get(pk=user_id)

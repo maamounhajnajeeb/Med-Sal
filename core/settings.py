@@ -15,9 +15,9 @@ DEBUG = True
 
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 ALLOWED_HOSTS = ["medsal-production.up.railway.app", "127.0.0.1"]
-ALLOWED_HOSTS.append(
-        os.environ.get("Railway_Host", "").split(",")
-    )
+# ALLOWED_HOSTS.append(
+#         os.environ.get("Railway_Host", "").split(",")
+#     )
 
 
 INSTALLED_APPS = [
@@ -76,11 +76,15 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication'
         , )
     
-    , 'DEFAULT_THROTTLE_RATES': {
-        'un_authenticated': '1/hour'
-        , 'authenticated': '2/hour'
-        , }
+    , 'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ]
     
+    , 'DEFAULT_THROTTLE_RATES': {
+        'anon': '2/hour'
+        , 'user': '2/hour'
+        , }
     }
 
 
