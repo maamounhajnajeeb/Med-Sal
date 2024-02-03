@@ -25,7 +25,8 @@ urlpatterns = [
     # search in services by service name
     path("by_name/<str:service_name>/", tareq_views.services_by_name, name="services_by_name"),
     # list services by distance
-    path("distance/<str:service_name>/<str:longitude>/<str:latitude>/", tareq_views.services_by_distance, name="service_by_distance"),
+    path("distance/<str:service_name>/<str:longitude>/<str:latitude>/"
+        , tareq_views.services_by_distance, name="service_by_distance"),
     
     
     ## Category Filters ##

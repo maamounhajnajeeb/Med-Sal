@@ -1,4 +1,4 @@
-from rest_framework import decorators, status, permissions
+from rest_framework import decorators, status
 from rest_framework.response import Response
 
 from django.contrib.gis.db.models.functions import Distance
@@ -15,7 +15,7 @@ from functools import reduce
 
 #
 @decorators.api_view(["GET", ])
-@decorators.permission_classes([permissions.AllowAny, ])
+@decorators.permission_classes([])
 def services_by_location(request: HttpRequest, location_id: int):
     """
     list location services
@@ -32,7 +32,7 @@ def services_by_location(request: HttpRequest, location_id: int):
 
 #
 @decorators.api_view(["GET", ])
-@decorators.permission_classes([permissions.AllowAny, ])
+@decorators.permission_classes([])
 def services_by_category(request: HttpRequest, category_id: int):
     """
     list category services
@@ -50,7 +50,7 @@ def services_by_category(request: HttpRequest, category_id: int):
 
 # 
 @decorators.api_view(["GET", ])
-@decorators.permission_classes([permissions.AllowAny, ])
+@decorators.permission_classes([])
 def services_by_distance(request: HttpRequest, service_name: str, longitude: str, latitude: str):
     """
         An api to list services filtered by distance ordered for nearest to farthest.
@@ -73,16 +73,15 @@ def services_by_distance(request: HttpRequest, service_name: str, longitude: str
     
     if not services.exists():
         return Response(
-            {"message": "No service provider in this area"}
+            {"message": "No services with this search term in this area"}
             , status=status.HTTP_404_NOT_FOUND)
     
     serializer = serializers.RUDServicesSerializer(services, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-
 #
 @decorators.api_view(["GET"])
-@decorators.permission_classes([permissions.AllowAny, ])
+@decorators.permission_classes([])
 def services_by_name(request:HttpRequest, service_name: str):
     """
         An api to list services filtered by it's name (ar & en)
@@ -96,7 +95,7 @@ def services_by_name(request:HttpRequest, service_name: str):
     services = smodels.Service.objects.filter(q_func)
     
     if not services.exists():
-        return Response({'error': 'No services found with that name'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'No services found with that title'}, status=status.HTTP_404_NOT_FOUND)
     
     serializer = sserializer.RUDServicesSerializer(services, many=True, language=language)
     return Response(serializer.data, status = status.HTTP_200_OK)

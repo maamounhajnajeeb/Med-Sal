@@ -114,7 +114,7 @@ class ServiceRUD(generics.RetrieveUpdateDestroyAPIView, helpers.FileMixin):
 #
 class ListAllServices(generics.ListAPIView):
     serializer_class = serializers.RUDServicesSerializer
-    queryset = models.Service.objects
+    queryset = models.Service.objects.select_related("category")
     permission_classes = ( )
     
     def get_serializer(self, *args, **kwargs):
@@ -354,8 +354,8 @@ def activation_switcher(req: Request, pk: int):
         return Response({"Error": "Service object not found"}, status=status.HTTP_404_NOT_FOUND)
         
     activation_status = req.data.get("status")
-    if activation_status:
-        activation_status = True if activation_status == "true" else False
+    if activation_status is not None and type(activation_status) == bool:
+        activation_status = activation_status
         service_obj = service_obj.first()
         service_obj.is_active = activation_status
         service_obj.save()
@@ -364,5 +364,5 @@ def activation_switcher(req: Request, pk: int):
             status=status.HTTP_202_ACCEPTED)
     
     return Response(
-        {"Error": "status attr needed in order to change the service activation status"},
+        {"Error": "status attr needed to change the service activation status and it's value most be boolean"},
         status=status.HTTP_400_BAD_REQUEST)
