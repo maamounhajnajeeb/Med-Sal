@@ -41,7 +41,7 @@ def services_by_category(request: HttpRequest, category_id: int):
     language = request.META.get("Accept-Language")
     services = smodels.Service.objects.filter(category=category_id)
     
-    if not services:
+    if not services.exists():
         return Response({"message": "No services found in this category"}, status=status.HTTP_404_NOT_FOUND)
     
     serializer = sserializer.RUDServicesSerializer(services, many=True, language=language)

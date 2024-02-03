@@ -31,9 +31,10 @@ urlpatterns = [
     
     ## Category Filters ##
     # category services by name
-    path("category/<str:category_name>/", maamoun_views.category_services_by_name, name="category_services_by_name"),
+    path("category/<str:category_name>/",
+        maamoun_views.category_services_by_name, name="category_services_by_name"),
     # list services in a category (by category_id)
-    path("category/<int:category_id>/", tareq_views.services_by_category, name="services_for_category"),
+    path("category/by_id/<int:category_id>/", tareq_views.services_by_category, name="category_services_by_id"),
     
     
     ## Provider and Location Filters ##
