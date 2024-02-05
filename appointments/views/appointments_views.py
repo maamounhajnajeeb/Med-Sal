@@ -8,7 +8,7 @@ from django.db.models import Count, Q
 from datetime import datetime
 from typing import Optional
 
-from utils.permission import authorization_with_method
+from utils.permission import authorization_with_method, HasPermission
 from appointments import models, serializers
 from notification.models import Notification
 
@@ -46,8 +46,12 @@ class CreateAppointment(generics.CreateAPIView):
 
 
 class AppointmentRUD(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (HasPermission, )
     queryset = models.Appointments.objects
     serializer_class = serializers.AppointmentSerializer
+    
+    def get_permissions(self):
+        return [permission("appointments") for permission in self.permission_classes]
     
     def get_serializer(self, *args, **kwargs):
         language = self.request.META.get("Accept-Language")
