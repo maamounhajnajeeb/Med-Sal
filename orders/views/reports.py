@@ -34,7 +34,7 @@ def provider_report(request: HttpRequest):
         product__service_provider_location__service_provider=provider_id
         , status="ACCEPTED", **additional_fields).annotate(total_price= F("price") * F("quantity"))
     
-    serializer = serializers.ReportItemSerialzier(queryset, many=True, language=language)
+    serializer = serializers.SpecificItemSerialzier(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -53,7 +53,7 @@ def location_report(request: HttpRequest, location_id: int):
         product__service_provider_location=location_id, status="ACCEPTED"
         , **additional_fields).annotate(total_price= F("price") * F("quantity"))
     
-    serializer = serializers.ReportItemSerialzier(queryset, many=True, language=language)
+    serializer = serializers.SpecificItemSerialzier(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -64,6 +64,6 @@ def user_report(request: HttpRequest, user_id: Optional[int]):
     
     queryset = models.OrderItem.objects.filter(
         order__patient=user_id).annotate(total_price= F("price") * F("quantity"))
-    serializer = serializers.ReportItemSerialzier(queryset, many=True, language=language)
+    serializer = serializers.SpecificItemSerialzier(queryset, many=True, language=language)
     
     return Response(serializer.data, status=status.HTTP_200_OK)

@@ -1,14 +1,14 @@
 from rest_framework.response import Response
 from rest_framework import viewsets, status
+from rest_framework.request import Request
 from rest_framework import decorators
-
-from django.http import HttpRequest
 
 from typing import Optional
 
 from orders import models, serializers
 
 from utils.permission import HasPermission
+
 
 
 class RejectedOrdersViewSet(viewsets.ModelViewSet):
@@ -21,7 +21,7 @@ class RejectedOrdersViewSet(viewsets.ModelViewSet):
 
 
 @decorators.api_view(["GET", ])
-def user_rejected_orders(request: HttpRequest, user_id: Optional[int]):
+def user_rejected_orders(request: Request, user_id: Optional[int]):
     user_id = user_id or request.user.id
     queryset = models.RejectedOrders.objects.filter(order__order__patient=user_id)
     serializer = serializers.RejectedOrderSerializer(queryset, many=True)
@@ -29,7 +29,7 @@ def user_rejected_orders(request: HttpRequest, user_id: Optional[int]):
 
 
 @decorators.api_view(["GET", ])
-def provider_rejected_orders(request: HttpRequest, provider_id: Optional[int]):
+def provider_rejected_orders(request: Request, provider_id: Optional[int]):
     provider_id = provider_id or request.user.id
     queryset = models.RejectedOrders.objects.filter(
         order__product__service_provider_location__service_provider=provider_id)
@@ -38,7 +38,7 @@ def provider_rejected_orders(request: HttpRequest, provider_id: Optional[int]):
 
 
 @decorators.api_view(["GET", ])
-def location_rejected_orders(request: HttpRequest, location_id: int):
+def location_rejected_orders(request: Request, location_id: int):
     queryset = models.RejectedOrders.objects.filter(
         order__product__service_provider_location=location_id)
     serializer = serializers.RejectedOrderSerializer(queryset, many=True)

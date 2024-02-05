@@ -50,7 +50,7 @@ class RetrieveDestroyUpdateItem(generics.RetrieveUpdateDestroyAPIView):
             , en_content=f"your order {serializer.data.get('status')}"
             , ar_content="تم رفض طلبك" if serializer.data.get('status') == "REJECTED" else "تم قبول طلبك")
         
-        return Response(serializer.data, status=serializer.status_code)
+        return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
     
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
