@@ -4,9 +4,8 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 
 from django.contrib.postgres.search import SearchQuery, SearchVector
+from django.db.models import Q, Avg, QuerySet, Sum, Avg, Min, Max, Count
 from django.contrib.gis.db.models.functions import Distance
-from django.db.models import Q, Avg, QuerySet
-from django.db.models import Avg, Min, Max
 from django.contrib.gis.geos import Point
 
 from collections import defaultdict
@@ -57,7 +56,14 @@ class CreateService(generics.CreateAPIView, helpers.FileMixin):
 class ServiceRUD(generics.RetrieveUpdateDestroyAPIView, helpers.FileMixin):
     serializer_class = serializers.RUDServicesSerializer
     permission_classes = (HasPermission, )
-    queryset = models.Service.objects
+    queryset = models.Service.objects.annotate(
+        one_star=Count("service_rates__rate", filter=Q(service_rates__rate=1)),
+        two_star=Count("service_rates__rate", filter=Q(service_rates__rate=2)),
+        three_star=Count("service_rates__rate", filter=Q(service_rates__rate=3)),
+        four_star=Count("service_rates__rate", filter=Q(service_rates__rate=4)),
+        five_star=Count("service_rates__rate", filter=Q(service_rates__rate=5)),
+        zero_star=Count("service_rates__rate", filter=Q(service_rates__rate=0)),
+    )
     
     def get_permissions(self):
         return [permission("service") for permission in self.permission_classes]
@@ -114,7 +120,14 @@ class ServiceRUD(generics.RetrieveUpdateDestroyAPIView, helpers.FileMixin):
 #
 class ListAllServices(generics.ListAPIView):
     serializer_class = serializers.RUDServicesSerializer
-    queryset = models.Service.objects.select_related("category")
+    queryset = models.Service.objects.annotate(
+        one_star=Count("service_rates__rate", filter=Q(service_rates__rate=1)),
+        two_star=Count("service_rates__rate", filter=Q(service_rates__rate=2)),
+        three_star=Count("service_rates__rate", filter=Q(service_rates__rate=3)),
+        four_star=Count("service_rates__rate", filter=Q(service_rates__rate=4)),
+        five_star=Count("service_rates__rate", filter=Q(service_rates__rate=5)),
+        zero_star=Count("service_rates__rate", filter=Q(service_rates__rate=0)),
+    )
     permission_classes = ( )
     
     def get_serializer(self, *args, **kwargs):
@@ -131,7 +144,15 @@ def provider_services(request: Request, provider_id: int= None):
     """
     provider_id = provider_id or request.user.id
     language = request.META.get("Accept-Language")
-    queryset = models.Service.objects.filter(provider_location__service_provider=provider_id)
+    queryset = models.Service.objects.annotate(
+        one_star=Count("service_rates__rate", filter=Q(service_rates__rate=1)),
+        two_star=Count("service_rates__rate", filter=Q(service_rates__rate=2)),
+        three_star=Count("service_rates__rate", filter=Q(service_rates__rate=3)),
+        four_star=Count("service_rates__rate", filter=Q(service_rates__rate=4)),
+        five_star=Count("service_rates__rate", filter=Q(service_rates__rate=5)),
+        zero_star=Count("service_rates__rate", filter=Q(service_rates__rate=0)),
+    )
+    queryset = queryset.filter(provider_location__service_provider=provider_id)
     serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -200,7 +221,14 @@ def provider_category_services(request: Request, provider_id: int, category_id: 
     return category related services for a specific provider
     """
     language = request.META.get("Accept-Language")
-    queryset = models.Service.objects.filter(
+    queryset = models.Service.objects.annotate(
+        one_star=Count("service_rates__rate", filter=Q(service_rates__rate=1)),
+        two_star=Count("service_rates__rate", filter=Q(service_rates__rate=2)),
+        three_star=Count("service_rates__rate", filter=Q(service_rates__rate=3)),
+        four_star=Count("service_rates__rate", filter=Q(service_rates__rate=4)),
+        five_star=Count("service_rates__rate", filter=Q(service_rates__rate=5)),
+        zero_star=Count("service_rates__rate", filter=Q(service_rates__rate=0)) )
+    queryset = queryset.filter(
         provider_location__service_provider=provider_id, category=category_id)
     serializer = serializers.RUDServicesSerializer(queryset, many=True, language=language)
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -219,7 +247,14 @@ def category_services_by_name(request: Request, category_name: str):
     search_func = reduce(lambda x, y : x | y, search_terms)
     
     queryset = models.Service.objects.annotate(
-        search=SearchVector("category__en_name", "category__ar_name")).filter(search_func)
+        one_star=Count("service_rates__rate", filter=Q(service_rates__rate=1)),
+        two_star=Count("service_rates__rate", filter=Q(service_rates__rate=2)),
+        three_star=Count("service_rates__rate", filter=Q(service_rates__rate=3)),
+        four_star=Count("service_rates__rate", filter=Q(service_rates__rate=4)),
+        five_star=Count("service_rates__rate", filter=Q(service_rates__rate=5)),
+        zero_star=Count("service_rates__rate", filter=Q(service_rates__rate=0)),
+        search=SearchVector("category__en_name", "category__ar_name") )
+    queryset = queryset.filter(search_func)
     
     if not queryset.exists():
         return Response({"message": "No services found relates to this category"}
@@ -320,7 +355,13 @@ def get_callables(query_params: dict[str, Any]):
 def search_in_provider_services(request: Request, provider_id: int):
     # first we get the language and query_params, then we make main querysets
     language, query_params = request.META.get("Accept-Language"), request.query_params
-    services_main_queryset = models.Service.objects
+    services_main_queryset = models.Service.objects.annotate(
+        one_star=Count("service_rates__rate", filter=Q(service_rates__rate=1)),
+        two_star=Count("service_rates__rate", filter=Q(service_rates__rate=2)),
+        three_star=Count("service_rates__rate", filter=Q(service_rates__rate=3)),
+        four_star=Count("service_rates__rate", filter=Q(service_rates__rate=4)),
+        five_star=Count("service_rates__rate", filter=Q(service_rates__rate=5)),
+        zero_star=Count("service_rates__rate", filter=Q(service_rates__rate=0)) )
     
     # then we get the callabels which mapped with the served query_params, and take care of pagination num
     callables, query_params, pagination_number = get_callables(query_params)
