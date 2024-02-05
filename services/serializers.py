@@ -1,7 +1,5 @@
 from rest_framework import serializers
 
-from django.db.models import QuerySet
-
 from .helpers import FileMixin
 
 from . import models
@@ -54,7 +52,6 @@ class RUDServicesSerializer(serializers.ModelSerializer, FileMixin):
     
     def to_representation(self, instance: models.Service):
         category = instance.category
-        rates: QuerySet[models.ServiceRates] = instance.service_rates.all()
         
         return {
             "id": instance.id
