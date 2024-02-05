@@ -1,6 +1,6 @@
 from rest_framework import routers
 
-from django.urls import re_path
+from django.urls import re_path, path
 
 
 from deliveries.views import maamoun_views
@@ -16,6 +16,9 @@ urlpatterns = [
     
     # user deliveries
     re_path(r"user/(\d{1,})?", maamoun_views.user_deliveries, name="user_deliveries"),
+    
+    # list all deliveries
+    path("list_all/", maamoun_views.list_all_deliveries, name="list_all_deliveries")
 ]
 
 urlpatterns += router.urls

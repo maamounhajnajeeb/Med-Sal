@@ -1,14 +1,13 @@
 from rest_framework import viewsets, decorators
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework import status
-
-from django.http import HttpRequest
 
 from typing import Optional
 
 from deliveries import models, serializers
 
-from utils.permission import HasPermission, authorization
+from utils.permission import HasPermission, authorization, authorization_with_method
 
 
 
@@ -34,7 +33,7 @@ class DeliveryViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
     
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        return Response({"Message": "This method is not allowed"}, status=status.HTTP_403_FORBIDDEN)
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -44,7 +43,7 @@ class DeliveryViewSet(viewsets.ModelViewSet):
 
 @decorators.api_view(["GET", ])
 @authorization("delivery")
-def provider_deliveries(request: HttpRequest, provider_id: Optional[int]):
+def provider_deliveries(request: Request, provider_id: Optional[int]):
     fields = {"language": request.META.get("Accept-Language")}
     provider_id = provider_id or request.user.id
     
@@ -57,7 +56,7 @@ def provider_deliveries(request: HttpRequest, provider_id: Optional[int]):
 
 @decorators.api_view(["GET", ])
 @authorization("delivery")
-def user_deliveries(request: HttpRequest, user_id: Optional[int]):
+def user_deliveries(request: Request, user_id: Optional[int]):
     fields = {"language": request.META.get("Accept-Language")}
     user_id = user_id or request.user.id
     
@@ -65,3 +64,12 @@ def user_deliveries(request: HttpRequest, user_id: Optional[int]):
     serializer = serializers.DeliverySerializer(queryset, many=True, fields=fields)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@decorators.api_view(["GET", ])
+@authorization_with_method("list", "delivery")
+def list_all_deliveries(req: Request):
+    fields = {"language": req.META.get("Accept-Language")}
+    return Response(
+        serializers.DeliverySerializer(models.Delivery.objects.all(), many=True, fields=fields).data
+        , status=status.HTTP_200_OK)
