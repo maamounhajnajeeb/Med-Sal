@@ -8,7 +8,7 @@ from typing import Optional
 
 from appointments import models, serializers
 
-from utils.permission import authorization_with_method
+from utils.permission import authorization_with_method, HasPermission
 from notification.models import Notification
 
 
@@ -37,6 +37,10 @@ class CreateRejectedAppointment(generics.CreateAPIView):
 class RUDRejectedAppointments(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.RejectedAppointments.objects
     serializer_class = serializers.RejectedSerializer
+    permission_classes = (HasPermission, )
+    
+    def get_permissions(self):
+        return [permission("rejectedappointments") for permission in self.permission_classes]
     
     def get_serializer(self, *args, **kwargs):
         language = self.request.META.get("Accept-Language")

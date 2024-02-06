@@ -107,7 +107,7 @@ def provider_today_appointments(req: Request):
         today_appointments, many=True, language=language)
     
     response = {
-        "last_five": last_five_serializer.data,
+        "last_five_done_appointments": last_five_serializer.data,
         "today_appointments": today_serializer.data
     }
     
@@ -116,17 +116,15 @@ def provider_today_appointments(req: Request):
 
 @decorators.api_view(["GET", ])
 @authorization_with_method("list", "appointments")
-def location_today_appointments(req: Request):
+def location_today_appointments(req: Request, location_id: int):
     language = req.META.get("Accept-Language")
-    location_id = req.query_params.get("provider_id")
     if not location_id:
         return Response({
             "message": "Sorry, but location_id needed for using this API"}, status=status.HTTP_200_OK)
     
-    location_id = int(location_id)
     main_queryset = models.Appointments.objects.filter(service__provider_location=location_id)
     
-    last_five_queryset = main_queryset.filter(result__isnull=False).order_by("-updated_at")[5:]
+    last_five_queryset = main_queryset.filter(result__isnull=False).order_by("-updated_at")[:5]
     
     date = datetime.now()
     day, month, year = date.day, date.month, date.year
@@ -134,11 +132,11 @@ def location_today_appointments(req: Request):
         updated_at__day=day, updated_at__month=month, updated_at__year=year)
     
     last_five_serializer = serializers.DailyAppointmentsSerializer(
-        queryset=last_five_queryset, many=True, language=language)
+        last_five_queryset, many=True, language=language)
     today_serializer = serializers.DailyAppointmentsSerializer(
-        queryset=today_appointments, many=True, language=language)
+        today_appointments, many=True, language=language)
     
-    return Response(last_five_serializer+today_serializer, status=status.HTTP_200_OK)
+    return Response(last_five_serializer.data+today_serializer.data, status=status.HTTP_200_OK)
 
 
 @decorators.api_view(["GET", ])
@@ -182,8 +180,9 @@ def all_user_appointments(request: Request, user_id: Optional[int]):
 @decorators.api_view(["GET", ])
 @authorization_with_method("view", "appointments")
 def provider_appointments_dashborad(req: Request):
-    # this trick because maybe admin want to see or provider
     language = req.META.get("Accept-Language")
+    
+    # this trick because maybe admin want to see or provider
     provider_id = req.query_params.get("provider_id")
     if provider_id:
         provider_id = int(provider_id)
