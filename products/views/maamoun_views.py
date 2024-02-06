@@ -90,7 +90,8 @@ class RUDProduct(generics.RetrieveUpdateDestroyAPIView):
         instance = self.get_object()
         
         data = request.data.copy()
-        if request.data.get("images"):
+        print(data)
+        if data.get("images"):
             # first delete old ones
             DeleteFiles().delete_files(instance.images)
             # then upload new ones and change names
@@ -329,9 +330,8 @@ def activation_switcher(req: Request, pk: int):
         return Response(
             {"Error": "Product objects with this id does not exist"}, status=status.HTTP_404_NOT_FOUND)
     
-    activation_status = req.data.get("status")
-    if activation_status:
-        activation_status = False if activation_status == "false" else True
+    activation_status = req.data.get("is_active")
+    if activation_status is not None:
         product_obj = product_obj.first()
         product_obj.is_active = activation_status
         product_obj.save()

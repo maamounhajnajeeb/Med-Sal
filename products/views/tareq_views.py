@@ -24,13 +24,13 @@ def products_by_distance(request: HttpRequest):
     
     if not (latitude and longitude and product_name):
         return Response(
-            {'error': 'Latitude and longitude parameters are required'}
+            {'error': 'Latitude, longitude and name (product name) parameters are required'}
             , status=status.HTTP_400_BAD_REQUEST)
     
     location = Point(float(longitude), float(latitude), srid=4326)
     Q_expression = Q(en_title__icontains=product_name) if language=="en" else Q(ar_title__icontains=product_name)
     
-    products = pmodels.Product.objects.filter(en_title__icontains=Q_expression,
+    products = pmodels.Product.objects.filter(Q_expression,
         service_provider_location__location__distance_lt=(location, 1000000)
         ).annotate(distance=Distance('service_provider_location__location', location)).order_by('distance')
     
@@ -51,17 +51,17 @@ def product_filter_by_name(request:HttpRequest):
     product name is required
     ?name=<string>
     """
-    language = request.META.get("Accept-Language")
-    product_name = request.query_params.get('name')
+    lang = request.META.get("Accept-Language")
     
+    product_name = request.query_params.get('name')
     if not product_name:
         return Response({'error': 'Product name parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
     
-    Q_expression = Q(en_title__icontains=product_name) if language == "en" else Q(ar_title__icontains=product_name)
+    Q_expression = Q(en_title__icontains=product_name) if lang=="en" else Q(ar_title__icontains=product_name)
     products = pmodels.Product.objects.filter(Q_expression)
     
     if not products.exists():
         return Response({'message': 'No products found with that name'}, status=status.HTTP_404_NOT_FOUND)
     
-    serializer = pserializer.ProudctSerializer(products, many = True, fields = {'language':language})
+    serializer = pserializer.ProudctSerializer(products, many = True, language=lang)
     return Response(serializer.data, status = status.HTTP_200_OK)
