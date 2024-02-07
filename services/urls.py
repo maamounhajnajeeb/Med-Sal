@@ -58,7 +58,7 @@ urlpatterns = [
     # delete and update rates for rate owner #
     path("rates/delete_or_update/<int:rate_id>/", rates_views.update_delete_rate, name="update_delete_rate"),
     # user rates #
-    path("rates/user/<int:user_id>/", rates_views.user_rates, name="user_rates"),
+    path("rates/user/", rates_views.user_rates, name="user_rates"),
     # provider rates #
     path("rates/provider/<int:provider_id>/", rates_views.provider_rates, name="provider_rates"),
     # location rates #

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 
 from django.contrib.gis.db.models.functions import Distance
 from django.contrib.gis.geos import Point
-from django.db.models import Q
+from django.db.models import Q, Count
 
 from django.http import HttpRequest
 
@@ -66,10 +66,17 @@ def services_by_distance(request: HttpRequest, service_name: str, longitude: str
     service_name = service_name.split("_")
     Q_expr = (Q(en_title__icontains=x) | Q(ar_title__icontains=x) for x in service_name)
     Q_func = reduce(lambda x,y: x & y, Q_expr)
+
+    services = smodels.Service.objects.annotate(
+        one_star=Count("service_rates__rate", filter=Q(service_rates__rate=1)),
+        two_star=Count("service_rates__rate", filter=Q(service_rates__rate=2)),
+        three_star=Count("service_rates__rate", filter=Q(service_rates__rate=3)),
+        four_star=Count("service_rates__rate", filter=Q(service_rates__rate=4)),
+        five_star=Count("service_rates__rate", filter=Q(service_rates__rate=5)),
+        zero_star=Count("service_rates__rate", filter=Q(service_rates__rate=0)) ).filter(Q_func,
+            provider_location__location__distance_lt=(location, 1000000)).annotate(
+                distance=Distance("provider_location__location", location)).order_by("distance")
     
-    services = smodels.Service.objects.filter(Q_func,
-        provider_location__location__distance_lt=(location, 1000000)
-        ).annotate(distance=Distance("provider_location__location", location)).order_by("distance")
     
     if not services.exists():
         return Response(
@@ -92,7 +99,14 @@ def services_by_name(request:HttpRequest, service_name: str):
     text_seq = service_name.split("_")
     Q_expr = (Q(en_title__icontains=x) | Q(ar_title__icontains=x) for x in text_seq)
     q_func = reduce(lambda x,y: x & y, Q_expr)
-    services = smodels.Service.objects.filter(q_func)
+
+    services = smodels.Service.objects.annotate(
+        one_star=Count("service_rates__rate", filter=Q(service_rates__rate=1)),
+        two_star=Count("service_rates__rate", filter=Q(service_rates__rate=2)),
+        three_star=Count("service_rates__rate", filter=Q(service_rates__rate=3)),
+        four_star=Count("service_rates__rate", filter=Q(service_rates__rate=4)),
+        five_star=Count("service_rates__rate", filter=Q(service_rates__rate=5)),
+        zero_star=Count("service_rates__rate", filter=Q(service_rates__rate=0)) ).filter(q_func)
     
     if not services.exists():
         return Response({'error': 'No services found with that title'}, status=status.HTTP_404_NOT_FOUND)

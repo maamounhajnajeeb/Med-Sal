@@ -129,8 +129,16 @@ def get_callables(query_params: dict[str, Any]):
 def search_in_services_products(request: Request):
     # first we get the language and query_params, then we make main querysets
     language, query_params = request.META.get("Accept-Language"), request.query_params
-    services_main_queryset, products_main_queryset = Service.objects, Product.objects
     
+    products_main_queryset = Product.objects
+    services_main_queryset = Service.objects.annotate(
+        one_star=Count("service_rates__rate", filter=Q(service_rates__rate=1)),
+        two_star=Count("service_rates__rate", filter=Q(service_rates__rate=2)),
+        three_star=Count("service_rates__rate", filter=Q(service_rates__rate=3)),
+        four_star=Count("service_rates__rate", filter=Q(service_rates__rate=4)),
+        five_star=Count("service_rates__rate", filter=Q(service_rates__rate=5)),
+        zero_star=Count("service_rates__rate", filter=Q(service_rates__rate=0)) )
+
     # then we get the callabels which mapped with the served query_params, and take care of pagination num
     callables, query_params, pagination_number = get_callables(query_params)
     

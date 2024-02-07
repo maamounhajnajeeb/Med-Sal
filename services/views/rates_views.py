@@ -118,9 +118,9 @@ def provider_rates(request: Request, provider_id: int):
 
 #
 @decorators.api_view(["GET", ])
-def user_rates(request: Request, user_id: int):
+def user_rates(request: Request):
     language = request.META.get("Accept-Language")
-    queryset = models.ServiceRates.objects.filter(user__id=user_id)
+    queryset = models.ServiceRates.objects.filter(user__id=request.user.id)
     serializer = serializers.ServiceRatesSerializer(queryset, many=True, language=language)
     
     return Response(serializer.data, status=status.HTTP_200_OK)
