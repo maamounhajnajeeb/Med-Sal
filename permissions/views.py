@@ -1,12 +1,12 @@
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework import viewsets, status
+from rest_framework.request import Request
 from rest_framework import decorators
 
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Group, Permission
 from django.contrib.auth import get_user_model
-from django.http import HttpRequest
 
 from . import serializers, helpers
 
@@ -18,6 +18,15 @@ class ContentTypeView(viewsets.ModelViewSet):
     queryset = ContentType.objects
     serializer_class = serializers.ContentTypeSerializer
     permission_classes = (IsAdminUser, )
+    
+    def create(self, request, *args, **kwargs):
+        return Response({"message": "This method isn't allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def destroy(self, request, *args, **kwargs):
+        return Response({"message": "This method isn't allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def update(self, request, *args, **kwargs):
+        return Response({"message": "This method isn't allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class GroupView(viewsets.ModelViewSet):
@@ -44,7 +53,7 @@ def group_permissions(request, pk: int):
 
 @decorators.api_view(["GET", ])
 @decorators.permission_classes([IsAdminUser, ])
-def get_user_group(request: HttpRequest, pk):
+def get_user_group(request: Request, pk):
     group = helpers.Groups()
     query_set = group.get_user_groups(pk)
     
@@ -54,34 +63,42 @@ def get_user_group(request: HttpRequest, pk):
 
 @decorators.api_view(["DELETE", ])
 @decorators.permission_classes([IsAdminUser, ])
-def execlude_user_from_group(request: HttpRequest):
-    user_id, group_id = int(request.data.get("user_id")), int(request.data.get("group_id"))
+def execlude_user_from_group(req: Request):
+    user_id, group_id = req.query_params.get("user_id"), req.query_params.get("group_id")
+    if not (user_id and group_id):
+        return Response({"message": "You should add group_id & user_id in the request query params"}
+            , status=status.HTTP_400_BAD_REQUEST)
     
     group = helpers.Groups()
-    group.delete_user_from_group(user_id=user_id, group_id=group_id)
+    result = group.delete_user_from_group(user_id=user_id, group_id=group_id)
     
-    return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response({"message": result}, status=status.HTTP_204_NO_CONTENT)
 
 
 @decorators.api_view(["POST", ])
 @decorators.permission_classes([IsAdminUser, ])
-def assign_user_to_group(request: HttpRequest):
-    user_id, group_id = int(request.data.get("user_id")), int(request.data.get("group_id"))
+def assign_user_to_group(req: Request):
+    user_id, group_id = req.query_params.get("user_id"), req.query_params.get("group_id")
+    if not (user_id and group_id):
+        return Response({"message": "You should add group_id & user_id in the request query params"}
+            , status=status.HTTP_400_BAD_REQUEST)
     
     group = helpers.Groups()
-    result = group.add_user(user_id=user_id, group_id=group_id)
+    result = group.add_user(user_id=int(user_id), group_id=int(group_id))
     
-    return Response({
-        "message": result
-    }, status= status.HTTP_201_CREATED)
+    return Response({"message": result}, status= status.HTTP_201_CREATED)
 
 
 @decorators.api_view(["POST", ])
-def assign_permission_to_group(request: HttpRequest):
-    permission_id, group_id = int(request.data.get("permission_id")), int(request.data.get("group_id"))
+@decorators.permission_classes([IsAdminUser, ])
+def assign_permission_to_group(req: Request):
+    permission_id, group_id = req.query_params.get("permission_id"), req.query_params.get("group_id")
+    if not (permission_id and group_id):
+        return Response({"Error": "both permission_id and group_id needed to be in the query params"}
+            , status=status.HTTP_400_BAD_REQUEST)
     
     group = helpers.Groups()
-    result = group.add_permission(perm_id=permission_id, group_id=group_id)
+    result = group.add_permission(perm_id=int(permission_id), group_id=int(group_id))
     
     return Response({
         "message": result
@@ -89,11 +106,16 @@ def assign_permission_to_group(request: HttpRequest):
 
 
 @decorators.api_view(["POST", ])
-def assign_permissions_to_group(request: HttpRequest):
-    perms_ids, group_id = request.data.get("permissions_ids"), int(request.data.get("group_id"))
+@decorators.permission_classes([IsAdminUser, ])
+def assign_permissions_to_group(req: Request):
+    permission_ids, group_id = req.query_params.get("permission_ids"), req.query_params.get("group_id")
+    if not (permission_ids and group_id):
+        return Response({"Error": "both permission_ids and group_id needed to be in the query params"}
+            , status=status.HTTP_400_BAD_REQUEST)
     
     group = helpers.Groups()
-    result = group.add_permissions(group_id=group_id, perms_ids=list(perms_ids))
+    result = group.add_permissions(
+        group_id=int(group_id), perms_ids=[int(perm) for perm in permission_ids.split(",")])
     
     return Response({
         "message": result

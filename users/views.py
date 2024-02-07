@@ -510,7 +510,7 @@ def send_2FA_code(request: Request):
 
 
 @decorators.api_view(["POST", ])
-@decorators.throttle_classes([local_throttles.AuthenticatedRateThrottle, ])
+# @decorators.throttle_classes([local_throttles.AuthenticatedRateThrottle, ])
 def resend_2fa_code(request: Request):
     """
     resend the 2FA code
