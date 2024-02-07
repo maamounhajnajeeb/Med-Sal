@@ -1,22 +1,21 @@
 from rest_framework import viewsets, decorators
-from rest_framework import status, permissions
 from rest_framework.response import Response
+from rest_framework.request import Request
 from rest_framework import generics
-
-from django.http import HttpRequest
+from rest_framework import status
 
 from typing import Optional
 
+from utils.permission import authorization_with_method
 from notification.models import Notification
 from products import models, serializers
-
 
 
 class CreateRate(generics.CreateAPIView):
     queryset = models.ProductRates.objects
     serializer_class = serializers.RateSerializer
     
-    def create(self, request: HttpRequest, *args, **kwargs):
+    def create(self, request: Request, *args, **kwargs):
         data = request.data
         data["user"] = request.user.id
         
@@ -40,6 +39,15 @@ class CreateRate(generics.CreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
+@decorators.api_view(["GET", ])
+@authorization_with_method("list", "productrates")
+def all_products_rates(req: Request):
+    return Response(
+        data=serializers.RateSerializer(models.ProductRates.objects.all(), many=True,
+            fields={"language": req.META.get("Accept-Language")}).data
+        , status=status.HTTP_200_OK)
+
+
 class RatesViewSet(viewsets.ModelViewSet):
     queryset = models.ProductRates.objects
     serializer_class = serializers.RateSerializer
@@ -52,7 +60,7 @@ class RatesViewSet(viewsets.ModelViewSet):
         return Response({"message": "Not allowed method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+            return Response({"message": "Not allowed method"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -84,7 +92,7 @@ class RatesViewSet(viewsets.ModelViewSet):
 
 
 @decorators.api_view(["GET", ])
-def user_rates(request: HttpRequest, user_id: Optional[int]):
+def user_rates(request: Request, user_id: Optional[int]):
     language = request.META.get("Accept-Language")
     user_id = user_id or request.user.id
     
@@ -95,7 +103,7 @@ def user_rates(request: HttpRequest, user_id: Optional[int]):
 
 
 @decorators.api_view(["GET", ])
-def provider_rates(request: HttpRequest, provider_id: Optional[int]):
+def provider_rates(request: Request, provider_id: Optional[int]):
     language = request.META.get("Accept-Language")
     provider_id = provider_id or request.user.id
     
@@ -107,7 +115,7 @@ def provider_rates(request: HttpRequest, provider_id: Optional[int]):
 
 
 @decorators.api_view(["GET", ])
-def product_rates(request: HttpRequest, product_id: int):
+def product_rates(request: Request, product_id: int):
     language = request.META.get("Accept-Language")
     queryset = models.ProductRates.objects.filter(product=product_id)
     serializer = serializers.RateSerializer(queryset, many=True, fields={"language": language})

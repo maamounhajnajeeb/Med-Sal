@@ -8,17 +8,20 @@ app_name = "products"
 
 
 router = routers.SimpleRouter()
-router.register("rates", rates_view.RatesViewSet, basename="rates_view")
+router.register("view/rates", rates_view.RatesViewSet, basename="rates_view") #
 
 
 urlpatterns = [
-    # create rate
+    # all products rates (for admins only) #
+    path("rates/all/", rates_view.all_products_rates, name="all_products_rates"),
+    
+    # create rate #
     path("rates/create/", rates_view.CreateRate.as_view(), name="create_rate"),
     
-    # create product
+    # create product 
     path("", maamoun_views.CreateProduct.as_view(), name="create_product"),
     
-    # read, update, destroy specific product
+    # read, update, destroy specific product #
     path("<int:pk>/", maamoun_views.RUDProduct.as_view(), name="specifc_product"),
     
     # activation switcher #

@@ -51,7 +51,8 @@ class ProudctSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Product
         fields = ("id", "service_provider_location", "quantity", "ar_title"
-                , "en_title", "ar_description", "en_description", "images", "price", )
+                , "en_title", "ar_description", "en_description", "images", "price",
+                "discount_ammount", )
     
     def __init__(self, instance=None, data=..., **kwargs):
         language = kwargs.get("language")
