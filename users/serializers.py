@@ -156,6 +156,7 @@ class ServiceProviderSerializer(serializers.ModelSerializer, helpers.FileMixin):
 
 
 class LogInSerializer(TokenObtainPairSerializer):
+    
     def validate(self, attrs: dict[str, Any]) -> dict[str, str]:
         attrs = super().validate(attrs)
         

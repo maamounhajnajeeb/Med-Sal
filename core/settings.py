@@ -142,7 +142,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # Docker
 # DATABASES = {
 #     "default": dj_database_url.config(
-#         default=os.environ.get("DataBase_URL")
+#         default=os.environ.get("med-sal")
 #         , conn_max_age=600
 #     )
 # }
