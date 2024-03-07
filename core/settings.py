@@ -211,18 +211,18 @@ LANGUAGES = (
     , ('en', _("English"))
 )
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = bool(int(os.environ.get("SESSION_COOKIE_SECURE", 0)))
+CSRF_COOKIE_SECURE = bool(int(os.environ.get("CSRF_COOKIE_SECURE", 0)))
 
-SECURE_HSTS_PRELOAD = True
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = bool(int(os.environ.get("SECURE_HSTS_PRELOAD", 0)))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = bool(int(os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS", 0)))
 SECURE_HSTS_SECONDS = 31536000 * 2 # 2 year
-# SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = bool(int(os.environ.get("SECURE_SSL_REDIRECT")))
 
 SECURE_REFERRER_POLICY = "strict-origin"
 
 # To support old browsers
-SECURE_BROWSER_XSS_FILTER = True
+SECURE_BROWSER_XSS_FILTER = bool(int(os.environ.get("SECURE_BROWSER_XSS_FILTER")))
 
 STORAGES = {
     "staticfiles": {
