@@ -155,19 +155,6 @@ DATABASES = {
     }
 }
 
-# Tareq
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.contrib.gis.db.backends.postgis",
-#         "NAME": "med_sal", # my database name, you can change
-#         "USER": "postgres", # your chosen or default database system name
-#         "PASSWORD": get_env_details(), #
-#         "HOST": "", # localhost
-#         "PORT": "", # 5432
-#     }
-# }
-
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
