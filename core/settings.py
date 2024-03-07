@@ -8,15 +8,10 @@ from django.utils.translation import gettext_lazy as _
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-SECRET_KEY = "3d9a9c547b8eac4412eae62daa2f250ef81cd94312964e5bf80007cf30014e4c"
-# DEBUG = bool(int(os.environ.get("DEBUG", 0)))
-DEBUG = True
+SECRET_KEY = os.environ.get("SECRET_KEY")
+DEBUG = bool(int(os.environ.get("DEBUG", 0)))
 
 ALLOWED_HOSTS = ["medsal-production.up.railway.app", "127.0.0.1"]
-# ALLOWED_HOSTS.append(
-#         os.environ.get("Railway_Host", "").split(",")
-#     )
 
 
 INSTALLED_APPS = [
@@ -97,12 +92,12 @@ SIMPLE_JWT = {
 }
 
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_HOST_USER = 'maamoun.haj.najeeb@gmail.com'
-EMAIL_HOST_PASSWORD = 'jrkuwnnkzqqgkkim'
-EMAIL_PORT = 587
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS")
+EMAIL_PORT = os.environ.get("EMAIL_PORT")
+EMAIL_HOST = os.environ.get("EMAIL_HOST")
 
 
 CORS_ALLOWED_ORIGINS = (
@@ -148,15 +143,15 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # }
 # DATABASES['default']['ENGINE'] = 'django.contrib.gis.db.backends.postgis'
 
-# Maamoun
+# Development
 DATABASES = {
     "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": "med_sal", # my database name, you can change
-        "USER": "postgres", # your chosen or default database system name
-        "PASSWORD": "17AiGz48rhe", #
-        "HOST": "", # localhost
-        "PORT": "", # 5432
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
+        "PORT": os.environ.get("DB_PORT", 5432),
+        "ENGINE": os.environ.get("DB_ENGINE"),
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER"),
+        "HOST": os.environ.get("DB_HOST")
     }
 }
 
