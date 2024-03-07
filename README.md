@@ -16,7 +16,10 @@ Initially, you need python 3.10 or higher installed on your local machine, then:
 1. `virtualenv .venv`
 2. `.venv\scripts\activate` for windows</br>
 (if you user mac or linux, do this instead:
-`source .venv/bin/activate`)
+```console
+source .venv/bin/activate
+```
+)
 - Next, clone the repo:</br>
 `git clone https://github.com/maamounhajnajeeb/Med-Sal.git`
 - Now it's dependencies' time:</br>
