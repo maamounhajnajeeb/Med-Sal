@@ -147,8 +147,8 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     "default": {
         "PASSWORD": os.environ.get("DB_PASSWORD"),
-        "PORT": os.environ.get("DB_PORT", 5432),
         "ENGINE": os.environ.get("DB_ENGINE"),
+        "PORT": os.environ.get("DB_PORT"),
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
         "HOST": os.environ.get("DB_HOST")
@@ -204,12 +204,12 @@ CSRF_COOKIE_SECURE = bool(int(os.environ.get("CSRF_COOKIE_SECURE", 0)))
 SECURE_HSTS_PRELOAD = bool(int(os.environ.get("SECURE_HSTS_PRELOAD", 0)))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = bool(int(os.environ.get("SECURE_HSTS_INCLUDE_SUBDOMAINS", 0)))
 SECURE_HSTS_SECONDS = 31536000 * 2 # 2 year
-SECURE_SSL_REDIRECT = bool(int(os.environ.get("SECURE_SSL_REDIRECT")))
+SECURE_SSL_REDIRECT = bool(int(os.environ.get("SECURE_SSL_REDIRECT", 0)))
 
 SECURE_REFERRER_POLICY = "strict-origin"
 
 # To support old browsers
-SECURE_BROWSER_XSS_FILTER = bool(int(os.environ.get("SECURE_BROWSER_XSS_FILTER")))
+SECURE_BROWSER_XSS_FILTER = bool(int(os.environ.get("SECURE_BROWSER_XSS_FILTER", 1)))
 
 STORAGES = {
     "staticfiles": {
