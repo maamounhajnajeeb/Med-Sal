@@ -4,7 +4,7 @@ Django web app that enclose the relationship between patients and medical servic
 ## Motivation
 Imagine that you need to buy a medicine but you're so ill, so you can't go out your room to buy it.
 Do you remember a situation when you have to take an appointment with a doctor, but the medical clinic is far far away from your house.
-Med Sal Project will do all of this, with Med Sal you can:
+With Med Sal you can do all of this, you can:
 - Order medical products from pharmacies
 - Reserve appointments with Doctors
 - Check appointments status
